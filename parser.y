@@ -31,8 +31,8 @@
 #include "rename.h"
 #include "util.h"
 
-static IDL_tree *		IDL_tree_node_new(void);
 static void			do_escapes(char *s);
+static IDL_tree *		IDL_tree_node_new(void);
 
 IDL_tree			__idl_root;
 static int			okay;
@@ -44,9 +44,9 @@ int				__idl_cur_line, __idl_nerrors, __idl_nwarnings;
 %union {
 	IDL_tree tree;
 	char *str;
-	long integer_v;
-	float float_v;
-	double double_v;
+	long integer;
+	float floatp;
+	int boolean;
 }
 
 %token TOK_ANY			"any"
@@ -96,10 +96,30 @@ int				__idl_cur_line, __idl_nerrors, __idl_nwarnings;
 %token<floatp>			TOK_FLOATP
 %token<fixedp>			TOK_FIXEDP
 
-%type<str>			string_lit dqstring ident
+%type<str>			sqstring dqstring ident
+
 %type<tree>			specification
 %type<tree>			definition_list definition
 %type<tree>			type_dcl const_dcl except_dcl interface module
+%type<tree>			interface interface_dcl forward_dcl
+%type<tree>			module
+%type<tree>			interface_header z_interface_body
+%type<tree>			inheritence_spec z_inheritence_spec
+%type<tree>			scoped_name_list scoped_name
+%type<tree>			export_list export
+%type<tree>			attr_dcl op_dcl
+%type<tree>			const_dcl const_type const_exp
+%type<tree>			integer_type char_type boolean_type
+%type<tree>			floating_pt_type string_type
+%type<tree>			or_expr xor_expr and_expr shift_expr
+%type<tree>			add_expr mult_expr unary_expr unary_op
+%type<tree>			primary_expr literal
+%type<tree>			string_lit character_lit integer_lit
+%type<tree>			floating_pt_lit boolean_lit
+%type<tree>			type_declarator simple_declarator
+%type<tree>			type_spec declarator_list
+%type<tree>			simple_type_spec constr_type_spec
+%type<tree>			base_type_spec template_type_spec
 
 %%
 
@@ -131,10 +151,10 @@ definition_list:	definition
 	;
 
 definition:		type_dcl ';'
-|			const_dcl ';'
+/*|			const_dcl ';'
 |			except_dcl ';'
 |			interface ';'
-|			module ';'
+|			module ';'*/
 	;
 
 interface:		interface_dcl

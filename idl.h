@@ -29,9 +29,18 @@
 extern "C" {
 #endif
 
+typedef enum {
+	IDL_TYPE_DCL,
+	IDL_CONST_DCL,
+	IDL_EXCEPT_DCL,
+	IDL_INTERFACE,
+	IDL_MODULE,
+} IDL_tree_type;
+
 struct _IDL_tree_node {
-	struct _IDL_tree_node *_s, *_c;
-	struct _IDL_tree_node *_s_tail, *_c_tail;
+	IDL_tree_type type;
+	union {
+	} u;
 };
 
 typedef struct _IDL_tree_node		IDL_tree_node;

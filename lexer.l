@@ -82,6 +82,43 @@ dqstring		\"[^\"\n]*[\"\n]
 	yylval.floatp = atof(yytext);
 	return TOK_FLOATP;
 }
+any			{ return TOK_ANY; }
+attribute		{ return TOK_ATTRIBUTE; }
+boolean			{ return TOK_BOOLEAN; }
+case			{ return TOK_CASE; }
+char			{ return TOK_CHAR; }
+const			{ return TOK_CONST; }
+context			{ return TOK_CONTEXT; }
+default			{ return TOK_DEFAULT; }
+double			{ return TOK_DOUBLE; }
+enum			{ return TOK_ENUM; }
+exception		{ return TOK_EXCEPTION; }
+FALSE			{ return TOK_FALSE; }
+fixed			{ return TOK_FIXED; }
+float			{ return TOK_FLOAT; }
+in			{ return TOK_IN; }
+inout			{ return TOK_INOUT; }
+interface		{ return TOK_INTERFACE; }
+long			{ return TOK_LONG; }
+module			{ return TOK_MODULE; }
+Object			{ return TOK_OBJECT; }
+octet			{ return TOK_OCTET; }
+oneway			{ return TOK_ONEWAY; }
+out			{ return TOK_OUT; }
+raises			{ return TOK_RAISES; }
+readonly		{ return TOK_READONLY; }
+sequence		{ return TOK_SEQUENCE; }
+short			{ return TOK_SHORT; }
+string			{ return TOK_STRING; }
+struct			{ return TOK_STRUCT; }
+switch			{ return TOK_SWITCH; }
+TRUE			{ return TOK_TRUE; }
+typedef			{ return TOK_TYPEDEF; }
+unsigned		{ return TOK_UNSIGNED; }
+union			{ return TOK_UNION; }
+void			{ return TOK_VOID; }
+wchar			{ return TOK_WCHAR; }
+wstring			{ return TOK_WSTRING; }
 ::			{ return TOK_OP_SCOPE; }
 \>\>			{ return TOK_OP_SHR; }
 \<\<			{ return TOK_OP_SHL; }
