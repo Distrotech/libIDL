@@ -1,6 +1,15 @@
-1999-03-22  Andrew T. Veliath  <andrewtv@usa.net>
+1999-03-23  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.4.
+
+	* util.c: Rework IDL_tree_to_IDL logic a bit to accept more node
+	types, even literals.
+
+	* IDL.h.new.in: Add a step variable to IDL_tree_func_data.  This
+	is 0 in the first call, and increments for every call thereafter
+	(currently only from 0 to 1).
+
+1999-03-22  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* util.c (IDL_tree_error): 
 	(IDL_tree_warning): If node is NULL, omit file and line number

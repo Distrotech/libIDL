@@ -36,9 +36,9 @@ print_repo_id (IDL_tree_func_data *tfd, WalkData *data)
 
 	p = tfd->tree;
 
-	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE)
+	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE) {
 		repo_id = IDL_IDENT_REPO_ID (IDL_INTERFACE (p).ident);
-	else if (IDL_NODE_TYPE (p) == IDLN_IDENT &&
+	} else if (IDL_NODE_TYPE (p) == IDLN_IDENT &&
 		 IDL_NODE_UP (p) != NULL &&
 		 IDL_NODE_UP (IDL_NODE_UP (p)) != NULL &&
 		 IDL_NODE_TYPE (IDL_NODE_UP (IDL_NODE_UP (p))) == IDLN_ATTR_DCL)
@@ -108,11 +108,13 @@ print_const_dcls (IDL_tree_func_data *tfd, WalkData *data)
 
 	p = tfd->tree;
 
-	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL &&
-	    IDL_NODE_TYPE (IDL_CONST_DCL (p).const_exp) == IDLN_INTEGER) {
-		printf ("%s is %" IDL_LL "d\n",
-			IDL_IDENT (IDL_CONST_DCL (p).ident).str,
-			IDL_INTEGER (IDL_CONST_DCL (p).const_exp).value);
+	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL) {
+		GString *s;
+
+		s = IDL_tree_to_IDL_string (p, NULL, IDLF_OUTPUT_NO_NEWLINES);
+		puts (s->str);
+		g_string_free (s, TRUE);
+
 		return FALSE;
 	}
 

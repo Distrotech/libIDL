@@ -676,6 +676,8 @@ struct _IDL_tree_func_data {
 	IDL_tree_func_state *state;
 	IDL_tree_func_data *up;
 	IDL_tree tree;
+	gint step;
+	gpointer data;		/* Application data */
 };
 
 typedef gboolean	(*IDL_tree_func)		(IDL_tree_func_data *tnfd,
