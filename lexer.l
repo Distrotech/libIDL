@@ -84,9 +84,6 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	sscanf(yytext, "# %d %s", &__IDL_cur_line, filename);
 
-	if (__IDL_cur_filename)
-		free(__IDL_cur_filename);
-
 	__IDL_cur_filename = g_strdup(filename + 1);
 	__IDL_cur_filename[strlen(filename) - 2] = 0;
 
