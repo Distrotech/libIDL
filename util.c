@@ -1404,22 +1404,23 @@ int IDL_tree_walk_pre_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_d
 		break;
 		
 	default:
-		g_message("IDL_tree_walk_pre_order: unknown node type %s\n", IDL_NODE_TYPE_NAME(p));
+		g_warning("IDL_tree_walk_pre_order: unknown node type %s\n", IDL_NODE_TYPE_NAME(p));
 		break;
 	}
 
 	return IDL_TRUE;
 }
 
-/* Hm.. might not be right.. I'll look later */
-static void gentree_free(IDL_tree data, IDL_tree p, gpointer user_data)
+static void __IDL_tree_free(IDL_tree p);
+
+static int tree_free_but_this(IDL_tree data, IDL_tree p, IDL_tree this_one)
 {
-	GHashTable *hash;
-	hash = IDL_GENTREE(p).children;
-	if (hash) {
-		g_hash_table_foreach(IDL_GENTREE(p).children, (GHFunc)gentree_free, NULL);
-		g_hash_table_destroy(hash);
-	}
+	if (p == this_one)
+		return TRUE;
+
+	__IDL_tree_free(p);
+
+	return TRUE;
 }
 
 /* Free associated node data, regardless of refcounts */
@@ -1427,9 +1428,31 @@ static void IDL_tree_free_real(IDL_tree p)
 {
 	assert(p != NULL);
 
-	if (IDL_NODE_TYPE(p) == IDLN_IDENT) {
+	switch (IDL_NODE_TYPE(p)) {
+	case IDLN_GENTREE:
+		g_hash_table_foreach(IDL_GENTREE(p).children, (GHFunc)tree_free_but_this, NULL);
+		g_hash_table_destroy(IDL_GENTREE(p).children);
+		break;
+
+	case IDLN_FIXED:
+		free(IDL_FIXED(p).value);
+		break;
+
+	case IDLN_STRING:
+		free(IDL_STRING(p).value);
+		break;
+
+	case IDLN_CHAR:
+		free(IDL_CHAR(p).value);
+		break;
+
+	case IDLN_IDENT:
 		free(IDL_IDENT(p).str);
 		free(IDL_IDENT_REPO_ID(p));
+		break;
+
+	default:
+		break;
 	}
 
 	free(p);
@@ -1448,7 +1471,6 @@ static void __IDL_tree_free(IDL_tree p)
 /* Free a set of references of an entire tree */
 void IDL_tree_free(IDL_tree p)
 {
-/*	GHashTable *hash; */
 	IDL_tree q;
 
 	if (p == NULL)
@@ -1466,6 +1488,10 @@ void IDL_tree_free(IDL_tree p)
 	case IDLN_TYPE_OCTET:
 	case IDLN_TYPE_ANY:
 	case IDLN_TYPE_OBJECT:
+	case IDLN_FIXED:
+	case IDLN_STRING:
+	case IDLN_CHAR:
+	case IDLN_IDENT:
 		__IDL_tree_free(p);
 		break;
 
@@ -1479,30 +1505,8 @@ void IDL_tree_free(IDL_tree p)
 		break;
 
 	case IDLN_GENTREE:
-/*
-  FIXME: do correct free
-		hash = IDL_GENTREE(p).siblings;
-		g_hash_table_foreach(IDL_GENTREE(p).siblings, (GHFunc)gentree_free, NULL);
-		g_hash_table_destroy(hash);
-*/
-		break;
-
-	case IDLN_FIXED:
-		free(IDL_FIXED(p).value);
-		__IDL_tree_free(p);
-		break;
-
-	case IDLN_STRING:
-		free(IDL_STRING(p).value);
-		__IDL_tree_free(p);
-		break;
-
-	case IDLN_CHAR:
-		free(IDL_CHAR(p).value);
-		__IDL_tree_free(p);
-		break;
-
-	case IDLN_IDENT:
+		g_hash_table_foreach(IDL_GENTREE(p).siblings, (GHFunc)tree_free_but_this, p);
+		g_hash_table_destroy(IDL_GENTREE(p).siblings);
 		__IDL_tree_free(p);
 		break;
 
