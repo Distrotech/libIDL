@@ -1427,11 +1427,13 @@ void __IDL_tree_free(IDL_tree p)
 		return;
 
 	if (IDL_NODE_TYPE(p) == IDLN_IDENT) {
-		free(IDL_IDENT(p).str);
-		free(IDL_IDENT_REPO_ID(p));
-	}
-
-	free(p);
+		if (--IDL_IDENT(p)._refs <= 0) {
+			free(IDL_IDENT(p).str);
+			free(IDL_IDENT_REPO_ID(p));
+			free(p);
+		}
+	} else
+		free(p);
 }
 
 void IDL_tree_free(IDL_tree p)

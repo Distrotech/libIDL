@@ -1,3 +1,7 @@
+1998-08-25  Andrew Veliath  <andrewtv@usa.net>
+
+	* util.c (__IDL_tree_free): Ref count IDLN_IDENTS.
+
 Tue Aug 25 01:46:10 1998  Tom Tromey  <tromey@cygnus.com>
 
 	* util.c (IDL_strcase_equal): Use g_strcasecmp.
