@@ -709,6 +709,8 @@ ns_new_ident:		ident				{
 		yyerror("duplicate identifier");
 		YYABORT;
 	}
+	/* hook ident->data to the namespace structure */
+	IDL_IDENT($1)._ns_ref = p;
 	$$ = p;
 }
 	;
@@ -722,6 +724,8 @@ ns_prev_ident:		ident				{
 		YYABORT;
 	}
 	IDL_tree_free($1);
+	assert(IDL_GENTREE(p).data != NULL);
+	assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
 	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	$$ = p;
 }
@@ -733,8 +737,12 @@ ns_new_or_prev_ident:	ident				{
 	if ((p = IDL_ns_resolve_ident(idl_ns, $1)) == NULL) {
 		p = IDL_ns_place_new(idl_ns, $1);
 		assert(p != NULL);
+		/* hook ident->data to the namespace structure */
+		IDL_IDENT($1)._ns_ref = p;
 	} else {
 		IDL_tree_free($1);
+		assert(IDL_GENTREE(p).data != NULL);
+		assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
 		++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	}
 	$$ = p;
@@ -750,6 +758,8 @@ ns_global_ident:	ident				{
 		YYABORT;
 	}
 	IDL_tree_free($1);
+	assert(IDL_GENTREE(p).data != NULL);
+	assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
 	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	$$ = p;
 }
@@ -1600,8 +1610,7 @@ IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
 			continue;
 		}
 		l = IDL_list_new(
-			IDL_ident_new(
-				strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
+			IDL_ident_new(strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
 		if (tail == NULL)
 			tail = l;
 		IDL_LIST(l).next = prev;

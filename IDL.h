@@ -118,10 +118,11 @@ IDL_tree				IDL_boolean_new(unsigned value);
 
 struct _IDL_IDENT {
 	char *str;
-	IDL_tree data;
+	IDL_tree _ns_ref;
 	int _refs;
 };
 #define IDL_IDENT(a)			((a)->u.idl_ident)
+#define IDL_IDENT_TO_NS(a)		((a)->u.idl_ident._ns_ref)
 IDL_tree				IDL_ident_new(char *str);
 
 struct _IDL_TYPE_FLOAT {
