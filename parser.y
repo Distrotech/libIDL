@@ -77,6 +77,7 @@ static void			assign_up_node(IDL_tree up, IDL_tree node);
 static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
+static int			do_prev_token_error(IDL_tree p, const char *message);
 static int			get_error_strings(IDL_tree p, char **who, char **what);
 
 #ifndef HAVE_CPP_PIPE_STDIN
@@ -184,24 +185,9 @@ definition_list:	definition			{ $$ = list_start($1); }
 
 check_semicolon:	';'
 |			/* empty */			{
-	IDL_tree p = $<tree>0;
-	char *what = NULL, *who = NULL;
 	int dienow = 0;
 
-	assert(p != NULL);
-
-	dienow = get_error_strings(p, &what, &who);
-
-	assert(what != NULL);
-	
-	if (who && *who)
-		yyerrorlv("Missing semicolon after %s `%s'",
-			  __IDL_prev_token_line - __IDL_cur_token_line,
-			  what, who);
-	else
-		yyerrorlv("Missing semicolon after %s",
-			  __IDL_prev_token_line - __IDL_cur_token_line,
-			  what);
+	dienow = do_prev_token_error($<tree>0, "Missing semicolon after");
 		
 	idl_is_okay = IDL_FALSE;
 
@@ -212,24 +198,9 @@ check_semicolon:	';'
 
 check_comma:		','
 |			/* empty */			{
-	IDL_tree p = $<tree>0;
-	char *what = NULL, *who = NULL;
 	int dienow = 0;
 
-	assert(p != NULL);
-
-	dienow = get_error_strings(p, &what, &who);
-
-	assert(what != NULL);
-
-	if (who && *who)
-		yyerrorlv("Missing comma after %s `%s'",
-			  __IDL_prev_token_line - __IDL_cur_token_line,
-			  what, who);
-	else
-		yyerrorlv("Missing comma after %s",
-			  __IDL_prev_token_line - __IDL_cur_token_line,
-			  what);
+	dienow = do_prev_token_error($<tree>0, "Missing comma after");
 
 	idl_is_okay = IDL_FALSE;
 
@@ -436,10 +407,9 @@ param_attribute:	TOK_IN				{ $$ = IDL_PARAM_IN; }
 |			TOK_OUT				{ $$ = IDL_PARAM_OUT; }
 |			TOK_INOUT			{ $$ = IDL_PARAM_INOUT; }
 |			ident				{
-	yyerrorv("Expecting parameter direction attribute (in, out, inout) before `%s'",
+	yyerrorv("Missing parameter direction attribute (in, out, inout) before `%s'",
 		 IDL_IDENT($1).str);
 	IDL_tree_free($1);
-	YYABORT;
 }
 	;
 
@@ -1143,6 +1113,29 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 	    curitem = IDL_LIST(curitem).next, i++)
 		/* */;
 	return curitem;
+}
+
+static int do_prev_token_error(IDL_tree p, const char *message)
+{
+	int dienow;
+	char *what = NULL, *who = NULL;
+
+	assert(p != NULL);
+
+	dienow = get_error_strings(p, &what, &who);
+
+	assert(what != NULL);
+	
+	if (who && *who)
+		yyerrorlv("%s %s `%s'",
+			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  message, what, who);
+	else
+		yyerrorlv("%s %s",
+			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  message, what);
+	
+	return dienow;
 }
 
 static int get_error_strings(IDL_tree p, char **what, char **who)
