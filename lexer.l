@@ -21,7 +21,6 @@
     $Id$
 
 ***************************************************************************/
-
 %{
 #include <assert.h>
 #include <stdio.h>
@@ -34,6 +33,9 @@
 #include "parser.h"
 
 extern void		__IDL_do_pragma(const char *s);
+#ifdef YYDEBUG
+extern int		yydebug;
+#endif
 %}
 
 whitespace		[ \t]*
@@ -49,6 +51,8 @@ ident			[A-Za-z][A-Za-z0-9_]*
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
+%option noyywrap
+
 %%
 
 {cpp_pragma}		{
@@ -57,6 +61,10 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	sscanf(yytext, "#%*6s%n", &n); s += n;
 	while (isspace(*s)) ++s;
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("lexer.l: pragma '%s'\n", s);
+#endif
 	__IDL_do_pragma(s);
 }
 {cpp_status}		{
@@ -90,47 +98,51 @@ dqstring		\"[^\"\n]*[\"\n]
 	yylval.floatp = atof(yytext);
 	return TOK_FLOATP;
 }
-any			{ return TOK_ANY; }
-attribute		{ return TOK_ATTRIBUTE; }
-boolean			{ return TOK_BOOLEAN; }
-case			{ return TOK_CASE; }
-char			{ return TOK_CHAR; }
-const			{ return TOK_CONST; }
-context			{ return TOK_CONTEXT; }
-default			{ return TOK_DEFAULT; }
-double			{ return TOK_DOUBLE; }
-enum			{ return TOK_ENUM; }
-exception		{ return TOK_EXCEPTION; }
-FALSE			{ return TOK_FALSE; }
-fixed			{ return TOK_FIXED; }
-float			{ return TOK_FLOAT; }
-in			{ return TOK_IN; }
-inout			{ return TOK_INOUT; }
-interface		{ return TOK_INTERFACE; }
-long			{ return TOK_LONG; }
-module			{ return TOK_MODULE; }
-Object			{ return TOK_OBJECT; }
-octet			{ return TOK_OCTET; }
-oneway			{ return TOK_ONEWAY; }
-out			{ return TOK_OUT; }
-raises			{ return TOK_RAISES; }
-readonly		{ return TOK_READONLY; }
-sequence		{ return TOK_SEQUENCE; }
-short			{ return TOK_SHORT; }
-string			{ return TOK_STRING; }
-struct			{ return TOK_STRUCT; }
-switch			{ return TOK_SWITCH; }
-TRUE			{ return TOK_TRUE; }
-typedef			{ return TOK_TYPEDEF; }
-unsigned		{ return TOK_UNSIGNED; }
-union			{ return TOK_UNION; }
-void			{ return TOK_VOID; }
-wchar			{ return TOK_WCHAR; }
-wstring			{ return TOK_WSTRING; }
-::			{ return TOK_OP_SCOPE; }
-\>\>			{ return TOK_OP_SHR; }
-\<\<			{ return TOK_OP_SHL; }
+any			return TOK_ANY;
+attribute		return TOK_ATTRIBUTE;
+boolean			return TOK_BOOLEAN;
+case			return TOK_CASE;
+char			return TOK_CHAR;
+const			return TOK_CONST;
+context			return TOK_CONTEXT;
+default			return TOK_DEFAULT;
+double			return TOK_DOUBLE;
+enum			return TOK_ENUM;
+exception		return TOK_EXCEPTION;
+FALSE			return TOK_FALSE;
+fixed			return TOK_FIXED;
+float			return TOK_FLOAT;
+in			return TOK_IN;
+inout			return TOK_INOUT;
+interface		return TOK_INTERFACE;
+long			return TOK_LONG;
+module			return TOK_MODULE;
+Object			return TOK_OBJECT;
+octet			return TOK_OCTET;
+oneway			return TOK_ONEWAY;
+out			return TOK_OUT;
+raises			return TOK_RAISES;
+readonly		return TOK_READONLY;
+sequence		return TOK_SEQUENCE;
+short			return TOK_SHORT;
+string			return TOK_STRING;
+struct			return TOK_STRUCT;
+switch			return TOK_SWITCH;
+TRUE			return TOK_TRUE;
+typedef			return TOK_TYPEDEF;
+unsigned		return TOK_UNSIGNED;
+union			return TOK_UNION;
+void			return TOK_VOID;
+wchar			return TOK_WCHAR;
+wstring			return TOK_WSTRING;
+::			return TOK_OP_SCOPE;
+\>\>			return TOK_OP_SHR;
+\<\<			return TOK_OP_SHL;
 {ident}			{
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("lexer.l: ident '%s'\n", yytext);
+#endif
 	yylval.str = strdup(yytext);
 	return TOK_IDENT;
 }
@@ -144,8 +156,15 @@ wstring			{ return TOK_WSTRING; }
 	yylval.str[strlen(yytext) - 2] = 0;
 	return TOK_DQSTRING;
 }
-{newline}		{ ++__IDL_cur_line; }
-.			{ return yytext[0]; }
+{newline}		{
+	++__IDL_cur_line;
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("lexer.l: %s:%d:\n", 
+		       __IDL_cur_filename, __IDL_cur_line);
+#endif
+}
+.			return yytext[0];
 
 %%
 

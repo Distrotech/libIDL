@@ -1,5 +1,7 @@
+#AUTOMAKE_OPTIONS = gnu
 AUTOMAKE_OPTIONS = foreign
-YFLAGS = -d
+CFLAGS = -g -O2 -Wall -pedantic -DYYDEBUG=1
+YFLAGS = -d -v
 LFLAGS = -8
 
 include_HEADERS = idl.h

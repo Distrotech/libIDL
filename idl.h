@@ -21,7 +21,6 @@
     $Id$
 
 ***************************************************************************/
-
 #ifndef __IDL_H
 #define __IDL_H
 
@@ -43,6 +42,7 @@ extern "C" {
 #define IDLF_EVAL_CONST			(1UL << 0)
 #define IDLF_ROOT_APPEND		(1UL << 1)
 #define IDLF_NS_APPEND			(1UL << 2)
+#define IDLF_PREFIX_FILENAME		(1UL << 3)
 
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
@@ -454,7 +454,7 @@ extern IDL_ns				IDL_ns_new(void);
 
 extern void				IDL_ns_free(IDL_ns ns);
 
-extern IDL_tree				IDL_ns_prefix(IDL_ns ns, IDL_tree prefix);
+extern int				IDL_ns_prefix(IDL_ns ns, const char *s);
 
 extern IDL_tree				IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident);
 
@@ -472,7 +472,7 @@ extern IDL_tree				IDL_ns_push_scope_new_or_prev(IDL_ns ns, IDL_tree ident);
 
 extern IDL_tree				IDL_ns_pop_scope(IDL_ns ns);
 
-extern IDL_tree				IDL_ns_get_qualified_ident(IDL_ns ns, IDL_tree ident);
+extern IDL_tree				IDL_ns_qualified_ident_new(IDL_tree nsid);
 
 #ifdef __cplusplus
 }

@@ -1,11 +1,47 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <idl.h>
 
-int IDL_cb(int level, int num, int line, const char *filename, const char *s)
+void IDL_ns_print_idents(FILE *o, IDL_tree l)
 {
-	fprintf(stderr, "%s:%d: %s\n", filename, line, s);
-	return 1;
+	if (l == NULL)
+		return;
+
+	assert(IDL_NODE_TYPE(l) == IDLN_LIST);
+
+	while (l != NULL) {
+		assert(IDL_LIST(l).data != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(l).data) == IDLN_IDENT);
+		fprintf(o, "::%s", IDL_IDENT(IDL_LIST(l).data).str);
+		l = IDL_LIST(l).next;
+	}
+	fprintf(o, "\n");
+}
+
+void IDL_ns_rcs_traverse(IDL_tree p)
+{
+	if (p == NULL)
+		return;
+
+	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
+
+	if (IDL_GENTREE(p).children == NULL) {
+		IDL_tree l = IDL_ns_qualified_ident_new(p);
+		if (l != NULL) {
+			IDL_ns_print_idents(stdout, l);
+			IDL_tree_free(l);
+		}
+	}
+
+	IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
+	IDL_ns_rcs_traverse(IDL_GENTREE(p).siblings);
+}
+
+void IDL_ns_dump_namespace(IDL_ns ns)
+{
+	IDL_ns_rcs_traverse(IDL_NS(ns).global);
 }
 
 int main(int argc, char *argv[])
@@ -16,7 +52,7 @@ int main(int argc, char *argv[])
 	char *fn;
 	extern int __IDL_debug;
 
-	__IDL_debug = 1;
+	__IDL_debug = 0;
 
 	if (argc != 3) {
 		fprintf(stderr, "usage: tstidl <filename> <fold>\n");
@@ -30,22 +66,9 @@ int main(int argc, char *argv[])
 	if (rv == IDL_SUCCESS) {
 		void __IDL_tree_print(IDL_tree p);
 		
-#if 1
-		fprintf(stderr, "tstidl: IDL_SUCCESS: %p\n", tree);		
-		printf("Walking Root Tree\n");
-		__IDL_tree_print(tree);
-		printf("Walking Symbol Table\n");
-		__IDL_tree_print(IDL_NS(ns).global);
-#else
-		emit_CXX(tree);
-#endif
-
-#if 0
+		IDL_ns_dump_namespace(ns);
 		IDL_tree_free(tree);
-#endif
-#if 0
 		IDL_ns_free(ns);
-#endif
 		
 	}
 	else if (rv == IDL_ERROR) {

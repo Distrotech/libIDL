@@ -1,5 +1,11 @@
 1998-06-24  Andrew Veliath  <andrewtv@usa.net>
 
+	* Warn if identifier appears in different case
+	
+	* Most namespace collision detection added, except for inheritence
+
+	* Use YYDEBUG
+	
 	* parser.y: Initial implementation of IDL_ns* stuff
 
 1998-06-23  Andrew Veliath  <andrewtv@usa.net>

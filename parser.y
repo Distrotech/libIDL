@@ -21,7 +21,6 @@
     $Id$
 
 ***************************************************************************/
-
 %{
 #include <assert.h>
 #include <errno.h>
@@ -32,8 +31,6 @@
 #include "idl.h"
 #include "rename.h"
 #include "util.h"
-
-#define YYDEBUG			1
 
 #define do_binop(rv,op,a,b)	do {		\
 	if (IDL_binop_chktypes(op, a, b))	\
@@ -78,6 +75,7 @@ static int			idl_nerrors, idl_nwarnings;
 static IDL_tree			idl_root;
 static IDL_ns			idl_ns;
 static IDL_callback		idl_msgcb;
+static int			idl_is_parsing = IDL_FALSE;
 
 char *				__IDL_cur_filename = NULL;
 int				__IDL_cur_line;
@@ -153,6 +151,7 @@ extern int			yylex(void);
 
 %type <tree>			specification
 %type <tree>			definition_list definition
+%type <tree>			new_scope new_or_prev_scope pop_scope
 %type <tree>			type_dcl const_dcl except_dcl attr_dcl op_dcl
 %type <tree>			type_spec type_declarator declarator_list declarator
 %type <tree>			simple_type_spec constr_type_spec base_type_spec
@@ -212,7 +211,7 @@ idl_finish:						{
 }
 	;
 
-specification:		/* empty */			{ yywarning("file is empty"); }
+specification:		/* empty */			{ yyerror("file is empty"); YYABORT; }
 |			definition_list
 	;
 
@@ -231,17 +230,61 @@ interface:		interface_dcl
 |			forward_dcl
 	;
 
-module:			"module" new_or_prev_ident '{'
+new_scope:		/* empty */			{
+	assert($<tree>0 != NULL);
+	assert(IDL_NODE_TYPE($<tree>0) == IDLN_IDENT);
+	if (IDL_ns_push_scope_new(idl_ns, $<tree>0) == NULL) {
+		printf("ident: %s\n", IDL_IDENT($<tree>0).str);
+		IDL_tree_free($<tree>0);
+		yyerror("redeclared scoping identifier");
+		YYABORT;
+	}
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("entering new scope of %s\n", 
+		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
+#endif
+}
+	;
+
+new_or_prev_scope:	/* empty */			{
+	assert($<tree>0 != NULL);
+	assert(IDL_NODE_TYPE($<tree>0) == IDLN_IDENT);
+	if (IDL_ns_push_scope_new_or_prev(idl_ns, $<tree>0) == NULL) {
+		IDL_tree_free($<tree>0);
+		yyerror("IDL_ns_push_scope_new_or_prev: internal error");
+		YYABORT;
+	}
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("entering new/prev scope of %s\n", 
+		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
+#endif
+}
+	;
+
+pop_scope:		/* empty */			{
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("scope to parent of %s\n", 
+		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
+#endif
+	IDL_ns_pop_scope(idl_ns);
+}
+	;
+
+module:			"module" ident new_or_prev_scope '{'
 				definition_list
-			'}'				{ $$ = IDL_module_new($2, $4); }
+			'}' pop_scope			{ $$ = IDL_module_new($2, $5); }
 	;
 
-interface_dcl:		"interface" new_or_prev_ident z_inheritence '{'
+interface_dcl:		"interface" ident new_or_prev_scope z_inheritence '{'
 				interface_body
-			'}'				{ $$ = IDL_interface_new($2, $3, $5); }
+			'}' pop_scope			{ $$ = IDL_interface_new($2, $4, $6); }
 	;
 
-forward_dcl:		"interface" new_or_prev_ident	{ $$ = IDL_forward_dcl_new($2); }
+forward_dcl:		"interface" ident
+			new_or_prev_scope pop_scope	{ $$ = IDL_forward_dcl_new($2); }
 	;
 
 z_inheritence:		/* empty */			{ $$ = NULL; }
@@ -291,16 +334,16 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
-struct_type:		"struct" new_ident '{'
+struct_type:		"struct" ident new_scope '{'
 				member_list
-			'}'				{ $$ = IDL_type_struct_new($2, $4); }
+			'}' pop_scope			{ $$ = IDL_type_struct_new($2, $5); }
 	;
 
-union_type:		"union" new_ident "switch" '('
+union_type:		"union" ident new_scope "switch" '('
 				switch_type_spec
 			')' '{'
 				switch_body
-			'}'				{ $$ = IDL_type_union_new($2, $5, $8); }
+			'}' pop_scope			{ $$ = IDL_type_union_new($2, $6, $9); }
 	;
 
 switch_type_spec:	integer_type
@@ -325,9 +368,9 @@ const_dcl:		"const" const_type new_ident
 			'=' const_exp			{ $$ = IDL_const_dcl_new($2, $3, $5); }
 	;
 
-except_dcl:		"exception" new_ident '{'
+except_dcl:		"exception" ident new_scope '{'
 				member_zlist
-			'}'				{ $$ = IDL_except_dcl_new($2, $4); }
+			'}' pop_scope			{ $$ = IDL_except_dcl_new($2, $5); }
 	;
 
 member_zlist:		/* empty */			{ $$ = NULL; }
@@ -354,8 +397,8 @@ is_oneway:		/* empty */			{ $$ = IDL_FALSE; }
 |			"oneway"			{ $$ = IDL_TRUE; }
 	;
 
-op_dcl:			is_oneway op_type_spec ident
-			parameter_dcls
+op_dcl:			is_oneway op_type_spec
+			ident new_scope parameter_dcls pop_scope
 			is_raises_expr
 			is_context_expr			{ $$ = $2; }
 	;
@@ -482,9 +525,9 @@ literal:		integer_lit
 |			boolean_lit
 	;
 
-enum_type:		"enum" new_ident '{'
+enum_type:		"enum" ident new_scope '{'
 				enumerator_list
-			'}'				{ $$ = IDL_type_enum_new($2, $4); }
+			'}' pop_scope			{ $$ = IDL_type_enum_new($2, $5); }
 	;
 
 scoped_name:		ns_scoped_name			{
@@ -504,10 +547,16 @@ ns_scoped_name:		ns_prev_ident
 	assert(IDL_NODE_TYPE($1) == IDLN_GENTREE);
 	assert(IDL_NODE_TYPE($3) == IDLN_IDENT);
 
-	printf("looking in %s\n", IDL_IDENT(IDL_GENTREE($1).data).str);
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("looking in %s\n", IDL_IDENT(IDL_GENTREE($1).data).str);
+#endif
 
 	if ((p = IDL_ns_lookup_this_scope(idl_ns, $1, $3)) == NULL) {
-		printf("'%s'\n", IDL_IDENT($3).str);
+#ifdef YYDEBUG
+		if (yydebug)
+			printf("'%s'\n", IDL_IDENT($3).str);
+#endif
 		IDL_tree_free($3);
 		yyerror("undeclared identifier");
 		YYABORT;
@@ -713,7 +762,7 @@ ns_new_ident:		ident				{
 ns_prev_ident:		ident				{
 	IDL_tree p;
 
-	if ((p = IDL_ns_lookup_cur_scope(idl_ns, $1)) == NULL) {
+	if ((p = IDL_ns_resolve_ident(idl_ns, $1)) == NULL) {
 		IDL_tree_free($1);
 		yyerror("undeclared identifier");
 		YYABORT;
@@ -727,7 +776,7 @@ ns_prev_ident:		ident				{
 ns_new_or_prev_ident:	ident				{
 	IDL_tree p;
 
-	if ((p = IDL_ns_lookup_cur_scope(idl_ns, $1)) == NULL) {
+	if ((p = IDL_ns_resolve_ident(idl_ns, $1)) == NULL) {
 		p = IDL_ns_place_new(idl_ns, $1);
 		assert(p != NULL);
 	} else {
@@ -819,10 +868,11 @@ void yyerrorl(const char *s, int ofs)
 	++idl_nerrors;
 	
 	if (idl_msgcb)
-		(*idl_msgcb)(IDL_ERROR, idl_nerrors, line, __IDL_cur_filename, s);
+		(*idl_msgcb)(IDL_ERROR, idl_nerrors, line,
+			     __IDL_cur_filename, s);
 	else
-		fprintf(stderr, "%s:%d: error [%d], %s\n", 
-			__IDL_cur_filename, line, idl_nerrors, s);
+		fprintf(stderr, "%s:%d: %s\n", 
+			__IDL_cur_filename, line, s);
 }
 
 void yywarningl(const char *s, int ofs)
@@ -832,10 +882,11 @@ void yywarningl(const char *s, int ofs)
 	++idl_nwarnings;
 	
 	if (idl_msgcb)
-		(*idl_msgcb)(IDL_WARNING, idl_nwarnings, line, __IDL_cur_filename, s);
+		(*idl_msgcb)(IDL_WARNING, idl_nwarnings, line,
+			     __IDL_cur_filename, s);
 	else
-		fprintf(stderr, "%s:%d: warning [%d], %s\n",
-			__IDL_cur_filename, line, idl_nwarnings, s);
+		fprintf(stderr, "%s:%d: warning: %s\n",
+			__IDL_cur_filename, line, s);
 }
 
 void yyerror(const char *s)
@@ -848,11 +899,6 @@ void yywarning(const char *s)
 	yywarningl(s, 0);
 }
 
-static void namespace_prefix(const char *s)
-{
-	fprintf(stderr, "install namespace prefix: '%s'\n", s);
-}
-
 void __IDL_do_pragma(const char *s)
 {
 	int n;
@@ -861,13 +907,13 @@ void __IDL_do_pragma(const char *s)
 	if (!s)
 		return;
 
-	if (sscanf(s, "%255s%n", directive, &n) < 0)
+	if (sscanf(s, "%255s%n", directive, &n) < 1)
 		return;
 	s += n;
 	while (isspace(*s)) ++s;
 
 	if (strcmp(directive, "prefix") == 0)
-		namespace_prefix(s);
+		IDL_ns_prefix(idl_ns, s);
 }
 
 #define C_ESC(a,b)				case a: *p++ = b; ++s; break
@@ -1383,8 +1429,6 @@ void IDL_ns_free(IDL_ns ns)
 	free(ns);
 }
 
-#define ISTR(a)			(IDL_IDENT(a).str)
-
 #define IDL_NS_ASSERTS		do {					\
 	assert(ns != NULL);						\
 	assert(IDL_NS(ns).global != NULL);				\
@@ -1395,19 +1439,49 @@ void IDL_ns_free(IDL_ns ns)
 	assert(IDL_NODE_TYPE(IDL_NS(ns).current) == IDLN_GENTREE);	\
 } while (0)
 
+static int my_strcmp(const char *a, const char *b)
+{
+	int rv = strcasecmp(a, b);
+	
+	if (idl_is_parsing && rv == 0 && strcmp(a, b) != 0)
+		yywarning("identifiers should remain same-case after first declaration");
+
+	return rv;
+}
+
 static int identcmp(IDL_tree a, IDL_tree b)
 {
 	assert(IDL_NODE_TYPE(a) == IDLN_IDENT);
 	assert(IDL_NODE_TYPE(b) == IDLN_IDENT);
-	return strcmp(IDL_IDENT(a).str, IDL_IDENT(b).str);
+	return my_strcmp(IDL_IDENT(a).str, IDL_IDENT(b).str);
 }
 
-
-IDL_tree IDL_ns_prefix(IDL_ns ns, IDL_tree prefix)
+int IDL_ns_prefix(IDL_ns ns, const char *s)
 {
+	IDL_tree p;
+	char *r;
+	int l;
+
 	IDL_NS_ASSERTS;
 
-	return NULL;
+	if (s == NULL)
+		return IDL_FALSE;
+	
+	if (*s == '"')
+		r = strdup(s + 1);
+	else
+		r = strdup(s);
+
+	l = strlen(r);
+	if (r[l - 1] == '"')
+		r[l - 1] = 0;
+
+	p = IDL_gentree_new(NULL, IDL_ident_new(r));
+	IDL_GENTREE(p).children = IDL_NS(ns).global;
+	IDL_GENTREE(IDL_NS(ns).global).parent = p;
+	IDL_NS(ns).global = p;
+
+	return IDL_TRUE;
 }
 
 IDL_tree IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident)
@@ -1444,12 +1518,12 @@ IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident)
 
 	p = IDL_GENTREE(scope).children;
 	
-	while (p != NULL) {
-		assert(IDL_GENTREE(p).data != NULL);
+	for (; p != NULL; p = IDL_GENTREE(p).siblings) {
+		if (IDL_GENTREE(p).data == NULL)
+			continue;
 		assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
 		if (identcmp(IDL_GENTREE(p).data, ident) == 0)
 			return p;
-		p = IDL_GENTREE(p).siblings;
 	}
 
 	return NULL;
@@ -1552,30 +1626,24 @@ IDL_tree IDL_ns_pop_scope(IDL_ns ns)
 	return q;
 }
 
-IDL_tree IDL_ns_get_qualified_ident(IDL_ns ns, IDL_tree ident)
+IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
 {
-	IDL_tree l = NULL, prev = NULL, tail = NULL, qident;
+	IDL_tree l = NULL, prev = NULL, tail = NULL;
 
-	IDL_NS_ASSERTS;
-
-	qident = IDL_ns_lookup_cur_scope(ns, ident);
-	if (qident == NULL)
-		return NULL;
-
-	while (qident != NULL) {
-		if (IDL_GENTREE(qident).data == NULL) {
-			qident = IDL_GENTREE(qident).parent;
+	while (nsid != NULL) {
+		if (IDL_GENTREE(nsid).data == NULL) {
+			nsid = IDL_GENTREE(nsid).parent;
 			continue;
 		}
 		l = IDL_list_new(
 			IDL_ident_new(
-				strdup(IDL_IDENT(IDL_GENTREE(qident).data).str)));
+				strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
 		if (tail == NULL)
 			tail = l;
 		IDL_LIST(l).next = prev;
 		IDL_LIST(l)._tail = tail;
 		prev = l;
-		qident = IDL_GENTREE(qident).parent;
+		nsid = IDL_GENTREE(nsid).parent;
 	}
 
 	return l;
@@ -1616,13 +1684,18 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	flags = parse_flags;
 	idl_ns = IDL_ns_new();
 	__IDL_lex_init();
+	idl_is_parsing = IDL_TRUE;
 	rv = yyparse();
+	idl_is_parsing = IDL_FALSE;
 	__IDL_lex_cleanup();
 	idl_msgcb = NULL;
 	pclose(input);
 
 	if (rv != 0)
 		return IDL_ERROR;
+
+	if (flags & IDLF_PREFIX_FILENAME)
+		IDL_ns_prefix(idl_ns, filename);
 
 	if (tree)
 		*tree = idl_root;
