@@ -1113,7 +1113,7 @@ int IDL_tree_walk_pre_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_d
 		break;
 
 	case IDLN_GENTREE:
-		g_assert("IDLN_GENTREE walk not implemented!");
+		g_error("IDLN_GENTREE walk not implemented!");
 		break;
 
 	case IDLN_MEMBER:

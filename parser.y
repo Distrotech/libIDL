@@ -343,7 +343,12 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 	for (; p != NULL; p = IDL_LIST(p).next) {
 		assert(IDL_LIST(p).data != NULL);
 		assert(IDL_NODE_TYPE(IDL_LIST(p).data) == IDLN_IDENT);
-		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) != IDLN_INTERFACE) {
+		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) == IDLN_FORWARD_DCL) {
+			yyerrorv("Interface `%s' hasn't been defined yet",
+				 IDL_IDENT(IDL_LIST(p).data).str);
+			YYABORT;
+		}
+		else if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) != IDLN_INTERFACE) {
 			yyerrorv("`%s' is not an interface",
 				 IDL_IDENT(IDL_LIST(p).data).str);
 			YYABORT;
