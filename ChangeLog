@@ -1,3 +1,18 @@
+1998-08-10  Andrew Veliath  <andrewtv@usa.net>
+
+	* ns.c (IDL_ns_ident_to_qstring): If given and IDLN_IDENT,
+	  quietly call IDL_IDENT_TO_NS.
+
+	* util.[ch]: Change g_strcase_hash to IDL_strcase_hash (make
+	  public).  Add IDL_strcase_equal, IDL_strcase_cmp,
+	  load_forward_dcls, resolve_forward_dcls,
+	  print_unresolved_forward_dcls, IDL_tree_resolve_forward_dcls.
+	  (IDL_parse_filename): Warn on unresolved forward declarations in
+	  post-parse semantic checking.  Remove __IDL_tree_print, add
+	  IDL_tree_walk_pre_order.
+
+	* IDL.h: Add IDL_tree_walk_pre_order prototype and callback typedef.
+
 1998-08-09  Andrew Veliath  <andrewtv@usa.net>
 
 	* parser.y: enum_type: Don't generate a nested scope.

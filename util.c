@@ -94,7 +94,7 @@ static int			__IDL_nerrors, __IDL_nwarnings;
 static IDL_callback		__IDL_msgcb;
 
 /* Case-insensitive version of g_str_hash */
-static guint g_strcase_hash(gconstpointer v)
+guint IDL_strcase_hash(gconstpointer v)
 {
 	const char *p;
 	guint h = 0, g;
@@ -110,14 +110,24 @@ static guint g_strcase_hash(gconstpointer v)
 	return h /* % M */;
 }
 
+gint IDL_strcase_equal(gconstpointer a, gconstpointer b)
+{
+	return strcasecmp(a, b) == 0;
+}
+
+gint IDL_strcase_cmp(gconstpointer a, gconstpointer b)
+{
+	return strcasecmp(a, b);
+}
+
 static int my_strcmp(IDL_tree p, IDL_tree q)
 {
 	const char *a = IDL_IDENT(p).str;
 	const char *b = IDL_IDENT(q).str;
-	int rv = strcasecmp(a, b);
+	int cmp = IDL_strcase_cmp(a, b);
 	
 	if (__IDL_is_parsing &&
-	    rv == 0 &&
+	    cmp == 0 &&
 	    strcmp(a, b) != 0 &&
 	    !(IDL_IDENT(p)._flags & IDLF_IDENT_CASE_MISMATCH_HIT ||
 	      IDL_IDENT(q)._flags & IDLF_IDENT_CASE_MISMATCH_HIT)) {
@@ -127,12 +137,12 @@ static int my_strcmp(IDL_tree p, IDL_tree q)
 		IDL_IDENT(q)._flags |= IDLF_IDENT_CASE_MISMATCH_HIT;
 	}
 
-	return rv;
+	return cmp;
 }
 
 guint IDL_ident_hash(gconstpointer v)
 {
-	return g_strcase_hash(IDL_IDENT((IDL_tree)v).str);
+	return IDL_strcase_hash(IDL_IDENT((IDL_tree)v).str);
 }
 
 gint IDL_ident_equal(gconstpointer a, gconstpointer b)
@@ -291,6 +301,8 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		return IDL_ERROR;
 	}
 
+	IDL_tree_resolve_forward_dcls(__IDL_root);
+
 	if (__IDL_flags & IDLF_PREFIX_FILENAME)
 		IDL_ns_prefix(__IDL_root_ns, filename);
 
@@ -310,28 +322,46 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 void yyerrorl(const char *s, int ofs)
 {
 	int line = __IDL_cur_line - 1 + ofs;
-	gchar *filename = g_basename(__IDL_cur_filename);
+	gchar *filename = NULL;
+
+	if (__IDL_cur_filename)
+		filename = g_basename(__IDL_cur_filename);
+	else
+		line = -1;
 
 	++__IDL_nerrors;
 	__IDL_is_okay = IDL_FALSE;
 	
 	if (__IDL_msgcb)
 		(*__IDL_msgcb)(IDL_ERROR, __IDL_nerrors, line, filename, s);
-	else
-		fprintf(stderr, "%s:%d: Error: %s\n", filename, line, s);
+	else {
+		if (line > 0)
+			fprintf(stderr, "%s:%d: Error: %s\n", filename, line, s);
+		else
+			fprintf(stderr, "Error: %s\n", s);
+	}
 }
 
 void yywarningl(int level, const char *s, int ofs)
 {
 	int line = __IDL_cur_line - 1 + ofs;
-	gchar *filename = g_basename(__IDL_cur_filename);
+	gchar *filename = NULL;
+
+	if (__IDL_cur_filename)
+		filename = g_basename(__IDL_cur_filename);
+	else
+		line = -1;
 	
 	++__IDL_nwarnings;
 	
 	if (__IDL_msgcb)
 		(*__IDL_msgcb)(level, __IDL_nwarnings, line, filename, s);
-	else
-		fprintf(stderr, "%s:%d: Warning: %s\n", filename, line, s);
+	else {
+		if (line > 0)
+			fprintf(stderr, "%s:%d: Warning: %s\n", filename, line, s);
+		else
+			fprintf(stderr, "Warning: %s\n", s);
+	}
 }
 
 void yyerror(const char *s)
@@ -1048,229 +1078,201 @@ IDL_tree IDL_get_parent_node(IDL_tree p, IDL_tree_type type, int *levels)
 	return p;
 }
 
-void __IDL_tree_print(IDL_tree p)
+int IDL_tree_walk_pre_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_data)
 {
-	if (p == NULL)
-		return;
+	assert(tree_func != NULL);
+
+	if (!p)
+		return IDL_TRUE;
+	
+	if (!(*tree_func)(p, user_data))
+		return IDL_FALSE;
 
 	switch (IDL_NODE_TYPE(p)) {
+	case IDLN_INTEGER:
+	case IDLN_STRING:
+	case IDLN_CHAR:
+	case IDLN_FIXED:
+	case IDLN_FLOAT:
+	case IDLN_BOOLEAN:
+	case IDLN_IDENT:
+	case IDLN_TYPE_WIDE_CHAR:
+	case IDLN_TYPE_BOOLEAN:
+	case IDLN_TYPE_OCTET:
+	case IDLN_TYPE_ANY:
+	case IDLN_TYPE_OBJECT:
+	case IDLN_TYPE_FLOAT:
+	case IDLN_TYPE_INTEGER:
+	case IDLN_TYPE_CHAR:
+		break;
+		
 	case IDLN_LIST:
-		printf("IDL list\n");
-		while (p) {
-			__IDL_tree_print(IDL_LIST(p).data);
-			p = IDL_LIST(p).next;
-		}
+		for (; p; p = IDL_LIST(p).next)
+			if (!IDL_tree_walk_pre_order(IDL_LIST(p).data, tree_func, user_data))
+				return IDL_FALSE;
 		break;
 
 	case IDLN_GENTREE:
-#if 0
-		__IDL_tree_print(IDL_GENTREE(p).data);
-		__IDL_tree_print(IDL_GENTREE(p).children);
-
-		q = IDL_GENTREE(p).siblings;
-		while (q != NULL) {
-			r = IDL_GENTREE(q).siblings;
-			__IDL_tree_print(IDL_GENTREE(q).data);
-			__IDL_tree_print(IDL_GENTREE(q).children);
-			q = r;
-		}
-#endif
+		g_assert("IDLN_GENTREE walk not implemented!");
 		break;
 
-	case IDLN_INTEGER:
-		printf("IDL integer: " IDL_SB10_FMT "\n", IDL_INTEGER(p).value);
-		break;
-		
-	case IDLN_STRING:
-		printf("IDL string: %s\n", IDL_STRING(p).value);
-		break;
-		
-	case IDLN_CHAR:
-		printf("IDL char: %s\n", IDL_CHAR(p).value);
-		break;
-		
-	case IDLN_FIXED:
-		printf("IDL fixed: %s\n", IDL_FIXED(p).value);
-		break;
-		
-	case IDLN_FLOAT:
-		printf("IDL float: %g\n", IDL_FLOAT(p).value);
-		break;
-		
-	case IDLN_BOOLEAN:
-		printf("IDL boolean: %s\n",
-		       IDL_BOOLEAN(p).value ? "TRUE" : "FALSE");
-		break;
-		
-	case IDLN_IDENT:
-		printf("IDL ident: %s (repo_id \"%s\")\n",
-		       IDL_IDENT(p).str,
-		       IDL_IDENT_REPO_ID(p) ? IDL_IDENT_REPO_ID(p) : "<NONE>");
-		break;
-		
 	case IDLN_MEMBER:
-		printf("IDL member declaration\n");
-		__IDL_tree_print(IDL_MEMBER(p).type_spec);
-		__IDL_tree_print(IDL_MEMBER(p).dcls);
+		if (!IDL_tree_walk_pre_order(IDL_MEMBER(p).type_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_MEMBER(p).dcls, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
 	case IDLN_TYPE_DCL:
-		printf("IDL type declaration\n");
-		__IDL_tree_print(IDL_TYPE_DCL(p).type_spec);
-		__IDL_tree_print(IDL_TYPE_DCL(p).dcls);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_DCL(p).type_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_DCL(p).dcls, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_CONST_DCL:
-		printf("IDL const declaration\n");
-		__IDL_tree_print(IDL_CONST_DCL(p).const_type);
-		__IDL_tree_print(IDL_CONST_DCL(p).ident);
-		__IDL_tree_print(IDL_CONST_DCL(p).const_exp);
+		if (!IDL_tree_walk_pre_order(IDL_CONST_DCL(p).const_type, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_CONST_DCL(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_CONST_DCL(p).const_exp, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
 	case IDLN_EXCEPT_DCL:
-		printf("IDL exception declaration\n");
-		__IDL_tree_print(IDL_EXCEPT_DCL(p).ident);
-		__IDL_tree_print(IDL_EXCEPT_DCL(p).members);
+		if (!IDL_tree_walk_pre_order(IDL_EXCEPT_DCL(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_EXCEPT_DCL(p).members, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
 	case IDLN_ATTR_DCL:
-		printf("IDL attr declaration\n");
-		__IDL_tree_print(IDL_ATTR_DCL(p).param_type_spec);
-		__IDL_tree_print(IDL_ATTR_DCL(p).simple_declarations);
+		if (!IDL_tree_walk_pre_order(IDL_ATTR_DCL(p).param_type_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_ATTR_DCL(p).simple_declarations, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
 	case IDLN_OP_DCL:
-		printf("IDL op declaration\n");
-		__IDL_tree_print(IDL_OP_DCL(p).op_type_spec);
-		__IDL_tree_print(IDL_OP_DCL(p).ident);
-		__IDL_tree_print(IDL_OP_DCL(p).parameter_dcls);
-		__IDL_tree_print(IDL_OP_DCL(p).raises_expr);
-		__IDL_tree_print(IDL_OP_DCL(p).context_expr);
+		if (!IDL_tree_walk_pre_order(IDL_OP_DCL(p).op_type_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_OP_DCL(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_OP_DCL(p).parameter_dcls, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_OP_DCL(p).raises_expr, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_OP_DCL(p).context_expr, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_PARAM_DCL:
-		printf("IDL param declaration: %d\n", IDL_PARAM_DCL(p).attr);
-		__IDL_tree_print(IDL_PARAM_DCL(p).param_type_spec);
-		__IDL_tree_print(IDL_PARAM_DCL(p).simple_declarator);
+		if (!IDL_tree_walk_pre_order(IDL_PARAM_DCL(p).param_type_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_PARAM_DCL(p).simple_declarator, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_FORWARD_DCL:
-		printf("IDL forward declaration\n");
-		__IDL_tree_print(IDL_FORWARD_DCL(p).ident);
+		if (!IDL_tree_walk_pre_order(IDL_FORWARD_DCL(p).ident, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
-	case IDLN_TYPE_FLOAT:
-		printf("IDL float type: %d\n", IDL_TYPE_FLOAT(p).f_type);
-		break;
-
 	case IDLN_TYPE_FIXED:
-		printf("IDL fixed type\n");
-		__IDL_tree_print(IDL_TYPE_FIXED(p).positive_int_const);
-		__IDL_tree_print(IDL_TYPE_FIXED(p).integer_lit);
-		break;
-
-	case IDLN_TYPE_INTEGER:
-		printf("IDL integer type: %d %d\n",
-		       IDL_TYPE_INTEGER(p).f_signed,
-		       IDL_TYPE_INTEGER(p).f_type);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_FIXED(p).positive_int_const, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_FIXED(p).integer_lit, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_TYPE_STRING:
-		printf("IDL string type\n");
-		__IDL_tree_print(IDL_TYPE_STRING(p).positive_int_const);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_STRING(p).positive_int_const, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_TYPE_WIDE_STRING:
-		printf("IDL wide string type\n");
-		__IDL_tree_print(IDL_TYPE_WIDE_STRING(p).positive_int_const);
-		break;
-
-	case IDLN_TYPE_CHAR:
-		printf("IDL char type\n");
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_WIDE_STRING(p).positive_int_const, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
-	case IDLN_TYPE_WIDE_CHAR:
-		printf("IDL wide char type\n");
-		break;
-		
-	case IDLN_TYPE_BOOLEAN:
-		printf("IDL boolean type\n");
-		break;
-		
-	case IDLN_TYPE_OCTET:
-		printf("IDL octet type\n");
-		break;
-		
-	case IDLN_TYPE_ANY:
-		printf("IDL any type\n");
-		break;
-		
-	case IDLN_TYPE_OBJECT:
-		printf("IDL object type\n");
-		break;
-
 	case IDLN_TYPE_ENUM:
-		printf("IDL enum type\n");
-		__IDL_tree_print(IDL_TYPE_ENUM(p).ident);
-		__IDL_tree_print(IDL_TYPE_ENUM(p).enumerator_list);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_ENUM(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_ENUM(p).enumerator_list, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_TYPE_SEQUENCE:
-		printf("IDL sequence type\n");
-		__IDL_tree_print(IDL_TYPE_SEQUENCE(p).simple_type_spec);
-		__IDL_tree_print(IDL_TYPE_SEQUENCE(p).positive_int_const);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_SEQUENCE(p).simple_type_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_SEQUENCE(p).positive_int_const, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_TYPE_ARRAY:
-		printf("IDL array type\n");
-		__IDL_tree_print(IDL_TYPE_ARRAY(p).ident);
-		__IDL_tree_print(IDL_TYPE_ARRAY(p).size_list);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_ARRAY(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_ARRAY(p).size_list, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_TYPE_STRUCT:
-		printf("IDL struct type\n");
-		__IDL_tree_print(IDL_TYPE_STRUCT(p).ident);
-		__IDL_tree_print(IDL_TYPE_STRUCT(p).member_list);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_STRUCT(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_STRUCT(p).member_list, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
 	case IDLN_TYPE_UNION:
-		printf("IDL union type\n");
-		__IDL_tree_print(IDL_TYPE_UNION(p).ident);
-		__IDL_tree_print(IDL_TYPE_UNION(p).switch_type_spec);
-		__IDL_tree_print(IDL_TYPE_UNION(p).switch_body);
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_UNION(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_UNION(p).switch_type_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_TYPE_UNION(p).switch_body, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_CASE_STMT:
-		__IDL_tree_print(IDL_CASE_STMT(p).labels);
-		__IDL_tree_print(IDL_CASE_STMT(p).element_spec);
+		if (!IDL_tree_walk_pre_order(IDL_CASE_STMT(p).labels, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_CASE_STMT(p).element_spec, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_INTERFACE:
-		__IDL_tree_print(IDL_INTERFACE(p).ident);
-		__IDL_tree_print(IDL_INTERFACE(p).inheritance_spec);
-		__IDL_tree_print(IDL_INTERFACE(p).body);
+		if (!IDL_tree_walk_pre_order(IDL_INTERFACE(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_INTERFACE(p).inheritance_spec, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_INTERFACE(p).body, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_MODULE:
-		__IDL_tree_print(IDL_MODULE(p).ident);
-		__IDL_tree_print(IDL_MODULE(p).definition_list);
+		if (!IDL_tree_walk_pre_order(IDL_MODULE(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_MODULE(p).definition_list, tree_func, user_data))
+			return IDL_FALSE;
 		break;		
 
 	case IDLN_BINOP:
-		printf("IDL binop: op %d\n", IDL_BINOP(p).op);
-		__IDL_tree_print(IDL_BINOP(p).left);
-		__IDL_tree_print(IDL_BINOP(p).right);
+		if (!IDL_tree_walk_pre_order(IDL_BINOP(p).left, tree_func, user_data))
+			return IDL_FALSE;
+		if (!IDL_tree_walk_pre_order(IDL_BINOP(p).right, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 
 	case IDLN_UNARYOP:
-		printf("IDL unary: op %d\n", IDL_UNARYOP(p).op);
-		__IDL_tree_print(IDL_UNARYOP(p).operand);
+		if (!IDL_tree_walk_pre_order(IDL_UNARYOP(p).operand, tree_func, user_data))
+			return IDL_FALSE;
 		break;
 		
 	default:
-		fprintf(stderr, "warning: print unknown node: %d\n", IDL_NODE_TYPE(p));
+		g_message("IDL_tree_walk_pre_order: unknown node type %s\n", IDL_NODE_TYPE_NAME(p));
 		break;
 	}
+
+	return IDL_TRUE;
 }
 
 /* Hm.. might not be right.. I'll look later */
@@ -1540,14 +1542,14 @@ char *IDL_do_escapes(const char *s)
 
 int IDL_list_length(IDL_tree list)
 {
-	int retval;
+	int length;
 	IDL_tree curitem;
 
-	for(curitem = list, retval = 0; curitem;
+	for(curitem = list, length = 0; curitem;
 	    curitem = IDL_LIST(curitem).next)
-		retval++;
+		length++;
 
-	return retval;
+	return length;
 }
 
 IDL_tree IDL_list_nth(IDL_tree list, int n)
@@ -1558,6 +1560,52 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 	    curitem = IDL_LIST(curitem).next, i++)
 		/* */;
 	return curitem;
+}
+
+/* Forward Declaration Resolution */
+static int load_forward_dcls(IDL_tree p, GHashTable *table)
+{
+	if (IDL_NODE_TYPE(p) == IDLN_FORWARD_DCL) {
+		char *s = IDL_ns_ident_to_qstring(IDL_FORWARD_DCL(p).ident, "::", 0);
+
+		if (!g_hash_table_lookup_extended(table, s, NULL, NULL))
+			g_hash_table_insert(table, s, NULL);
+		else
+			free(s);
+	}
+
+	return IDL_TRUE;
+}
+
+static int resolve_forward_dcls(IDL_tree p, GHashTable *table)
+{
+	if (IDL_NODE_TYPE(p) == IDLN_INTERFACE) {
+		char *orig, *s = IDL_ns_ident_to_qstring(IDL_INTERFACE(p).ident, "::", 0);
+
+		if (g_hash_table_lookup_extended(table, s, (gpointer)&orig, NULL))
+			g_hash_table_remove(table, orig);
+		free(s);
+	}
+
+	return IDL_TRUE;
+}
+
+static int print_unresolved_forward_dcls(char *s)
+{
+	yywarningv(IDL_WARNING1, "Unresolved forward declaration %s", s);
+	free(s);
+
+	return TRUE;
+}
+
+void IDL_tree_resolve_forward_dcls(IDL_tree p)
+{
+	GHashTable *table = g_hash_table_new(IDL_strcase_hash, IDL_strcase_equal);
+
+	IDL_tree_walk_pre_order(p, (IDL_tree_func)load_forward_dcls, table);
+	IDL_tree_walk_pre_order(p, (IDL_tree_func)resolve_forward_dcls, table);
+	g_hash_table_foreach(table, (GHFunc)print_unresolved_forward_dcls, NULL);
+	g_hash_table_destroy(table);
 }
 
 /*

@@ -518,6 +518,9 @@ typedef int				(*IDL_callback)(int level,
 							const char *filename,
 							const char *message);
 
+typedef int				(*IDL_tree_func)(IDL_tree p,
+							 gpointer user_data);
+
 extern IDL_tree				IDL_check_type_cast(const IDL_tree var,
 							    IDL_tree_type type,
 							    const char *file,
@@ -546,6 +549,10 @@ extern void				IDL_ns_version(IDL_ns ns,
 extern IDL_tree				IDL_get_parent_node(IDL_tree p,
 							    IDL_tree_type type,
 							    int *scope_levels);
+
+extern int				IDL_tree_walk_pre_order(IDL_tree p,
+								IDL_tree_func tree_func,
+								gpointer user_data);
 
 extern void				IDL_tree_free(IDL_tree root);
 

@@ -274,6 +274,9 @@ char *IDL_ns_ident_to_qstring(IDL_tree ns_ident, const char *join, int levels)
 	if (ns_ident == NULL)
 		return NULL;
 
+	if (IDL_NODE_TYPE(ns_ident) == IDLN_IDENT)
+		ns_ident = IDL_IDENT_TO_NS(ns_ident);
+
 	assert(IDL_NODE_TYPE(ns_ident) == IDLN_GENTREE);
 
 	l = IDL_ns_qualified_ident_new(ns_ident);

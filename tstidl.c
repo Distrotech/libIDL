@@ -2,64 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <glib.h>
-#ifdef IDL_LIBRARY
+#include "util.h"
 #include "IDL.h"
-#else
-#include <libIDL/IDL.h>
-#endif
 
-#if 0
-void IDL_ns_rcs_traverse(IDL_tree p)
+int print_repo_id(IDL_tree p, gpointer user_data)
 {
-	if (p == NULL)
-		return;
-
-	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
-
-	while (p != NULL) {
-		if (IDL_GENTREE(p).children == NULL) {
-			IDL_tree q;
-			char *s;
-			int levels;
-
-			q = IDL_GENTREE(p).data;
-
-			q = IDL_get_parent_node(q, IDLN_INTERFACE, &levels);
-			
-			if (q != NULL) {
-
-				printf("node type: %s levels %d\n", IDL_NODE_TYPE_NAME(q), levels);
-				
-				s = IDL_ns_ident_to_qstring(p, "_", levels);
-
-				
-			} else {
-				s = IDL_ns_ident_to_qstring(p, "_", 0);
-			}
-
-
-			if (s != NULL)
-				printf("%s\n", s);
-
-			free(s);
-
-		} else
-			IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
-		p = IDL_GENTREE(p).siblings;
+	if (IDL_NODE_TYPE(p) == IDLN_IDENT && IDL_IDENT_REPO_ID(p)) {
+		printf("%s\n", IDL_IDENT_REPO_ID(p));
 	}
-}
-
-#else
-void IDL_ns_rcs_traverse(IDL_tree p)
-{
-	printf("traversing namespace\n");
-}
-#endif
-
-void IDL_ns_dump_namespace(IDL_ns ns)
-{
-	IDL_ns_rcs_traverse(IDL_NS(ns).global);
+	return IDL_TRUE;
 }
 
 int main(int argc, char *argv[])
@@ -83,17 +36,9 @@ int main(int argc, char *argv[])
 	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, argc == 3 ? atoi(argv[2]) : 0);
 
 	if (rv == IDL_SUCCESS) {
-		void __IDL_tree_print(IDL_tree p);
-
-		__IDL_tree_print(tree);
-#if 1
-		IDL_ns_dump_namespace(ns);
-#endif
-		printf("Freeing Namespace\n");
+		IDL_tree_walk_pre_order(tree, print_repo_id, NULL);
 		IDL_ns_free(ns);
-		printf("Freeing Tree\n");
 		IDL_tree_free(tree);
-		
 	}
 	else if (rv == IDL_ERROR) {
 		fprintf(stderr, "tstidl: IDL_ERROR\n");
