@@ -73,6 +73,7 @@ EXPORTS
 	IDL_tree_property_set
 	IDL_tree_property_remove
 	IDL_tree_properties_copy
+	IDL_tree_type_names
 	IDL_tree_walk
 	IDL_tree_walk_in_order
 	IDL_tree_free

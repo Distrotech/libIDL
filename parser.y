@@ -659,7 +659,7 @@ attr_dcl:		z_props
 	node.properties = $1;
 	for (p = $5; p; p = IDL_LIST (p).next) {
 		dcl = IDL_LIST (p).data;
-		IDL_tree_properties_copy (&node, p);
+		IDL_tree_properties_copy (&node, dcl);
 	}
 	__IDL_free_properties (node.properties);
 }
@@ -724,12 +724,12 @@ param_dcl_list:		param_dcl			{ $$ = list_start ($1, TRUE); }
 			check_comma param_dcl		{ $$ = list_chain ($1, $3, TRUE); }
 	;
 
-param_dcl:		param_attribute
-			z_props
+param_dcl:		z_props
+			param_attribute
 			param_type_spec
 			simple_declarator		{
-	$$ = IDL_param_dcl_new ($1, $3, $4);
-	assign_props (IDL_PARAM_DCL ($$).simple_declarator, $2);
+	$$ = IDL_param_dcl_new ($2, $3, $4);
+	assign_props (IDL_PARAM_DCL ($$).simple_declarator, $1);
 }
 	;
 

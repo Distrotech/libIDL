@@ -34,7 +34,7 @@
 #include "rename.h"
 #include "util.h"
 
-const char *IDL_tree_type_names[] = {
+IDL_EXPORT const char *IDL_tree_type_names[] = {
 	"IDLN_NONE",
 	"IDLN_ANY",
 	"IDLN_LIST",
@@ -2743,7 +2743,7 @@ static gboolean IDL_emit_IDL_module_pre (IDL_tree p, IDL_tree parent, IDL_output
 static gboolean IDL_emit_IDL_interface_pre (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
 	data->inline_props = FALSE;
-	IDL_emit_IDL_properties (p, parent, data);
+	IDL_emit_IDL_properties (IDL_INTERFACE (p).ident, p, data);
 	idataf (data, "interface" DELIM_SPACE);
 	IDL_emit_IDL_ident (IDL_INTERFACE (p).ident, parent, data);
 	dataf (data, DELIM_SPACE);
@@ -2768,6 +2768,9 @@ static gboolean IDL_emit_IDL_forward_dcl_pre (IDL_tree p, IDL_tree parent, IDL_o
 static gboolean IDL_emit_IDL_attr_dcl_pre (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
 	IDL_emit_IDL_indent (p, parent, data);
+	data->inline_props = TRUE;
+	IDL_emit_IDL_properties (IDL_LIST (IDL_ATTR_DCL (p).simple_declarations).data,
+				 IDL_ATTR_DCL (p).simple_declarations, data);
 	if (IDL_ATTR_DCL (p).f_readonly) dataf (data, "readonly" DELIM_SPACE);
 	dataf (data, "attribute" DELIM_SPACE);
 	data->idents = TRUE;
@@ -2787,6 +2790,8 @@ static gboolean IDL_emit_IDL_attr_dcl_pre (IDL_tree p, IDL_tree parent, IDL_outp
 static gboolean IDL_emit_IDL_op_dcl_pre (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
 	IDL_emit_IDL_indent (p, parent, data);
+	data->inline_props = TRUE;
+	IDL_emit_IDL_properties (IDL_OP_DCL (p).ident, p, data);
 	if (IDL_OP_DCL (p).f_noscript) dataf (data, "noscript" DELIM_SPACE);
 	if (IDL_OP_DCL (p).f_oneway) dataf (data, "oneway" DELIM_SPACE);
 	if (IDL_OP_DCL (p).op_type_spec) {
@@ -2833,13 +2838,13 @@ static gboolean IDL_emit_IDL_op_dcl_pre (IDL_tree p, IDL_tree parent, IDL_output
 
 static gboolean IDL_emit_IDL_param_dcl_pre (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
+	data->inline_props = TRUE;
+	IDL_emit_IDL_properties (IDL_PARAM_DCL (p).simple_declarator, p, data);
 	switch (IDL_PARAM_DCL (p).attr) {
 	case IDL_PARAM_IN: dataf (data, "in" DELIM_SPACE); break;
 	case IDL_PARAM_OUT: dataf (data, "out" DELIM_SPACE); break;
 	case IDL_PARAM_INOUT: dataf (data, "inout" DELIM_SPACE); break;
 	}
-	data->inline_props = TRUE;
-	IDL_emit_IDL_properties (p, parent, data);
 	data->idents = TRUE;
 	IDL_tree_walk (IDL_PARAM_DCL (p).param_type_spec, parent,
 		       (IDL_tree_func) IDL_emit_node_pre_func,

@@ -514,7 +514,7 @@ typedef enum {
 	
 	IDLN_LAST
 } IDL_tree_type;
-extern const char *			IDL_tree_type_names[];
+IDL_IMPORT const char *			IDL_tree_type_names[];
 
 struct _IDL_tree_node {
 	IDL_tree_type _type;
