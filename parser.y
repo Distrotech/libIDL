@@ -286,12 +286,27 @@ interface:		interface_dcl
 module:			TOK_MODULE new_or_prev_scope '{'
 				definition_list
 			'}' pop_scope			{
+	IDL_tree module;
+
 	if (IDL_NODE_UP($2) != NULL &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
 		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
 		YYABORT;
 	}
-	$$ = IDL_module_new($2, $4);
+
+	if (IDL_NODE_UP ($2) == NULL)
+		module = IDL_module_new($2, $4);
+
+	else {
+		module = IDL_NODE_UP ($2);
+
+		IDL_MODULE(module).definition_list =
+			IDL_list_concat(IDL_MODULE(module).definition_list, $4);
+
+		module = NULL;
+	}
+
+	$$ = module;
 }
 |			TOK_MODULE new_or_prev_scope '{'
 			'}' pop_scope			{
@@ -301,7 +316,8 @@ module:			TOK_MODULE new_or_prev_scope '{'
 		YYABORT;
 	}
 	yyerrorv("Empty module declaration `%s' is not legal IDL", IDL_IDENT($2).str);
-	$$ = IDL_module_new($2, NULL);
+
+	$$ = IDL_NODE_UP ($2) ? NULL : IDL_module_new($2, NULL);
 }
 	;
 

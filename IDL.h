@@ -65,11 +65,13 @@ typedef struct _IDL_tree_node *		IDL_tree;
 struct _IDL_LIST {
 	IDL_tree data;
 	IDL_tree next;
-	IDL_tree _tail;
+	IDL_tree _tail;			/* Internal use */
 };
   
 #define IDL_LIST(a)			IDL_CHECK_CAST(a, IDLN_LIST, idl_list)
 extern IDL_tree				IDL_list_new(IDL_tree data);
+extern IDL_tree				IDL_list_concat(IDL_tree orig,
+							IDL_tree append);
 extern int				IDL_list_length(IDL_tree list);
 extern IDL_tree                         IDL_list_nth(IDL_tree list,
 						     int n);

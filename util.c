@@ -570,6 +570,20 @@ IDL_tree IDL_list_new(IDL_tree data)
 	return p;
 }
 
+IDL_tree IDL_list_concat(IDL_tree orig, IDL_tree append)
+{
+	if (orig == NULL)
+		return append;
+
+	if (append == NULL)
+		return orig;
+
+	IDL_LIST(orig)._tail = IDL_LIST(orig)._tail;
+	IDL_LIST(orig).next = append;
+
+	return orig;
+}
+
 IDL_tree IDL_gentree_new(GHashFunc hash_func, GCompareFunc key_compare_func, IDL_tree data)
 {
 	IDL_tree p = IDL_node_new(IDLN_GENTREE);
