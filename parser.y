@@ -82,6 +82,7 @@ static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b, int filter_null);
 static int			do_token_error(IDL_tree p, const char *message, int prev);
 static int			get_node_info(IDL_tree p, char **who, char **what);
 
+int				__IDL_check_type_casts = IDL_FALSE;
 #ifndef HAVE_CPP_PIPE_STDIN
 char *				__IDL_tmp_filename = NULL;
 #endif
@@ -3104,18 +3105,19 @@ IDL_tree IDL_forward_dcl_new(IDL_tree ident)
 IDL_tree IDL_check_type_cast(IDL_tree tree, IDL_tree_type type,
 			     const char *file, int line, const char *function)
 {
-	if (tree == NULL) {
-		g_warning ("file %s: line %d: (%s) invalid type cast attempt, NULL tree to %s\n",
-			   file, line, function,
-			   IDL_tree_type_names[type]);
+	if (__IDL_check_type_casts) {
+		if (tree == NULL) {
+			g_warning ("file %s: line %d: (%s) invalid type cast attempt, NULL tree to %s\n",
+				   file, line, function,
+				   IDL_tree_type_names[type]);
+		}
+		else if (IDL_NODE_TYPE(tree) != type) {
+			g_warning ("file %s: line %d: (%s) expected IDL tree type %s, but got %s\n",
+				   file, line, function,
+				   IDL_tree_type_names[type], IDL_NODE_TYPE_NAME(tree));
+			
+		}
 	}
-	else if (IDL_NODE_TYPE(tree) != type) {
-		g_warning ("file %s: line %d: (%s) expected IDL tree type %s, but got %s\n",
-			   file, line, function,
-			   IDL_tree_type_names[type], IDL_NODE_TYPE_NAME(tree));
-		
-	}
-
 	return tree;
 }
 
