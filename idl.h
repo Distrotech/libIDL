@@ -40,7 +40,9 @@ extern "C" {
 #define IDL_WARNING			2
 
 /* parse flags for IDL_parse_filename */
-#define IDLF_EVAL_CONST			(1UL<<0)
+#define IDLF_EVAL_CONST			(1UL << 0)
+#define IDLF_ROOT_APPEND		(1UL << 1)
+#define IDLF_NS_APPEND			(1UL << 2)
 
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
@@ -119,11 +121,11 @@ IDL_tree				IDL_boolean_new(unsigned value);
 struct _IDL_IDENT {
 	char *str;
 	IDL_tree data;
+	int _refs;
 };
 #define IDL_IDENT(a)			((a)->u.idl_ident)
-IDL_tree				IDL_ident_new(char *str, IDL_tree data);
-IDL_tree				IDL_ident_get(IDL_tree *table, char *s_ident,
-						      int add, int *added);
+IDL_tree				IDL_ident_new(char *str);
+
 struct _IDL_TYPE_FLOAT {
 	enum IDL_float_type {
 		IDL_FLOAT_TYPE_FLOAT,
@@ -426,17 +428,51 @@ struct _IDL_tree_node {
 };
 #define IDL_NODE_TYPE(a)		((a)->type)
 
+typedef struct _IDL_ns *		IDL_ns;
+
+struct _IDL_ns {
+	IDL_tree global;
+	IDL_tree file;
+	IDL_tree current;
+};
+#define IDL_NS(a)			(*a)
+
 typedef int				(*IDL_callback)(int level, int num, int line,
 							const char *filename, const char *s);
 
 extern int				IDL_parse_filename(const char *filename,
 							   const char *cpp_args,
 							   IDL_callback cb,
-							   IDL_tree *tree, IDL_tree *symtab,
+							   IDL_tree *tree, IDL_ns *ns,
 							   unsigned long parse_flags);
-extern void				IDL_root_free(IDL_tree root);
-extern void				IDL_symtab_free(IDL_tree symtab);
+
+extern void				IDL_tree_free(IDL_tree root);
+
 extern char *				IDL_do_escapes(const char *s);
+
+extern IDL_ns				IDL_ns_new(void);
+
+extern void				IDL_ns_free(IDL_ns ns);
+
+extern IDL_tree				IDL_ns_prefix(IDL_ns ns, IDL_tree prefix);
+
+extern IDL_tree				IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident);
+
+extern IDL_tree				IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident);
+
+extern IDL_tree				IDL_ns_lookup_cur_scope(IDL_ns ns, IDL_tree ident);
+
+extern IDL_tree				IDL_ns_place_new(IDL_ns ns, IDL_tree ident);
+
+extern IDL_tree				IDL_ns_push_scope_new(IDL_ns ns, IDL_tree ident);
+
+extern IDL_tree				IDL_ns_push_scope_prev(IDL_ns ns, IDL_tree ident);
+
+extern IDL_tree				IDL_ns_push_scope_new_or_prev(IDL_ns ns, IDL_tree ident);
+
+extern IDL_tree				IDL_ns_pop_scope(IDL_ns ns);
+
+extern IDL_tree				IDL_ns_get_qualified_ident(IDL_ns ns, IDL_tree ident);
 
 #ifdef __cplusplus
 }

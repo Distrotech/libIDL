@@ -11,8 +11,12 @@ int IDL_cb(int level, int num, int line, const char *filename, const char *s)
 int main(int argc, char *argv[])
 {
 	int rv;
-	IDL_tree tree, symtab;
+	IDL_tree tree;
+	IDL_ns ns;
 	char *fn;
+	extern int __IDL_debug;
+
+	__IDL_debug = 1;
 
 	if (argc != 3) {
 		fprintf(stderr, "usage: tstidl <filename> <fold>\n");
@@ -21,23 +25,27 @@ int main(int argc, char *argv[])
 
 	fn = argv[1];
 
-	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &symtab, atoi(argv[2]));
+	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, atoi(argv[2]));
 
 	if (rv == IDL_SUCCESS) {
-		void __IDL_print_tree(IDL_tree p);
+		void __IDL_tree_print(IDL_tree p);
 		
 #if 1
 		fprintf(stderr, "tstidl: IDL_SUCCESS: %p\n", tree);		
 		printf("Walking Root Tree\n");
-		__IDL_print_tree(tree);
+		__IDL_tree_print(tree);
 		printf("Walking Symbol Table\n");
-		__IDL_print_tree(symtab);
+		__IDL_tree_print(IDL_NS(ns).global);
 #else
 		emit_CXX(tree);
 #endif
-	
-		IDL_root_free(tree);
-		IDL_symtab_free(symtab);
+
+#if 0
+		IDL_tree_free(tree);
+#endif
+#if 0
+		IDL_ns_free(ns);
+#endif
 		
 	}
 	else if (rv == IDL_ERROR) {
