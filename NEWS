@@ -1,3 +1,11 @@
+libIDL 0.8.1:
+
+	* add '_' prefix escaped keyword support (Nick Lewycky)
+	* cygwin build support (Masahiro Sakai)
+	* build fixes (Mark McLoughlin, Thomas Vander Stichele)
+	* autoconf upgrade (Havoc Pennington)
+	* BSD portability fix (Jacob Berkman)
+
 libIDL 0.8.0: stable ABI/API fozen release
 
 	* link against glib (Mark)
