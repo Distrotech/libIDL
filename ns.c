@@ -398,12 +398,6 @@ static void mark_visited_interface (GHashTable *visited_interfaces, IDL_tree sco
 	g_hash_table_insert (visited_interfaces, scope, scope);
 }
 
-struct insert_heap_cb_data {
-	IDL_tree interface_ident;
-	GTree *ident_heap;
-	int insert_conflict;
-};
-
 static int is_inheritance_conflict (IDL_tree p)
 {
 	if (IDL_GENTREE (p).data == NULL)
@@ -422,6 +416,12 @@ static int is_inheritance_conflict (IDL_tree p)
 	return TRUE;
 }
 
+struct insert_heap_cb_data {
+	IDL_tree interface_ident;
+	GTree *ident_heap;
+	int insert_conflict;
+};
+
 static void insert_heap_cb (IDL_tree ident, IDL_tree p, struct insert_heap_cb_data *data)
 {
 	if (!is_inheritance_conflict (p))
@@ -437,7 +437,7 @@ static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree iden
 					GTree *ident_heap, GHashTable *visited_interfaces)
 {
 	IDL_tree q, scope;
-	struct insert_heap_cb_data data = { interface_ident, ident_heap, 0 };
+	struct insert_heap_cb_data data;
 
 	assert (ident_scope != NULL);
 	assert (IDL_NODE_TYPE (ident_scope) == IDLN_IDENT);
@@ -457,6 +457,9 @@ static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree iden
 		return TRUE;
 
 	/* Search this namespace */
+	data.interface_ident = interface_ident;
+	data.ident_heap = ident_heap;
+	data.insert_conflict = 0;
 	g_hash_table_foreach (IDL_GENTREE (scope).children, (GHFunc)insert_heap_cb, &data);
 
 	/* If there are inherited namespaces, look in those before giving up */

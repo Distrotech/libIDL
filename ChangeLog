@@ -1,3 +1,10 @@
+1998-10-25  Andrew Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.5.2
+
+	* ns.c (IDL_ns_load_idents_to_tables): Initialize
+	struct insert_heap_cb_data just before use.
+
 1998-10-20  Andrew Veliath  <andrewtv@usa.net>
 
 	* util.c (IDL_parse_filename): Try to make #includes behave more
