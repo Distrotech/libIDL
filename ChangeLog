@@ -7,7 +7,7 @@
 
 	* parser.y: Much improved error messages about illegal types in
 	attributes, operations and parameters.  Also, explicit errors
-	added for missing struct, union and enum definitions with missing
+	added for struct, union and enum definitions with missing
 	identifiers.
 
 	* (IDLF_PROPERTIES): New syntax flag; properties can be used
