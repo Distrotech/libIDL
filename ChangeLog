@@ -1,8 +1,7 @@
 1998-12-15  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* (IDL_tree_to_IDL): New public function.  Not yet fully
-	implemented yet, but most stuff will work. Add a call from
-	tstidl.c.
+	implemented, but most stuff will work. Add a call from tstidl.c.
 	(IDL_tree_walk): New public function; more generalized version of
 	IDL_tree_walk_in_order.
 

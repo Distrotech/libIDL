@@ -57,7 +57,9 @@ extern "C" {
 #define IDLF_DECLSPEC_INHIBIT		(1UL << 1)
 
 /* output flags */
-#define IDLF_OUTPUT_NEWLINES		(1UL << 0)
+#define IDLF_OUTPUT_NO_NEWLINES		(1UL << 0)
+#define IDLF_OUTPUT_QUALIFY_IDENTS	(1UL << 1)
+#define IDLF_OUTPUT_CODEFRAGS		(1UL << 2)
 
 #ifdef _WIN32
 #  define IDL_EXPORT			__declspec (dllexport)
