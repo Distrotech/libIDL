@@ -59,11 +59,15 @@
 	}						\
 } while (0)
 
+#define IS_INHIBIT_STATE()				\
+	(__IDL_inhibits > 0 ||				\
+	  ((__IDL_flags & IDLF_INHIBIT_INCLUDES) &&	\
+	     (__IDL_flagsi & IDLFP_IN_INCLUDES) ) )
+
+
 #define assign_declspec(tree,declspec)	do {		\
 	IDL_NODE_DECLSPEC (tree) = declspec;		\
-	if (__IDL_inhibits > 0 ||			\
-	    (__IDL_flags & IDLF_INHIBIT_INCLUDES &&	\
-	     __IDL_flagsi & IDLFP_IN_INCLUDES)) {	\
+	if ( IS_INHIBIT_STATE() ) {			\
 		IDL_NODE_DECLSPEC (tree) |=		\
 			IDLF_DECLSPEC_EXIST |		\
 			IDLF_DECLSPEC_INHIBIT;		\
@@ -172,6 +176,7 @@ static void		illegal_type_error		(IDL_tree p,
 %token <str>		TOK_PROP_VALUE TOK_NATIVE_TYPE
 %token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
 %token <tree>		TOK_CODEFRAG
+%token <tree>		TOK_SRCFILE
 
 /* Non-Terminals */
 %type <tree>		add_expr
@@ -261,6 +266,7 @@ static void		illegal_type_error		(IDL_tree p,
 %type <tree>		simple_declarator_list
 %type <tree>		simple_type_spec
 %type <tree>		specification
+%type <tree>		srcfile
 %type <tree>		string_lit
 %type <tree>		string_lit_list
 %type <tree>		string_type
@@ -343,6 +349,7 @@ definition:		type_dcl check_semicolon
 |			interface check_semicolon
 |			module check_semicolon
 |			codefrag
+|			srcfile
 |			illegal_ident
 |			useless_semicolon
 	;
@@ -1388,6 +1395,11 @@ codefrag:		z_declspec TOK_CODEFRAG		{
 }
 	;
 
+srcfile:		TOK_SRCFILE		{
+	$$ = $1;
+}
+	;
+
 dqstring_cat:		dqstring
 |			dqstring_cat dqstring		{
 	char *catstr = g_malloc (strlen ($1) + strlen ($2) + 1);
@@ -1677,44 +1689,50 @@ static IDL_declspec_t IDL_parse_declspec (const char *strspec)
 	return flags;
 }
 
-void IDL_file_set (const char *filename, int line)
+IDL_tree IDL_file_set (const char *filename, int line)
 {
 	IDL_fileinfo *fi;
-	char *orig;
+	IDL_tree tree = NULL;
 
-	g_return_if_fail (__IDL_is_parsing);
+	g_return_val_if_fail (__IDL_is_parsing, 0);
 
 	if (filename) {
-		__IDL_cur_filename = g_strdup (filename);
-
-		if (
+		const char *oldfilename = __IDL_cur_filename;
+		gboolean wasInhibit = IS_INHIBIT_STATE();
+		gboolean isTop = 
 #ifdef HAVE_CPP_PIPE_STDIN
-			!strlen (__IDL_cur_filename)
+			strlen (filename)==0;
 #else
 			__IDL_tmp_filename &&
-			!strcmp (__IDL_cur_filename, __IDL_tmp_filename)
+			strcmp (filename, __IDL_tmp_filename)==0;
 #endif
-			) {
-			g_free (__IDL_cur_filename);
-			__IDL_cur_filename = g_strdup (__IDL_real_filename);
+		if ( isTop ) {
+			filename = __IDL_real_filename;
 			__IDL_flagsi &= ~IDLFP_IN_INCLUDES;
-		} else
+		} else {
 			__IDL_flagsi |= IDLFP_IN_INCLUDES;
+		}
 
-		if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
-						  (gpointer) &orig, (gpointer) &fi)) {
-			g_free (__IDL_cur_filename);
-			__IDL_cur_filename = orig;
+		if ((fi=g_hash_table_lookup(__IDL_filename_hash, filename)) ) {
 			__IDL_cur_fileinfo = fi;
+			++(fi->seenCnt);
 		} else {
 			fi = g_new0 (IDL_fileinfo, 1);
-			__IDL_cur_fileinfo = fi;
-			g_hash_table_insert (__IDL_filename_hash, __IDL_cur_filename, fi);
+			fi->name = g_strdup(filename);
+			g_hash_table_insert (__IDL_filename_hash, fi->name, fi);
+		}
+		__IDL_cur_fileinfo = fi;
+		__IDL_cur_filename = fi->name;
+		if ( (__IDL_flags & IDLF_SRCFILES)!=0
+		  && (oldfilename==0 
+		  	    || strcmp(oldfilename,fi->name)!=0) ) {
+			tree = IDL_srcfile_new(fi->name, fi->seenCnt, isTop, wasInhibit);
 		}
 	}
 
 	if (__IDL_cur_line > 0)
 		__IDL_cur_line = line;
+	return tree;
 }
 
 void IDL_file_get (const char **filename, int *line)

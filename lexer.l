@@ -79,7 +79,6 @@
 	else					\
 		BEGIN (INITIAL);
 
-extern void		__IDL_do_pragma			(const char *s);
 static int		count_nl			(const char *s);
 
 #ifdef YYDEBUG
@@ -193,9 +192,11 @@ dqstring		\"[^\"\n]*[\"\n]
 	} else
 		filename2 = filename;
 
-	IDL_file_set (filename2, line);
+	yylval.tree = IDL_file_set (filename2, line);
 
 	g_free (filename2);
+	if ( yylval.tree )
+	 	tokreturn (TOK_SRCFILE);
 }
 <*>{whitespace}						;
 {b8_int}						{

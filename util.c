@@ -1309,6 +1309,17 @@ IDL_tree IDL_codefrag_new (char *desc, GSList *lines)
 	return p;
 }
 
+IDL_tree IDL_srcfile_new (char *filename, int seenCnt, gboolean isTop, gboolean wasInhibit)
+{
+	IDL_tree p = IDL_node_new (IDLN_SRCFILE);
+	IDL_SRCFILE (p).filename = filename;
+	IDL_SRCFILE (p).seenCnt = seenCnt;
+	IDL_SRCFILE (p).isTop = isTop;
+	IDL_SRCFILE (p).wasInhibit = wasInhibit;
+
+	return p;
+}
+
 IDL_tree IDL_const_dcl_new (IDL_tree const_type, IDL_tree ident, IDL_tree const_exp)
 {
 	IDL_tree p = IDL_node_new (IDLN_CONST_DCL);
@@ -1570,6 +1581,7 @@ static void IDL_tree_walk_real (IDL_tree_func_data *tfd, IDLTreeWalkRealData *da
 	case IDLN_TYPE_INTEGER:
 	case IDLN_TYPE_CHAR:
 	case IDLN_CODEFRAG:
+	case IDLN_SRCFILE:
 		break;
 
 	case IDLN_LIST:

@@ -55,6 +55,8 @@
 
 typedef struct {
 	unsigned long flags;
+	char* name;
+	int seenCnt;
 } IDL_fileinfo;
 
 extern void		yyerror				(const char *s);
@@ -91,6 +93,11 @@ extern void		__IDL_assign_up_node		(IDL_tree up, IDL_tree node);
 extern void		__IDL_assign_location		(IDL_tree node, IDL_tree from_node);
 extern void		__IDL_assign_this_location	(IDL_tree node, char *filename, int line);
 extern void		__IDL_parser_reset		(void);
+extern void             __IDL_do_pragma                 (const char *s);
+
+extern void		__IDL_lex_init			(void);
+extern void		__IDL_lex_cleanup 		(void);
+
 
 #ifndef HAVE_CPP_PIPE_STDIN
 extern char *				__IDL_tmp_filename;
@@ -113,5 +120,6 @@ extern unsigned long			__IDL_flagsi;
 extern gpointer				__IDL_inputcb_user_data;
 extern IDL_input_callback		__IDL_inputcb;
 extern GSList *				__IDL_new_ident_comments;
+
 
 #endif /* __UTIL_H */

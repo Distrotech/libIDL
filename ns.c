@@ -55,7 +55,7 @@ IDL_ns IDL_ns_new (void)
 
 static void filename_hash_free (char *filename, IDL_fileinfo *fi)
 {
-	g_free (filename);
+	g_free (fi->name);
 	g_free (fi);
 }
 

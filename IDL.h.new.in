@@ -70,6 +70,7 @@ extern "C" {
 #define IDLF_XPIDL			(1UL << 17)
 #define IDLF_PROPERTIES			(1UL << 18)
 #define IDLF_CODEFRAGS			(1UL << 19)
+#define IDLF_SRCFILES			(1UL << 20)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
@@ -476,6 +477,16 @@ struct _IDL_CODEFRAG {
 extern IDL_tree		IDL_codefrag_new		(char *desc,
 							 GSList *lines);
 
+/* source/include file marking extension. */
+struct _IDL_SRCFILE {
+	char *filename;
+	int seenCnt;
+	gboolean isTop;
+	gboolean wasInhibit;
+};
+#define IDL_SRCFILE(a)			IDL_CHECK_CAST(a, IDLN_SRCFILE, idl_srcfile)
+extern IDL_tree		IDL_srcfile_new		(char *filename, int seenCnt, gboolean isTop, gboolean wasInhibit);
+
 /*
  * IDL_tree_type - Enumerations of node types
  *
@@ -531,6 +542,7 @@ typedef enum {
 	IDLN_BINOP,
 	IDLN_UNARYOP,
 	IDLN_CODEFRAG,
+	IDLN_SRCFILE,
 
 	IDLN_LAST
 } IDL_tree_type;
@@ -581,6 +593,7 @@ struct _IDL_tree_node {
 		struct _IDL_BINOP idl_binop;
 		struct _IDL_UNARYOP idl_unaryop;
 		struct _IDL_CODEFRAG idl_codefrag;
+		struct _IDL_SRCFILE idl_srcfile;
 	} u;
 
 	/* Fields for application use */
@@ -736,7 +749,7 @@ extern void		IDL_inhibit_push		(void);
 
 extern void		IDL_inhibit_pop			(void);
 
-extern void		IDL_file_set			(const char *filename,
+extern IDL_tree		IDL_file_set			(const char *filename,
 							 int line);
 
 extern void		IDL_file_get			(const char **filename,
