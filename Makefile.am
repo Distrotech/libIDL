@@ -1,11 +1,11 @@
-#AUTOMAKE_OPTIONS = gnu
 AUTOMAKE_OPTIONS = foreign
 CFLAGS = -g -O2 -Wall -pedantic -DYYDEBUG=1
-#YACC = byacc
+#YACC = yacc
 YFLAGS = -d -v
 LEX_PREFIX = __IDL_
 LEX_OUTPUT_ROOT = lex.$(LEX_PREFIX)
 LFLAGS = -8 -P$(LEX_PREFIX)
+LIBS =
 
 include_HEADERS = idl.h
 lib_LIBRARIES = libIDL.a

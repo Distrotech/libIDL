@@ -1,6 +1,6 @@
 /**************************************************************************
 
-    idl.h
+    idl.h (IDL AST and namespace components)
 
     Copyright (C) 1998 Andrew Veliath
 

@@ -1,6 +1,6 @@
-/**************************************************************************
+/***************************************************************************
 
-    parser.y
+    parser.y (IDL yacc parser and AST generation)
 
     Copyright (C) 1998 Andrew Veliath
 
@@ -57,36 +57,32 @@
 	}					\
 } while (0)
 
+extern int			yylex(void);
+
+void				__IDL_tree_print(IDL_tree p);
 static int			IDL_binop_chktypes(enum IDL_binop op,
 						   IDL_tree a,
 						   IDL_tree b);
 static int			IDL_unaryop_chktypes(enum IDL_unaryop op,
 						     IDL_tree a);
+static void			__IDL_tree_free(IDL_tree p, int idents);
 static IDL_tree			IDL_binop_eval(enum IDL_binop op,
 					       IDL_tree a,
 					       IDL_tree b);
 static IDL_tree			IDL_unaryop_eval(enum IDL_unaryop op,
 						 IDL_tree a);
-static void			__IDL_tree_free(IDL_tree p, int idents);
+static IDL_tree			list_start(IDL_tree a);
+static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
+static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 
-static int			okay;
+char *				__IDL_cur_filename = NULL;
+int				__IDL_cur_line;
 static unsigned long		flags;
 static int			idl_nerrors, idl_nwarnings;
 static IDL_tree			idl_root;
 static IDL_ns			idl_ns;
 static IDL_callback		idl_msgcb;
 static int			idl_is_parsing = IDL_FALSE;
-
-char *				__IDL_cur_filename = NULL;
-int				__IDL_cur_line;
-
-void				__IDL_tree_print(IDL_tree p);
-
-static IDL_tree			list_start(IDL_tree a);
-static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
-static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
-
-extern int			yylex(void);
 %}
 
 %union {
@@ -99,8 +95,8 @@ extern int			yylex(void);
 	enum IDL_param_attr paramattr;
 }
 
-/* token aliases which are C reserved words are prefixed with an
-   underscore */
+/* Token aliases which are C reserved words are prefixed with an
+   underscore. */
 
 %token TOK_ANY			"any"
 %token TOK_ATTRIBUTE		"attribute"
@@ -196,19 +192,16 @@ start:			idl_init
 			specification
 			idl_finish			{
 	idl_root = NULL;
-	if (okay)
-		idl_root = $2;
+	idl_root = $2;
 }
 	;
 
-idl_init:						{
-	okay = 1;
+idl_init:		/* emtpy */			{
 	idl_nerrors = idl_nwarnings = 0;
 }
 	;
 
-idl_finish:						{
-}
+idl_finish:		/* empty */
 	;
 
 specification:		/* empty */			{ yyerror("file is empty"); YYABORT; }
@@ -505,7 +498,7 @@ primary_expr:		scoped_name
 	case IDLN_FIXED:
 		break;
 	default:
-		yyerror("invalid constant expression");
+		yyerror("illegal type in constant expression");
 		YYABORT;
 		break;
 	}
@@ -1410,12 +1403,10 @@ IDL_ns IDL_ns_new(void)
 	IDL_ns ns;
 
 	ns = (IDL_ns)malloc(sizeof(struct _IDL_ns));
-
 	if (ns == NULL) {
-		yyerror("cannot allocate memory");
+		yyerror("IDL_ns_new: memory exhausted");
 		return NULL;
 	}
-
 	memset(ns, 0, sizeof(struct _IDL_ns));
 
 	IDL_NS(ns).global = IDL_gentree_new(NULL, NULL);
@@ -1789,9 +1780,12 @@ static IDL_tree IDL_node_new(IDL_tree_type type)
 	IDL_tree p;
 
 	p = (IDL_tree)malloc(sizeof(IDL_tree_node));
-	if (p == NULL)
+	if (p == NULL) {
+		yyerror("IDL_node_new: memory exhausted");
 		return NULL;
+	}
 	memset(p, 0, sizeof(IDL_tree_node));
+
 	IDL_NODE_TYPE(p) = type;
 
 	return p;
@@ -2440,3 +2434,12 @@ static IDL_tree IDL_unaryop_eval(enum IDL_unaryop op, IDL_tree a)
 	default: return NULL;
 	}
 }
+
+/*
+ * Local variables:
+ * mode: C
+ * c-basic-offset: 8
+ * tab-width: 8
+ * indent-tabs-mode: t
+ * End:
+ */

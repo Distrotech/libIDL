@@ -1,6 +1,6 @@
-/**************************************************************************
+/***************************************************************************
 
-    lexer.l
+    lexer.l (IDL flex scanner)
 
     Copyright (C) 1998 Andrew Veliath
 
@@ -40,7 +40,7 @@ extern int		yydebug;
 
 whitespace		[ \t]*
 newline			\n
-cpp_pragma		^#[ \t]*pragma[ \t].*
+cpp_pragma		^#{whitespace}pragma{whitespace}.*
 cpp_status		^#.*
 b8_int			0[0-9]*
 b10_int			[1-9][0-9]*
@@ -181,3 +181,12 @@ void __IDL_lex_cleanup(void)
 		__IDL_cur_filename = NULL;
 	}
 }
+
+/*
+ * Local variables:
+ * mode: C
+ * c-basic-offset: 8
+ * tab-width: 8
+ * indent-tabs-mode: t
+ * End:
+ */
