@@ -507,18 +507,22 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 		*what = "structure definition";
 		*who = IDL_IDENT (IDL_TYPE_STRUCT (p).ident).str;
 		break;
+		
 	case IDLN_TYPE_UNION:
 		*what = "union definition";
 		*who = IDL_IDENT (IDL_TYPE_UNION (p).ident).str;
 		break;
+		
 	case IDLN_TYPE_ENUM:
 		*what = "enumeration definition";
 		*who = IDL_IDENT (IDL_TYPE_ENUM (p).ident).str;
 		break;
+		
 	case IDLN_IDENT:
 		*what = "identifier";
 		*who = IDL_IDENT (p).str;
 		break;
+		
 	case IDLN_TYPE_DCL:
 		*what = "type definition";
 		assert (IDL_TYPE_DCL (p).dcls != NULL);
@@ -527,6 +531,7 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 		assert (IDL_NODE_TYPE (IDL_LIST (IDL_TYPE_DCL (p).dcls)._tail) == IDLN_LIST);
 		*who = IDL_IDENT (IDL_LIST (IDL_LIST (IDL_TYPE_DCL (p).dcls)._tail).data).str;
 		break;
+		
 	case IDLN_MEMBER:
 		*what = "member declaration";
 		assert (IDL_MEMBER (p).dcls != NULL);
@@ -535,12 +540,14 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 		assert (IDL_NODE_TYPE (IDL_LIST (IDL_MEMBER (p).dcls)._tail) == IDLN_LIST);
 		*who = IDL_IDENT (IDL_LIST (IDL_LIST (IDL_MEMBER (p).dcls)._tail).data).str;
 		break;
+		
 	case IDLN_NATIVE:
 		*what = "native declaration";
 		assert (IDL_NATIVE (p).ident != NULL);
 		assert (IDL_NODE_TYPE (IDL_NATIVE (p).ident) == IDLN_IDENT);
 		*who = IDL_IDENT (IDL_NATIVE (p).ident).str;
 		break;
+		
 	case IDLN_LIST:
 		if (!IDL_LIST (p).data)
 			break;
@@ -549,6 +556,7 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 			break;
 		dienow = IDL_tree_get_node_info (IDL_LIST (IDL_LIST (p)._tail).data, what, who);
 		break;
+		
 	case IDLN_ATTR_DCL:
 		*what = "interface attribute";
 		assert (IDL_ATTR_DCL (p).simple_declarations != NULL);
@@ -559,36 +567,44 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 		*who = IDL_IDENT (IDL_LIST (IDL_LIST (
 			IDL_ATTR_DCL (p).simple_declarations)._tail).data).str;
 		break;
+		
 	case IDLN_PARAM_DCL:
 		*what = "operation parameter";
 		assert (IDL_PARAM_DCL (p).simple_declarator != NULL);
 		assert (IDL_NODE_TYPE (IDL_PARAM_DCL (p).simple_declarator) = IDLN_IDENT);
 		*who = IDL_IDENT (IDL_PARAM_DCL (p).simple_declarator).str;
 		break;
+		
 	case IDLN_CONST_DCL:
 		*what = "constant declaration for";
 		*who = IDL_IDENT (IDL_CONST_DCL (p).ident).str;
 		break;
+		
 	case IDLN_EXCEPT_DCL:
 		*what = "exception";
 		*who = IDL_IDENT (IDL_EXCEPT_DCL (p).ident).str;
 		break;
+		
 	case IDLN_OP_DCL:
 		*what = "interface operation";
 		*who = IDL_IDENT (IDL_OP_DCL (p).ident).str;
 		break;
+		
 	case IDLN_MODULE:
 		*what = "module";
 		*who = IDL_IDENT (IDL_MODULE (p).ident).str;
 		break;
+		
 	case IDLN_FORWARD_DCL:
 		*what = "forward declaration";
 		*who = IDL_IDENT (IDL_FORWARD_DCL (p).ident).str;
 		break;
+		
 	case IDLN_INTERFACE:
 		*what = "interface";
 		*who = IDL_IDENT (IDL_INTERFACE (p).ident).str;
 		break;
+		
 	default:
 		g_warning ("Node type: %s\n", IDL_NODE_TYPE_NAME (p));
 		*what = "unknown (internal error)";
