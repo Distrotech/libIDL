@@ -52,6 +52,7 @@ extern "C" {
 #define IDLF_NO_EVAL_CONST		(1UL << 1)
 #define IDLF_COMBINE_REOPENED_MODULES	(1UL << 2)
 #define IDLF_PREFIX_FILENAME		(1UL << 3)
+#define IDLF_RESOLVE_FORWARDS		(1UL << 4)
 
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)

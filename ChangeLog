@@ -1,3 +1,10 @@
+1999-03-03  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* util.c (IDL_tree_optimize): Understand
+	IDLF_RESOLVE_FORWARDS. libIDL will only resolve them if told now.
+
+	* IDL.h.new.in (IDLF_RESOLVE_FORWARDS): New flag.
+
 1999-02-23  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.0.

@@ -183,7 +183,8 @@ const char *IDL_get_IDLver_string (void)
 
 static void IDL_tree_optimize (IDL_tree *p, IDL_ns ns)
 {
-	IDL_tree_process_forward_dcls (p, ns);
+	if (__IDL_flags & IDLF_RESOLVE_FORWARDS)
+		IDL_tree_process_forward_dcls (p, ns);
 	IDL_tree_remove_inhibits (p, ns);
 	IDL_tree_remove_empty_modules (p, ns);
 }
