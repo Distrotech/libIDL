@@ -173,6 +173,7 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 %type <tree>		integer_type
 %type <tree>		interface
 %type <tree>		interface_body
+%type <tree>		interface_catch_ident
 %type <tree>		interface_dcl
 %type <tree>		is_context_expr
 %type <tree>		is_raises_expr
@@ -304,7 +305,14 @@ module:			TOK_MODULE new_or_prev_scope '{'
 }
 	;
 
-interface_dcl:		TOK_INTERFACE new_or_prev_scope
+interface_catch_ident:	new_or_prev_scope
+|			TOK_OBJECT			{
+	yyerror("Interfaces cannot be named `Object'");
+	YYABORT;
+}
+	;
+
+interface_dcl:		TOK_INTERFACE interface_catch_ident
 			pop_scope
 			z_inheritance			{ 
 	assert($2 != NULL);
@@ -332,7 +340,7 @@ interface_dcl:		TOK_INTERFACE new_or_prev_scope
 	;
 
 forward_dcl:		TOK_INTERFACE
-			new_or_prev_scope pop_scope	{ $$ = IDL_forward_dcl_new($2); }
+			interface_catch_ident pop_scope	{ $$ = IDL_forward_dcl_new($2); }
 	;
 
 z_inheritance:		/* empty */			{ $$ = NULL; }

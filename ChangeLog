@@ -1,5 +1,10 @@
 1998-08-10  Andrew Veliath  <andrewtv@usa.net>
 
+	* parser.y: Catch the interface Object construct, which isn't
+	  legal, but is in some pseudo-IDL files.
+
+	* lexer.l: Bring back Object token recognition.
+
 	* ns.c (IDL_ns_ident_to_qstring): If given and IDLN_IDENT,
 	  quietly call IDL_IDENT_TO_NS.
 
