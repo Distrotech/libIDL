@@ -32,7 +32,7 @@
 #include "rename.h"
 #include "util.h"
 
-#define do_binop(rv,op,a,b)	do {			\
+#define do_binop(rv,op,a,b)		do {		\
 	if (IDL_binop_chktypes (op, a, b))		\
 		YYABORT;				\
 	if (!(__IDL_flags & IDLF_NO_EVAL_CONST)) {	\
@@ -45,7 +45,7 @@
 	}						\
 } while (0)
 
-#define do_unaryop(rv,op,a)	do {			\
+#define do_unaryop(rv,op,a)		do {		\
 	if (IDL_unaryop_chktypes (op, a))		\
 		YYABORT;				\
 	if (!(__IDL_flags & IDLF_NO_EVAL_CONST)) {	\
@@ -55,6 +55,13 @@
 	} else {					\
 		rv = IDL_unaryop_new (op, a);		\
 	}						\
+} while (0)
+
+#define assign_props(tree,props)	do {		\
+	if (__IDL_flags & IDLF_XPIDL)			\
+		IDL_NODE_PROPERTIES (tree) = (props);	\
+	else						\
+		__IDL_free_properties (props);		\
 } while (0)
 
 extern int		yylex				(void);
@@ -411,14 +418,7 @@ interface:		z_declspec
 	IDL_NODE_DECLSPEC ($$) = $1;
 	if (__IDL_inhibits > 0)
 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
-
-	/* Check for XPIDL interface properties */
-	if ($2 != NULL) {
-		if (__IDL_flags & IDLF_XPIDL)
-			IDL_INTERFACE ($$).properties = $2;
-		else
-			__IDL_free_properties ($2);
-	}
+	assign_props ($$, $2);
 }
 |			z_declspec
 			z_props
@@ -429,7 +429,7 @@ interface:		z_declspec
 			    "Ignoring declspec for forward declaration `%s'",
 			    IDL_IDENT ($4));
 	if ($2) yywarningv (IDL_WARNING1,
-			    "Ignoring interface properties for forward declaration `%s'",
+			    "Ignoring properties for forward declaration `%s'",
 			    IDL_IDENT ($4));
 	$$ = IDL_forward_dcl_new ($4);
 }
@@ -666,8 +666,12 @@ param_dcl_list:		param_dcl			{ $$ = list_start ($1, TRUE); }
 	;
 
 param_dcl:		param_attribute
+			z_props
 			param_type_spec
-			simple_declarator		{ $$ = IDL_param_dcl_new ($1, $2, $3); }
+			simple_declarator		{
+	$$ = IDL_param_dcl_new ($1, $3, $4);
+	assign_props ($$, $2);
+}
 	;
 
 param_attribute:	TOK_IN				{ $$ = IDL_PARAM_IN; }
@@ -1183,7 +1187,7 @@ z_props:		/* empty */			{ $$ = NULL; }
 	if (__IDL_flags & IDLF_XPIDL)
 		__IDL_flagsi |= IDLFP_XPIDL_PROPERTY;
 	else {
-		yyerror ("XPIDL syntax not enabled, cannot specify interface properties");
+		yyerror ("XPIDL syntax not enabled, cannot specify properties");
 		YYABORT;
 	}
 }			prop_hash

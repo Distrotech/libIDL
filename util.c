@@ -1182,18 +1182,6 @@ IDL_tree IDL_interface_new (IDL_tree ident, IDL_tree inheritance_spec, IDL_tree 
 	return p;
 }
 
-const char *IDL_interface_get_property (IDL_tree interface, const char *key)
-{
-	g_return_val_if_fail (interface != NULL, NULL);
-	g_return_val_if_fail (key != NULL, NULL);
-	g_return_val_if_fail (IDL_NODE_TYPE (interface) == IDLN_INTERFACE, NULL);
-
-	if (!IDL_INTERFACE (interface).properties)
-		return NULL;
-
-	return g_hash_table_lookup (IDL_INTERFACE (interface).properties, key);
-}
-
 IDL_tree IDL_module_new (IDL_tree ident, IDL_tree definition_list)
 {
 	IDL_tree p = IDL_node_new (IDLN_MODULE);
@@ -1623,8 +1611,6 @@ static void IDL_tree_free_real (IDL_tree p)
 		break;
 
 	case IDLN_INTERFACE:
-		if (IDL_INTERFACE (p).properties)
-			__IDL_free_properties (IDL_INTERFACE (p).properties);
 		break;
 
 	case IDLN_CODEFRAG:
@@ -1638,6 +1624,9 @@ static void IDL_tree_free_real (IDL_tree p)
 		break;
 	}
 
+	if (IDL_NODE_PROPERTIES (p))
+		__IDL_free_properties (IDL_NODE_PROPERTIES (p));
+	
 	free (p);
 }
 
@@ -1912,6 +1901,49 @@ IDL_tree IDL_list_nth (IDL_tree list, int n)
 	     curitem = IDL_LIST (curitem).next, i++) ;
 
 	return curitem;
+}
+
+const char *IDL_property_get (IDL_tree tree, const char *key)
+{
+	g_return_val_if_fail (tree != NULL, NULL);
+	g_return_val_if_fail (key != NULL, NULL);
+
+	if (!IDL_NODE_PROPERTIES (tree))
+		return NULL;
+
+	return g_hash_table_lookup (IDL_NODE_PROPERTIES (tree), key);
+}
+
+void IDL_property_set (IDL_tree tree, const char *key, const char *value)
+{
+	g_return_if_fail (tree != NULL);
+	g_return_if_fail (key != NULL);
+
+	if (!IDL_NODE_PROPERTIES (tree))
+		IDL_NODE_PROPERTIES (tree) = g_hash_table_new (
+			IDL_strcase_hash, IDL_strcase_equal);
+	else if (IDL_property_get (tree, key))
+		IDL_property_remove (tree, key);
+
+	g_hash_table_insert (IDL_NODE_PROPERTIES (tree), g_strdup (key), g_strdup (value));
+}
+
+gboolean IDL_property_remove (IDL_tree tree, const char *key)
+{
+	gboolean removed = FALSE;
+	
+	g_return_val_if_fail (tree != NULL, FALSE);
+	g_return_val_if_fail (key != NULL, FALSE);
+
+	if (!IDL_NODE_PROPERTIES (tree))
+		return FALSE;
+
+	if (g_hash_table_lookup (IDL_NODE_PROPERTIES (tree), key)) {
+		g_hash_table_remove (IDL_NODE_PROPERTIES (tree), key);
+		removed = TRUE;
+	}
+	
+	return removed;
 }
 
 struct remove_list_node_data {

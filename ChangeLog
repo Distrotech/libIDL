@@ -1,3 +1,12 @@
+1998-12-05  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* IDL.h, parser.y, lexer.l, util.c, tstidl.c: Turn interface
+	properties into extended node properties for XPIDL (for any node).
+	IDL_interface_get_property -=> IDL_property_get. Add
+	IDL_property_set, IDL_property_remove.  Add a potential property
+	list between the parameter attribute and the type.  Allow
+	underscores in property keys.
+
 1998-12-04  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* IDL.h (IDL_NODE_IS_TYPE): Add macro.

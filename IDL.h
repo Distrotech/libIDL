@@ -382,16 +382,11 @@ struct _IDL_INTERFACE {
 	IDL_tree ident;
 	IDL_tree inheritance_spec;
 	IDL_tree body;
-	/* properties is an XPIDL extension.  It is a hash table of
-	 * case-insensitive string keys to string values. */
-	GHashTable *properties;
 };
 #define IDL_INTERFACE(a)		IDL_CHECK_CAST(a, IDLN_INTERFACE, idl_interface)
 extern IDL_tree		IDL_interface_new		(IDL_tree ident,
 							 IDL_tree inheritance_spec,
 							 IDL_tree body);
-extern const char *	IDL_interface_get_property	(IDL_tree interface,
-							 const char *key);
 
 struct _IDL_FORWARD_DCL {
 	IDL_tree ident;
@@ -516,6 +511,9 @@ struct _IDL_tree_node {
 	IDL_tree_type _type;
 	IDL_tree up;			/* Do not recurse */
 	IDL_declspec_t declspec;
+	/* properties is an XPIDL extension.  It is a hash table of
+	 * case-insensitive string keys to string values. */
+	GHashTable *properties;
 	int refs;
 	char *_file;			/* Internal use */
 	int _line;			/* Internal use */
@@ -561,6 +559,7 @@ struct _IDL_tree_node {
 #define IDL_NODE_TYPE(a)		((a)->_type)
 #define IDL_NODE_TYPE_NAME(a)		(IDL_tree_type_names[IDL_NODE_TYPE(a)])
 #define IDL_NODE_UP(a)			((a)->up)
+#define IDL_NODE_PROPERTIES(a)		((a)->properties)
 #define IDL_NODE_DECLSPEC(a)		((a)->declspec)
 #define IDL_NODE_REFS(a)		((a)->refs)
 #define IDL_NODE_IS_LITERAL(a)				\
@@ -740,6 +739,13 @@ extern char *		IDL_ns_ident_make_repo_id	(IDL_ns ns,
 							 const char *p_prefix,
 							 int *major,
 							 int *minor);
+extern const char *	IDL_property_get		(IDL_tree tree,
+							 const char *key);
+extern void		IDL_property_set		(IDL_tree tree,
+							 const char *key,
+							 const char *value);
+extern gboolean		IDL_property_remove		(IDL_tree tree,
+							 const char *key);
 
 #ifdef __cplusplus
 }

@@ -80,7 +80,7 @@ declspec		__declspec{whitespace}\({whitespace}[A-Za-z]*{whitespace}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
-prop_key		{happy_ident}
+prop_key		[A-Za-z][A-Za-z0-9_]*
 prop_value		\([^\)]+\)
 native_type		[^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
