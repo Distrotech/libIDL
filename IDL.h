@@ -235,7 +235,9 @@ struct _IDL_CONST_DCL {
 	IDL_tree const_exp;
 };
 #define IDL_CONST_DCL(a)		((a)->u.idl_const_dcl)
-IDL_tree				IDL_const_dcl_new(IDL_tree const_type, IDL_tree ident, IDL_tree const_exp);
+IDL_tree				IDL_const_dcl_new(IDL_tree const_type,
+							  IDL_tree ident,
+							  IDL_tree const_exp);
 
 struct _IDL_EXCEPT_DCL {
 	IDL_tree ident;
@@ -297,7 +299,9 @@ struct _IDL_INTERFACE {
 	IDL_tree body;
 };
 #define IDL_INTERFACE(a)		((a)->u.idl_interface)
-IDL_tree				IDL_interface_new(IDL_tree ident, IDL_tree inheritence_spec, IDL_tree body);
+IDL_tree				IDL_interface_new(IDL_tree ident,
+							  IDL_tree inheritence_spec,
+							  IDL_tree body);
 
 struct _IDL_FORWARD_DCL {
 	IDL_tree ident;
@@ -310,7 +314,8 @@ struct _IDL_MODULE {
 	IDL_tree definition_list;
 };
 #define IDL_MODULE(a)			((a)->u.idl_module)
-IDL_tree				IDL_module_new(IDL_tree ident, IDL_tree definition_list);
+IDL_tree				IDL_module_new(IDL_tree ident,
+						       IDL_tree definition_list);
 
 struct _IDL_BINOP {
 	enum IDL_binop {
@@ -328,7 +333,9 @@ struct _IDL_BINOP {
 	IDL_tree left, right;
 };
 #define IDL_BINOP(a)			((a)->u.idl_binop)
-IDL_tree				IDL_binop_new(enum IDL_binop op, IDL_tree left, IDL_tree right);
+IDL_tree				IDL_binop_new(enum IDL_binop op,
+						      IDL_tree left,
+						      IDL_tree right);
 
 struct _IDL_UNARYOP {
 	enum IDL_unaryop {
@@ -339,7 +346,8 @@ struct _IDL_UNARYOP {
 	IDL_tree operand;
 };
 #define IDL_UNARYOP(a)			((a)->u.idl_unaryop)
-IDL_tree				IDL_unaryop_new(enum IDL_unaryop op, IDL_tree operand);
+IDL_tree				IDL_unaryop_new(enum IDL_unaryop op,
+							IDL_tree operand);
 
 typedef enum {
 	IDLN_NONE,
@@ -435,8 +443,11 @@ struct _IDL_ns {
 };
 #define IDL_NS(a)			(*a)
 
-typedef int				(*IDL_callback)(int level, int num, int line,
-							const char *filename, const char *s);
+typedef int				(*IDL_callback)(int level,
+							int num,
+							int line,
+							const char *filename,
+							const char *s);
 
 extern int				IDL_parse_filename(const char *filename,
 							   const char *cpp_args,
@@ -454,20 +465,27 @@ extern void				IDL_ns_free(IDL_ns ns);
 
 extern int				IDL_ns_prefix(IDL_ns ns, const char *s);
 
-extern IDL_tree				IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident);
+extern IDL_tree				IDL_ns_resolve_ident(IDL_ns ns,
+							     IDL_tree ident);
 
-extern IDL_tree				IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope,
+extern IDL_tree				IDL_ns_lookup_this_scope(IDL_ns ns,
+								 IDL_tree scope,
 								 IDL_tree ident);
 
-extern IDL_tree				IDL_ns_lookup_cur_scope(IDL_ns ns, IDL_tree ident);
+extern IDL_tree				IDL_ns_lookup_cur_scope(IDL_ns ns,
+								IDL_tree ident);
 
-extern IDL_tree				IDL_ns_place_new(IDL_ns ns, IDL_tree ident);
+extern IDL_tree				IDL_ns_place_new(IDL_ns ns,
+							 IDL_tree ident);
 
-extern IDL_tree				IDL_ns_push_scope_new(IDL_ns ns, IDL_tree ident);
+extern IDL_tree				IDL_ns_push_scope_new(IDL_ns ns,
+							      IDL_tree ident);
 
-extern IDL_tree				IDL_ns_push_scope_prev(IDL_ns ns, IDL_tree ident);
+extern IDL_tree				IDL_ns_push_scope_prev(IDL_ns ns,
+							       IDL_tree ident);
 
-extern IDL_tree				IDL_ns_push_scope_new_or_prev(IDL_ns ns, IDL_tree ident);
+extern IDL_tree				IDL_ns_push_scope_new_or_prev(IDL_ns ns,
+								      IDL_tree ident);
 
 extern IDL_tree				IDL_ns_pop_scope(IDL_ns ns);
 
