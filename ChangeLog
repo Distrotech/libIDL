@@ -1,3 +1,12 @@
+2004-10-06  James Henstridge  <james@jamesh.id.au>
+
+	Fix for bug #154641:
+
+	* configure.in: update and simplify a bit.
+
+	* autogen.sh: use modern automake rather than 1.4 (this has been
+	tested with "make distcheck").
+
 2004-08-17  Mark McLoughlin  <mark@skynet.ie>
 
 	* configure.in: post-release bump to 0.8.5.

@@ -3,6 +3,7 @@
 
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
+ORIGDIR=`pwd`
 
 DIE=0
 
@@ -22,13 +23,22 @@ DIE=0
 	DIE=1
 }
 
-(automake-1.4 --version) < /dev/null > /dev/null 2>&1 || {
+if automake-1.9 --version < /dev/null > /dev/null 2>&1; then
+        AUTOMAKE=automake-1.9
+	ACLOCAL=aclocal-1.9
+elif automake-1.8 --version < /dev/null > /dev/null 2>&1; then
+        AUTOMAKE=automake-1.8
+	ACLOCAL=aclocal-1.8
+elif automake-1.7 --version < /dev/null > /dev/null 2>&1; then
+        AUTOMAKE=automake-1.7
+	ACLOCAL=aclocal-1.7
+else
 	echo
 	echo "You must have automake installed to compile libIDL."
-	echo "Get ftp://ftp.cygnus.com/pub/home/tromey/automake-1.2d.tar.gz"
+	echo "Get http://ftp.gnu.org/gnu/automake/automake-1.9.2.tar.gz"
 	echo "(or a newer version if it is available)"
 	DIE=1
-}
+fi
 
 if test "$DIE" -eq 1; then
 	exit 1
@@ -47,14 +57,15 @@ fi
 for i in $srcdir
 do 
   echo processing $i
-  (cd $i; \
-    libtoolize --copy --force; \
-    aclocal-1.4 $ACLOCAL_FLAGS; \
-    automake-1.4 --add-missing --copy; \
-    autoconf)
+  cd $i
+  libtoolize --copy --force || exit $?
+  $ACLOCAL $ACLOCAL_FLAGS || exit $?
+  autoconf || exit $?
+  $AUTOMAKE --add-missing --copy || exit $?
 done
+cd $ORIGDIR
 
 echo "Running ./configure --enable-maintainer-mode" "$@"
-$srcdir/configure --enable-maintainer-mode "$@"
+$srcdir/configure --enable-maintainer-mode "$@" || exit $?
 
 echo "Now type 'make' to compile libIDL."
