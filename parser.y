@@ -72,6 +72,10 @@
 			IDLF_DECLSPEC_EXIST |		\
 			IDLF_DECLSPEC_INHIBIT;		\
 	}						\
+	if ( __IDL_pidl > 0 ) {				\
+		IDL_NODE_DECLSPEC (tree) |=		\
+			IDLF_DECLSPEC_PIDL;		\
+	}						\
 } while (0)
 
 #define assign_props(tree,props)	do {		\
@@ -553,7 +557,7 @@ type_dcl_def:		z_props TOK_TYPEDEF
 |			z_props TOK_NATIVE simple_declarator
 			'('				{
 	/* Enable native type scanning */
-	if (__IDL_flags & IDLF_XPIDL)
+	if (__IDL_pidl > 0)
 		__IDL_flagsi |= IDLFP_NATIVE;
 	else {
 		yyerror ("Native syntax not enabled");
@@ -945,14 +949,11 @@ ns_scoped_name:		ns_prev_ident
 
 #ifdef YYDEBUG
 	if (yydebug)
-		printf ("looking in %s\n", IDL_IDENT (IDL_GENTREE ($1).data).str);
+		fprintf (stderr, "ns: looking in `%s' for `%s'\n", 
+		  IDL_IDENT (IDL_GENTREE ($1).data).str, IDL_IDENT($3).str);
 #endif
 
 	if ((p = IDL_ns_lookup_this_scope (__IDL_root_ns, $1, $3, NULL)) == NULL) {
-#ifdef YYDEBUG
-		if (yydebug)
-			printf ("'%s'\n", IDL_IDENT ($3).str);
-#endif
 		yyerrorv ("`%s' undeclared identifier", IDL_IDENT ($3).str);
 		IDL_tree_free ($3);
 		YYABORT;
@@ -1170,11 +1171,12 @@ new_ident:		ns_new_ident			{
 	;
 
 new_scope:		ns_new_ident			{
+	IDL_tree	old_top = IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data;
 	IDL_ns_push_scope (__IDL_root_ns, $1);
 #ifdef YYDEBUG
 	if (yydebug)
-		printf ("entering new/prev scope of %s\n", 
-		       IDL_IDENT (IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data).str);
+		fprintf (stderr, "ns: entering new scope `%s' of `%s'\n", 
+		       IDL_IDENT (IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data).str, IDL_IDENT(old_top).str);
 #endif
 	assert (IDL_NODE_TYPE (IDL_GENTREE ($1).data) == IDLN_IDENT);
 	$$ = IDL_GENTREE ($1).data;
@@ -1182,6 +1184,7 @@ new_scope:		ns_new_ident			{
 	;
 
 new_or_prev_scope:	cur_ns_new_or_prev_ident	{
+	IDL_tree	old_top = IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data;
 	IDL_ns_push_scope (__IDL_root_ns, $1);
 	assert (IDL_NS (__IDL_root_ns).current != NULL);
 	assert (IDL_NODE_TYPE (IDL_NS (__IDL_root_ns).current) == IDLN_GENTREE);
@@ -1189,8 +1192,8 @@ new_or_prev_scope:	cur_ns_new_or_prev_ident	{
 	assert (IDL_NODE_TYPE (IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data) == IDLN_IDENT);
 #ifdef YYDEBUG
 	if (yydebug)
-		printf ("entering new/prev scope of %s\n", 
-		       IDL_IDENT (IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data).str);
+		fprintf (stderr,"ns: entering new/prev scope `%s' of `%s'\n",
+		       IDL_IDENT (IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data).str, IDL_IDENT(old_top).str);
 #endif
 	assert (IDL_NODE_TYPE (IDL_GENTREE ($1).data) == IDLN_IDENT);
 	$$ = IDL_GENTREE ($1).data;
@@ -1198,12 +1201,14 @@ new_or_prev_scope:	cur_ns_new_or_prev_ident	{
 	;
 
 pop_scope:		/* empty */			{
+	IDL_tree cur_top = IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data;
+	IDL_ns_pop_scope (__IDL_root_ns);
 #ifdef YYDEBUG
 	if (yydebug)
-		printf ("scope to parent of %s\n", 
+		fprintf (stderr, "ns: pop scope from `%s' to `%s'\n", 
+		       IDL_IDENT(cur_top).str,
 		       IDL_IDENT (IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data).str);
 #endif
-	IDL_ns_pop_scope (__IDL_root_ns);
 }
 	;
 
@@ -1268,6 +1273,12 @@ cur_ns_new_or_prev_ident:
 	IDL_tree p;
 
 	if ((p = IDL_ns_lookup_cur_scope (__IDL_root_ns, $1, NULL)) == NULL) {
+#ifdef YYDEBUG
+		if (yydebug)
+			fprintf (stderr, "ns: place_new `%s' in `%s'\n", 
+		  	  IDL_IDENT($1).str,
+			  IDL_IDENT(IDL_GENTREE (IDL_NS (__IDL_root_ns).current).data).str );
+#endif
 		p = IDL_ns_place_new (__IDL_root_ns, $1);
 		assert (p != NULL);
 		assert (IDL_IDENT ($1)._ns_ref == p);
@@ -1521,9 +1532,18 @@ static const char *get_name_token (const char *s, char **tok)
 
 static IDL_tree IDL_ns_pragma_parse_name (IDL_ns ns, const char *s)
 {
-	IDL_tree p = IDL_NS (ns).current;
+	IDL_tree p = IDL_NS (ns).current, q;
 	int start = 1;
 	char *tok;
+
+	/* This is a hack to allow directives for an ident (such
+	 * as and interface) to be located within the scope of
+	 * that identifier. */
+	if ( p && (q=IDL_GENTREE(p).data)!=0
+	  && IDL_NODE_TYPE(q)==IDLN_IDENT
+	  && strcmp(s,IDL_IDENT(q).str)==0 ) {
+		return p;
+	}
 
 	while (p && *s && (s = get_name_token (s, &tok))) {
 		if (tok == NULL)
@@ -1583,7 +1603,7 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 	int n, major, minor;
 	IDL_tree p, ident;
 
-	n = sscanf (s, "%1023s %u %u", name, &major, &minor);
+	n = sscanf (s, "%1023s %u.%u", name, &major, &minor);
 	if (n < 3 && __IDL_is_parsing) {
 		yywarning (IDL_WARNING1, "Malformed pragma version");
 		return;
@@ -1652,6 +1672,22 @@ static void IDL_inhibit (IDL_ns ns, const char *s)
 		IDL_inhibit_pop ();
 }
 
+static void IDL_typecodes_as_tok (IDL_ns ns, const char *s)
+{
+	if (g_strcasecmp ("push", s) == 0)
+		++(__IDL_typecodes_as_tok);
+	else if (g_strcasecmp ("pop", s) == 0)
+		--(__IDL_typecodes_as_tok);
+}
+
+static void IDL_pidl (IDL_ns ns, const char *s)
+{
+	if (g_strcasecmp ("push", s) == 0)
+		++(__IDL_pidl);
+	else if (g_strcasecmp ("pop", s) == 0)
+		--(__IDL_pidl);
+}
+
 void __IDL_do_pragma (const char *s)
 {
 	int n;
@@ -1673,6 +1709,10 @@ void __IDL_do_pragma (const char *s)
 		IDL_ns_version (__IDL_root_ns, s);
 	else if (strcmp (directive, "inhibit") == 0)
 		IDL_inhibit (__IDL_root_ns, s);
+	else if (strcmp (directive, "typecodes_as_tok") == 0)
+		IDL_typecodes_as_tok (__IDL_root_ns, s);
+	else if (strcmp (directive, "pidl") == 0)
+		IDL_pidl (__IDL_root_ns, s);
 }
 
 static IDL_declspec_t IDL_parse_declspec (const char *strspec)
@@ -1684,6 +1724,8 @@ static IDL_declspec_t IDL_parse_declspec (const char *strspec)
 
 	if (strcmp (strspec, "inhibit") == 0)
 		flags |= IDLF_DECLSPEC_INHIBIT;
+	if (strcmp (strspec, "pidl") == 0)
+		flags |= IDLF_DECLSPEC_PIDL;
 	else if (__IDL_is_parsing)
 		yywarningv (IDL_WARNING1, "Ignoring unknown declspec `%s'", strspec);
 

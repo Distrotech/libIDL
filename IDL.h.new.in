@@ -75,6 +75,7 @@ extern "C" {
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
 #define IDLF_DECLSPEC_INHIBIT		(1UL << 1)
+#define IDLF_DECLSPEC_PIDL		(1UL << 2)
 
 /* output flags */
 #define IDLF_OUTPUT_NO_NEWLINES		(1UL << 0)
@@ -793,6 +794,12 @@ extern void		IDL_tree_remove_inhibits	(IDL_tree *tree,
 							 IDL_ns ns);
 
 extern void		IDL_tree_walk			(IDL_tree p,
+							 IDL_tree_func_data *current,
+							 IDL_tree_func pre_tree_func,
+							 IDL_tree_func post_tree_func,
+							 gpointer user_data);
+
+extern void		IDL_tree_walk2			(IDL_tree p,
 							 IDL_tree_func_data *current,
 							 glong flags,
 							 IDL_tree_func pre_tree_func,

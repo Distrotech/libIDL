@@ -111,6 +111,8 @@ extern int				__IDL_prev_token_line;
 extern int				__IDL_cur_token_line;
 extern GHashTable *			__IDL_structunion_ht;
 extern int				__IDL_inhibits;
+extern int				__IDL_typecodes_as_tok;
+extern int				__IDL_pidl;
 extern IDL_tree				__IDL_root;
 extern IDL_ns				__IDL_root_ns;
 extern int				__IDL_is_okay;

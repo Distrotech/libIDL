@@ -220,7 +220,6 @@ dqstring		\"[^\"\n]*[\"\n]
 	tokreturn (TOK_FLOATP);
 }
 FALSE			tokreturn (TOK_FALSE);
-Object			tokreturn (TOK_OBJECT);
 TRUE			tokreturn (TOK_TRUE);
 any			tokreturn (TOK_ANY);
 attribute		tokreturn (TOK_ATTRIBUTE);
@@ -271,8 +270,14 @@ wstring			tokreturn (TOK_WSTRING);
 	tokreturn (TOK_DECLSPEC);
 }
 {happy_ident}						{
-	if (__IDL_flags & IDLF_TYPECODES && strcmp (yytext, "TypeCode") == 0)
+#if 0
+	if ((__IDL_flags & IDLF_TYPECODES) && strcmp (yytext, "TypeCode") == 0)
 		tokreturn (TOK_TYPECODE);
+#endif
+	if (__IDL_typecodes_as_tok>0 && strcmp (yytext, "TypeCode") == 0)
+		tokreturn (TOK_TYPECODE);
+	if ( (__IDL_pidl <= 0) && strcmp(yytext, "Object")==0 )
+		tokreturn (TOK_OBJECT);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
