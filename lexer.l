@@ -35,7 +35,7 @@
 	if (__IDL_inputcb == NULL) {						\
 		if ((result = fread (buf, 1, the_max_size, yyin)) == YY_NULL &&	\
 		    ferror (yyin))						\
-			YY_FATAL_ERROR ("input in flex scanner failed");	\
+			YY_FATAL_ERROR ("input in scanner failed");		\
 	} else {								\
 		union IDL_input_data data;					\
 										\
