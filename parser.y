@@ -992,8 +992,10 @@ void __IDL_do_pragma(const char *s)
 	s += n;
 	while (isspace(*s)) ++s;
 
+#if 0
 	if (strcmp(directive, "prefix") == 0)
 		IDL_ns_prefix(idl_ns, s);
+#endif
 }
 
 #define C_ESC(a,b)				case a: *p++ = b; ++s; break
