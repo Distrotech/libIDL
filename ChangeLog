@@ -1,3 +1,9 @@
+2001-06-23  Martin Baulig  <baulig@suse.de>
+
+	* Makefile.am: Call the library libIDL-2.la, not libIDL.la.
+
+	* libIDL-2.0.pc.in: Copied from ORBit-martin-forked/libIDL.
+
 2000-10-02 Elliot Lee <sopwith@redhat.com>
 	* parser.y (interface_catch_ident): Allow 'Object' and 'TypeCode' interface
 	names in pidl mode.

@@ -35,23 +35,23 @@ EXTRA_DIST		= BUGS parser.y lexer.l \
 
 info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
-lib_LTLIBRARIES		= libIDL.la
+lib_LTLIBRARIES		= libIDL-2.la
 noinst_PROGRAMS		= tstidl
 
 bin_SCRIPTS		= libIDL-config
 
 BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h stamp-parser
 
-libIDL_la_SOURCES	= parser.c parser.h lexer.c \
+libIDL_2_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h
-libIDL_la_LDFLAGS	= -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)	\
+libIDL_2_la_LDFLAGS	= -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)	\
 			  -release $(LT_RELEASE)
 
 m4datadir		= $(datadir)/aclocal
 m4data_DATA		= libIDL.m4
 
 tstidl_SOURCES		= tstidl.c
-tstidl_LDADD		= libIDL.la @GLIB_LIBS@
+tstidl_LDADD		= libIDL-2.la @GLIB_LIBS@
 
 confexecdir		= $(libdir)
 confexec_DATA		= libIDLConf.sh
@@ -69,3 +69,7 @@ libIDLConf.sh: libIDLConf.sh.in Makefile
 		-e 's?\@VERSION\@?$(VERSION)?g' \
 		< $(srcdir)/libIDLConf.sh.in > libIDLConf.tmp \
 		&& mv libIDLConf.tmp libIDLConf.sh
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA= libIDL-2.0.pc
+

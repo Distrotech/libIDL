@@ -28,3 +28,4 @@ libIDL-config
 libIDL.m4
 Makefile.msc
 libIDL.spec
+libIDL-2.0.pc
