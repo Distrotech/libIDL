@@ -4,7 +4,7 @@
 
 	* configure.in improved
 	
-	* Wee, should now also works with standard lex with new renaming
+	* Wee, should now also work with standard lex with new renaming
 	  rule
 	
 	* Now works with standard yacc, but flex will be a requirement
