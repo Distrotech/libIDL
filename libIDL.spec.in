@@ -7,7 +7,6 @@ Version:   %{version}
 Release:   %{release}
 Source:    libIDL-%PACKAGE_VERSION.tar.gz
 Vendor:    Andrew T. Veliath <andrewtv@usa.net>
-URL:       http://www.rpi.edu/~veliaa/libIDL
 Copyright: LGPL
 Group:     Libraries
 Prereq:    /sbin/install-info
