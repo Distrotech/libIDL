@@ -1,7 +1,14 @@
 /*
- * cc `libIDL-config --cflags --libs` tstidl.c -o tstidl
+ *
+ * Some crude tests for libIDL.
+ *
+ * Usage: tstidl <filename> [flags]
+ *
+ * if given, flags is read as (output_flags << 24) | parse_flags
+ *
+ * gcc `libIDL-config --cflags --libs` tstidl.c -o tstidl
+ *
  */
-
 #ifdef G_LOG_DOMAIN
 #  undef G_LOG_DOMAIN
 #endif
@@ -22,9 +29,12 @@ typedef struct {
 } WalkData;
 
 static gboolean
-print_repo_id (IDL_tree p, IDL_tree parent, WalkData *data)
+print_repo_id (IDLTreeFuncData *tfd, WalkData *data)
 {
 	char *repo_id = NULL;
+	IDL_tree p;
+
+	p = tfd->tree;
 
 	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE)
 		repo_id = IDL_IDENT_REPO_ID (IDL_INTERFACE (p).ident);
@@ -40,8 +50,12 @@ print_repo_id (IDL_tree p, IDL_tree parent, WalkData *data)
 }
 
 static gboolean
-print_xpidl_exts (IDL_tree p, IDL_tree parent, WalkData *data)
+print_xpidl_exts (IDLTreeFuncData *tfd, WalkData *data)
 {
+	IDL_tree p;
+
+	p = tfd->tree;
+
 	if (IDL_NODE_TYPE (p) == IDLN_IDENT &&
 	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_INTERFACE) {
 		const char *val;
@@ -68,9 +82,12 @@ print_xpidl_exts (IDL_tree p, IDL_tree parent, WalkData *data)
 }
 
 static gboolean
-print_ident_comments (IDL_tree p, IDL_tree parent, WalkData *data)
+print_ident_comments (IDLTreeFuncData *tfd, WalkData *data)
 {
 	GSList *list;
+	IDL_tree p;
+
+	p = tfd->tree;
 
 	if (IDL_NODE_TYPE (p) == IDLN_IDENT) {
 		printf ("Identifier: %s\n", IDL_IDENT (p).str);
@@ -85,8 +102,12 @@ print_ident_comments (IDL_tree p, IDL_tree parent, WalkData *data)
 }
 
 static gboolean
-print_const_dcls (IDL_tree p, IDL_tree parent, WalkData *data)
+print_const_dcls (IDLTreeFuncData *tfd, WalkData *data)
 {
+	IDL_tree p;
+
+	p = tfd->tree;
+
 	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL &&
 	    IDL_NODE_TYPE (IDL_CONST_DCL (p).const_exp) == IDLN_INTEGER) {
 		printf ("%s is %" IDL_LL "d\n",
@@ -123,7 +144,7 @@ my_input_cb (IDL_input_reason reason, union IDL_input_data *cb_data, gpointer us
 	InputData *my_data = user_data;
 	int rv;
 	static int linecount;
-	
+
 	switch (reason) {
 	case IDL_INPUT_REASON_INIT:
 		g_message ("my_input_cb: filename: %s", cb_data->init.filename);
@@ -154,7 +175,7 @@ my_input_cb (IDL_input_reason reason, union IDL_input_data *cb_data, gpointer us
 		fclose (my_data->in);
 		break;
 	}
-	
+
 	return 0;
 }
 #endif
@@ -214,7 +235,7 @@ main (int argc, char *argv[])
 
 	data.tree = tree;
 	data.ns = ns;
-	
+
 	g_print ("--------------------------------------\n");
 	g_message ("Repository IDs");
 	g_print ("--------------------------------------\n");
@@ -237,6 +258,6 @@ main (int argc, char *argv[])
 	IDL_tree_to_IDL (tree, ns, stdout, parse_flags >> 24);
 	IDL_ns_free (ns);
 	IDL_tree_free (tree);
-	
+
 	return 0;
 }

@@ -72,6 +72,7 @@ extern void		IDL_tree_remove_inhibits	(IDL_tree *p, IDL_ns ns);
 extern void		IDL_tree_remove_empty_modules	(IDL_tree *p, IDL_ns ns);
 
 extern void		__IDL_free_properties		(GHashTable *table);
+extern void		__IDL_assign_up_node		(IDL_tree up, IDL_tree node);
 
 #ifndef HAVE_CPP_PIPE_STDIN
 extern char *				__IDL_tmp_filename;

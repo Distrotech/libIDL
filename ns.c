@@ -137,7 +137,7 @@ IDL_tree IDL_ns_resolve_ident (IDL_ns ns, IDL_tree ident)
 IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gboolean *conflict)
 {
 	IDL_tree p, q;
-	
+
 	IDL_NS_ASSERTS;
 
 	if (conflict)
@@ -145,7 +145,7 @@ IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gb
 
 	if (scope == NULL)
 		return NULL;
-	
+
 	assert (IDL_NODE_TYPE (scope) == IDLN_GENTREE);
 
 	/* Search this namespace */
@@ -336,6 +336,8 @@ char *IDL_ns_ident_to_qstring (IDL_tree ns_ident, const char *join, int levels)
 	return s;
 }
 
+/* #define DEBUGNS */
+
 int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 {
 	IDL_tree p, scope_here, scope_ident;
@@ -348,23 +350,23 @@ int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 	if (parent == NULL)
 		return 1;
 
-	debugf ("Start type: %s", IDL_NODE_TYPE_NAME (parent));
+	printf ("Start type: %s\n", IDL_NODE_TYPE_NAME (parent));
 #endif
 	while (parent && !IDL_NODE_IS_SCOPED (parent)) {
 		parent = IDL_NODE_UP (parent);
 #ifdef DEBUGNS
 		if (parent)
-			debugf ("Type up: %s", IDL_NODE_TYPE_NAME (parent));
+			printf ("Type up: %s\n", IDL_NODE_TYPE_NAME (parent));
 #endif
 	}
 	if (parent == NULL) {
 #ifdef DEBUGNS
-		debugf ("No end type");
+		printf ("No end type\n");
 #endif
 		return 1;
 	}
 #ifdef DEBUGNS
-	debugf ("End type: %s", IDL_NODE_TYPE_NAME (parent));
+	printf ("End type: %s\n", IDL_NODE_TYPE_NAME (parent));
 #endif
 
 	if ((scope_here = IDL_tree_get_scope (parent)) == NULL ||
@@ -381,14 +383,13 @@ int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 	for (levels = 1; scope_ident;
 	     ++levels, scope_ident = IDL_NODE_UP (scope_ident)) {
 #ifdef DEBUGNS
-		IDL_tree scope;
 		char *s, *s3;
 
 		if (scope_ident == IDL_NS (ns).global)
 			break;
 		s = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_ident).data, "::", 0);
 		s3 = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_here).data, "::", 0);
-		debugf ("Searching for ident %s from scope %s", s, s3);
+		printf ("Searching for ident %s from scope %s\n", s, s3);
 		g_free (s); g_free (s3);
 #endif
 		p = IDL_ns_resolve_this_scope_ident (
@@ -397,16 +398,15 @@ int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 			return levels;
 #ifdef DEBUGNS
 		if (p) {
-			char *s2 = IDL_ns_ident_to_qstring (IDL_GENTREE (p).data, "::",
-							    0);
-			debugf ("Rejected scope %s", s2);
+			char *s2 = IDL_ns_ident_to_qstring (IDL_GENTREE (p).data, "::", 0);
+			printf ("Rejected scope %s\n", s2);
 			g_free (s2);
 		}
 #endif
 	}
 
 #ifdef DEBUGNS
-	debugf ("Fall through");
+	printf ("Fall through\n");
 #endif
 
 	return 1;

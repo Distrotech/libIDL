@@ -566,7 +566,7 @@ struct _IDL_tree_node {
 	} u;
 };
 #define IDL_NODE_TYPE(a)		((a)->_type)
-#define IDL_NODE_TYPE_NAME(a)		(IDL_tree_type_names[IDL_NODE_TYPE(a)])
+#define IDL_NODE_TYPE_NAME(a)		((a)?IDL_tree_type_names[IDL_NODE_TYPE(a)]:"NULL")
 #define IDL_NODE_UP(a)			((a)->up)
 #define IDL_NODE_PROPERTIES(a)		((a)->properties)
 #define IDL_NODE_DECLSPEC(a)		((a)->declspec)
@@ -646,10 +646,28 @@ typedef int		(*IDL_msg_callback)		(int level,
 							 const char *filename,
 							 const char *message);
 
-typedef gboolean	(*IDL_tree_func)		(IDL_tree p,
-							 IDL_tree scope,
+typedef struct _IDLTreeFuncState	IDLTreeFuncState;
+typedef struct _IDLTreeFuncData		IDLTreeFuncData;
+
+/* Traversal state data.  Recursive walks chain states. */
+struct _IDLTreeFuncState {
+	IDLTreeFuncState *up;
+	IDL_tree start;
+	IDLTreeFuncData *bottom;
+};
+
+/* This holds a list of the up hierarchy traversed, beginning from traversal.  This is
+ * useful since nodes referenced after initial definition will have a different traversal
+ * path than the actual up path. */
+struct _IDLTreeFuncData {
+	IDLTreeFuncState *state;
+	IDLTreeFuncData *up;
+	IDL_tree tree;
+};
+
+typedef gboolean	(*IDL_tree_func)		(IDLTreeFuncData *tnfd,
 							 gpointer user_data);
-	
+
 extern IDL_tree		IDL_check_type_cast		(const IDL_tree var,
 							 IDL_tree_type type,
 							 const char *file,
@@ -729,7 +747,7 @@ extern void		IDL_tree_properties_copy	(IDL_tree from_tree,
 							 IDL_tree to_tree);
 
 extern void		IDL_tree_walk			(IDL_tree p,
-							 IDL_tree scope,
+							 IDLTreeFuncData *current,
 							 IDL_tree_func pre_tree_func,
 							 IDL_tree_func post_tree_func,
 							 gpointer user_data);

@@ -561,8 +561,8 @@ struct_type:		TOK_STRUCT new_scope '{'	{
 			'}' pop_scope			{
 	g_hash_table_remove (__IDL_structunion_ht, $2);
 	$$ = $<tree>4;
+	__IDL_assign_up_node ($$, $5);
 	IDL_TYPE_STRUCT ($$).member_list = $5;
-	IDL_NODE_UP (IDL_TYPE_STRUCT ($$).member_list) = $$;
 }
 	;
 
@@ -575,8 +575,8 @@ union_type:		TOK_UNION new_scope TOK_SWITCH '('
 			'}' pop_scope			{
 	g_hash_table_remove (__IDL_structunion_ht, $2);
 	$$ = $<tree>8;
+	__IDL_assign_up_node ($$, $9);
 	IDL_TYPE_UNION ($$).switch_body = $9;
-	IDL_NODE_UP (IDL_TYPE_UNION ($$).switch_body) = $$;
 }
 	;
 
@@ -1682,7 +1682,6 @@ static IDL_tree list_chain (IDL_tree a, IDL_tree b, gboolean filter_null)
 	if (filter_null) {
 		if (!b)
 			return a;
-		
 		if (!a)
 			return list_start (b, filter_null);
 	}
