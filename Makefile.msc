@@ -19,7 +19,7 @@ LDFLAGS = /link /nodefaultlib:libc msvcrt.lib # /debug:full /debugtype:cv
 INSTALL = copy
 TOUCH = copy makefile.msc+nul
 
-LIBIDL_VER = 0.5
+LIBIDL_VER = 0.5.5
 
 CFLAGS = -I. $(GLIB_INCLUDES)
 
