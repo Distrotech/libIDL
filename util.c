@@ -328,6 +328,10 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		    cwd, cpp_args ? cpp_args : "", tmpfilename, cpperrs);
 #endif
 
+       /* Many versions of cpp do evil translating internal
+        * strings, producing bogus output, so clobber LC_ALL */
+       putenv ("LC_ALL=C");
+
 #ifdef HAVE_POPEN
 	input = popen (cmd, "r");
 #else

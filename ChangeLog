@@ -1,3 +1,7 @@
+2003-06-12  Fernando Herrera de las Heras  <fherrera@onirica.com>
+
+       * util.c (IDL_parse_filename): clobber LC_ALL
+
 2003-05-26  Mark McLoughlin  <mark@skynet.ie>
 
 	* configure.in: Version 0.8.2.
