@@ -357,7 +357,7 @@ extern IDL_tree		IDL_attr_dcl_new		(unsigned f_readonly,
 							 IDL_tree simple_declarations);
 
 struct _IDL_OP_DCL {
-	unsigned f_noscript		: 1;
+	unsigned __f_noscript		: 1;	/* Deprecated */
 	unsigned f_oneway		: 1;
 	/* XPIDL extension (varags) */
 	unsigned f_varargs		: 1;

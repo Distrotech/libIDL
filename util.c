@@ -3054,7 +3054,6 @@ static gboolean IDL_emit_IDL_op_dcl_pre (IDL_tree_func_data *tfd, IDL_output_dat
 	IDL_emit_IDL_indent (tfd, data);
 	data->inline_props = TRUE;
 	IDL_emit_IDL_properties (IDL_OP_DCL (tfd->tree).ident, data);
-	if (IDL_OP_DCL (tfd->tree).f_noscript) dataf (data, "noscript" DELIM_SPACE);
 	if (IDL_OP_DCL (tfd->tree).f_oneway) dataf (data, "oneway" DELIM_SPACE);
 	if (IDL_OP_DCL (tfd->tree).op_type_spec) {
 		save_flag (idents, TRUE);

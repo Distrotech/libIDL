@@ -152,7 +152,7 @@ dqstring		\"[^\"\n]*[\"\n]
 		codefrag_list_tail = slist;
 	}
 }
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{cpp_pragma}		{
+<*>{cpp_pragma}						{
 	int n;
 	char *p = yytext;
 	char *s;
@@ -164,7 +164,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	__IDL_do_pragma (s);
 }
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{cpp_status}		{
+<*>{cpp_status}						{
 	char *starttext;
 	char *filename;
 	char *filename2;
@@ -187,7 +187,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	g_free (filename2);
 }
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{whitespace}		;
+<*>{whitespace}						;
 {b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
@@ -234,7 +234,6 @@ interface		tokreturn (TOK_INTERFACE);
 long			tokreturn (TOK_LONG);
 module			tokreturn (TOK_MODULE);
 native			tokreturn (TOK_NATIVE);
-<XP>noscript		tokreturn (TOK_NOSCRIPT);
 octet			tokreturn (TOK_OCTET);
 oneway			tokreturn (TOK_ONEWAY);
 out			tokreturn (TOK_OUT);
@@ -316,9 +315,26 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str[strlen (yytext) - 2] = 0;
 	tokreturn (TOK_DQSTRING);
 }
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{newline}		++__IDL_cur_line;
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>\/\/.*		;
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>.			tokreturn (yytext[0]);
+<*>{newline}		++__IDL_cur_line;
+<*>\/\/.*		;
+<*>\/\*							{
+	int c;
+
+	while (1) {
+		while ((c = input ()) != '*' && c != EOF)
+			if (c == '\n') ++__IDL_cur_line;
+		if (c == '*') {
+			while ((c = input ()) == '*') ;
+			if (c == '/') break;
+		}
+		if (c == '\n') ++__IDL_cur_line;
+		if (c == EOF) {
+			yywarning (IDL_WARNING1, "End of file in comment");
+			break;
+		}
+	}
+}
+<*>.			tokreturn (yytext[0]);
 
 %%
 

@@ -141,7 +141,6 @@ static void		illegal_type_error		(IDL_tree p,
 %token			TOK_LONG
 %token			TOK_MODULE
 %token			TOK_NATIVE
-%token			TOK_NOSCRIPT
 %token			TOK_OBJECT
 %token			TOK_OCTET
 %token			TOK_ONEWAY
@@ -286,7 +285,7 @@ static void		illegal_type_error		(IDL_tree p,
 %type <treedata>	parameter_dcls
 %type <declspec>	z_declspec module_declspec
 %type <hash_table>	z_props prop_hash
-%type <boolean>		is_readonly is_oneway is_noscript
+%type <boolean>		is_readonly is_oneway
 %type <boolean>		is_varargs is_cvarargs
 %type <integer>		signed_int unsigned_int
 %type <paramattr>	param_attribute
@@ -329,7 +328,7 @@ check_comma:		','
 
 illegal_ident:		scoped_name			{
 	if (IDL_NODE_UP ($1))
-	    do_token_error (IDL_NODE_UP ($1), "Illegal context for", FALSE);
+		do_token_error (IDL_NODE_UP ($1), "Illegal context for", FALSE);
 	else
 		yyerror ("Illegal context for identifier");
 	YYABORT;
@@ -741,10 +740,6 @@ op_param_type_spec:	base_type_spec
 }
 	;
 
-is_noscript:		/* empty */			{ $$ = FALSE; }
-|			TOK_NOSCRIPT			{ $$ = TRUE; }
-	;
-
 is_oneway:		/* empty */			{ $$ = FALSE; }
 |			TOK_ONEWAY			{ $$ = TRUE; }
 	;
@@ -756,15 +751,13 @@ op_dcl:		z_declspec op_dcl_def			{
 	;
 
 op_dcl_def:		z_props
-			is_noscript
 			is_oneway
 			op_type_spec
 			new_scope parameter_dcls pop_scope
 			is_raises_expr
 			is_context_expr			{
-	$$ = IDL_op_dcl_new ($3, $4, $5, $6.tree, $8, $9);
-	IDL_OP_DCL ($$).f_noscript = $2;
-	IDL_OP_DCL ($$).f_varargs = GPOINTER_TO_INT ($6.data);
+	$$ = IDL_op_dcl_new ($2, $3, $4, $5.tree, $7, $8);
+	IDL_OP_DCL ($$).f_varargs = GPOINTER_TO_INT ($5.data);
 	assign_props (IDL_OP_DCL ($$).ident, $1);
 }
 	;
@@ -956,7 +949,9 @@ ns_scoped_name:		ns_prev_ident
 		YYABORT;
 	}
 	IDL_tree_free ($3);
+#ifdef REF_IDENTS
 	++IDL_NODE_REFS (IDL_GENTREE (p).data);
+#endif
 	$$ = p;
 }
 	;
@@ -1229,7 +1224,9 @@ ns_new_ident:		ident				{
 		YYABORT;
 	}
 	assert (IDL_IDENT ($1)._ns_ref == p);
+#ifdef REF_IDENTS
 	++IDL_NODE_REFS (IDL_GENTREE (p).data);
+#endif
 	if (__IDL_new_ident_comments != NULL) {
 		assert (IDL_IDENT ($1).comments == NULL);
 		IDL_IDENT ($1).comments = __IDL_new_ident_comments;
@@ -1250,7 +1247,9 @@ ns_prev_ident:		ident				{
 	IDL_tree_free ($1);
 	assert (IDL_GENTREE (p).data != NULL);
 	assert (IDL_IDENT (IDL_GENTREE (p).data)._ns_ref == p);
+#ifdef REF_IDENTS
 	++IDL_NODE_REFS (IDL_GENTREE (p).data);
+#endif
 	$$ = p;
 }
 	;
@@ -1273,7 +1272,9 @@ cur_ns_new_or_prev_ident:
 		assert (IDL_GENTREE (p).data != NULL);
 		assert (IDL_IDENT (IDL_GENTREE (p).data)._ns_ref == p);
 	}
+#ifdef REF_IDENTS
 	++IDL_NODE_REFS (IDL_GENTREE (p).data);
+#endif
 	$$ = p;
 }
 	;
@@ -1290,7 +1291,9 @@ ns_global_ident:	ident				{
 	IDL_tree_free ($1);
 	assert (IDL_GENTREE (p).data != NULL);
 	assert (IDL_IDENT (IDL_GENTREE (p).data)._ns_ref == p);
+#ifdef REF_IDENTS
 	++IDL_NODE_REFS (IDL_GENTREE (p).data);
+#endif
 	$$ = p;
 }
 	;
