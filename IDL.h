@@ -47,7 +47,8 @@ extern "C" {
 
 /* flags for IDL_parse_filename */
 #define IDLF_EVAL_CONST			(1UL << 0)
-#define IDLF_PREFIX_FILENAME		(1UL << 1)
+#define IDLF_COMBINE_REOPENED_MODULES	(1UL << 1)
+#define IDLF_PREFIX_FILENAME		(1UL << 2)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
@@ -88,14 +89,17 @@ typedef struct _IDL_tree_node *		IDL_tree;
 
 struct _IDL_LIST {
 	IDL_tree data;
+	IDL_tree prev;
 	IDL_tree next;
-	IDL_tree _tail;			/* Internal use */
+	IDL_tree _tail;			/* Internal use, may not be valid */
 };
   
 #define IDL_LIST(a)			IDL_CHECK_CAST(a, IDLN_LIST, idl_list)
 extern IDL_tree				IDL_list_new(IDL_tree data);
 extern IDL_tree				IDL_list_concat(IDL_tree orig,
 							IDL_tree append);
+extern IDL_tree				IDL_list_remove(IDL_tree list,
+							IDL_tree p);
 extern int				IDL_list_length(IDL_tree list);
 extern IDL_tree                         IDL_list_nth(IDL_tree list,
 						     int n);

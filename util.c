@@ -166,10 +166,10 @@ const char *IDL_get_IDLver_string(void)
 	return "2.2";
 }
 
-static void IDL_tree_check_semantics(IDL_tree p)
+static void IDL_tree_check_semantics(IDL_tree *p)
 {
-	/* will update later for new declspecs 
-	   IDL_tree_resolve_forward_dcls(p); */
+	IDL_tree_resolve_forward_dcls(*p);
+	IDL_tree_remove_nostubs(p);
 }
 
 int IDL_parse_filename(const char *filename, const char *cpp_args,
@@ -307,7 +307,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		return IDL_ERROR;
 	}
 
-	IDL_tree_check_semantics(__IDL_root);
+	IDL_tree_check_semantics(&__IDL_root);
 	__IDL_msgcb = NULL;
 
 	if (__IDL_flags & IDLF_PREFIX_FILENAME)
@@ -590,6 +590,27 @@ IDL_tree IDL_list_concat(IDL_tree orig, IDL_tree append)
 	IDL_LIST(orig).next = append;
 
 	return orig;
+}
+
+IDL_tree IDL_list_remove(IDL_tree list, IDL_tree p)
+{
+	IDL_tree new_list = list;
+
+	if (IDL_LIST(p).prev == NULL) {
+		assert(list == p);
+		new_list = IDL_LIST(p).next;
+		if (new_list)
+			IDL_LIST(new_list).prev = NULL;
+	} else {
+		IDL_tree prev = IDL_LIST(p).prev;
+		IDL_tree next = IDL_LIST(p).next;
+		
+		IDL_LIST(prev).next = next;
+		if (next)
+			IDL_LIST(next).prev = prev;
+	}
+
+	return new_list;
 }
 
 IDL_tree IDL_gentree_new(GHashFunc hash_func, GCompareFunc key_compare_func, IDL_tree data)
@@ -1654,6 +1675,51 @@ void IDL_tree_resolve_forward_dcls(IDL_tree p)
 	IDL_tree_walk_pre_order(p, (IDL_tree_func)load_forward_dcls, table);
 	IDL_tree_walk_pre_order(p, (IDL_tree_func)resolve_forward_dcls, table);
 	g_hash_table_foreach(table, (GHFunc)print_unresolved_forward_dcls, NULL);
+	g_hash_table_destroy(table);
+}
+
+static int load_nostubs(IDL_tree p, GHashTable *table)
+{
+	if (IDL_NODE_TYPE(p) == IDLN_INTERFACE &&
+	    IDL_NODE_UP(p) &&
+	    IDL_NODE_TYPE(IDL_NODE_UP(p)) == IDLN_LIST &&
+	    IDL_NODE_DECLSPEC(p) & IDLF_DECLSPEC_NOSTUBS)
+		if (!g_hash_table_lookup_extended(table, IDL_NODE_UP(p), NULL, NULL)) {
+
+			IDL_tree *list_head = NULL;
+			
+			if (IDL_NODE_UP(IDL_NODE_UP(p))) {
+				g_message ("adding to definition list");
+				assert(IDL_NODE_TYPE(IDL_NODE_UP(IDL_NODE_UP(p))) == IDLN_MODULE);
+				list_head = &IDL_MODULE(IDL_NODE_UP(IDL_NODE_UP(p))).definition_list;
+			}
+
+			g_hash_table_insert(table, IDL_NODE_UP(p), list_head);
+		}
+
+	return IDL_TRUE;
+}
+
+static int remove_nostubs(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
+{
+	assert(p != NULL);
+	
+	assert(IDL_NODE_TYPE (p) == IDLN_LIST);
+
+	if (list_head)
+		*list_head = IDL_list_remove(*list_head, p);
+	else
+		*root = IDL_list_remove(*root, p);
+	
+	return TRUE;
+}
+
+void IDL_tree_remove_nostubs(struct _IDL_tree_node **p)
+{
+	GHashTable *table = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_nostubs, table);
+	g_hash_table_foreach(table, (GHFunc)remove_nostubs, p);
 	g_hash_table_destroy(table);
 }
 

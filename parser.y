@@ -290,16 +290,20 @@ module:			TOK_MODULE new_or_prev_scope '{'
 		YYABORT;
 	}
 
-	if (IDL_NODE_UP ($2) == NULL)
+	if (__IDL_flags & IDLF_COMBINE_REOPENED_MODULES) {
+		if (IDL_NODE_UP ($2) == NULL)
+			module = IDL_module_new($2, $4);
+		
+		else {
+			module = IDL_NODE_UP ($2);
+			
+			IDL_MODULE(module).definition_list =
+				IDL_list_concat(IDL_MODULE(module).definition_list, $4);
+
+			module = NULL;
+		}
+	} else {
 		module = IDL_module_new($2, $4);
-
-	else {
-		module = IDL_NODE_UP ($2);
-
-		IDL_MODULE(module).definition_list =
-			IDL_list_concat(IDL_MODULE(module).definition_list, $4);
-
-		module = NULL;
 	}
 
 	$$ = module;
@@ -350,16 +354,12 @@ interface:		interface_declspec
 	if (IDL_ns_check_for_ambiguous_inheritance($2, $4))
 		__IDL_is_okay = IDL_FALSE;
 }
-			'{' interface_body '}'
-			pop_scope			{
-				IDL_NODE_DECLSPEC($2) = $1;
-				if (IDL_NODE_DECLSPEC($2) & IDLF_DECLSPEC_NOSTUBS) {
-					IDL_tree_free($4);
-					IDL_tree_free($7);
-					$$ = NULL;
-				} else
-					$$ = IDL_interface_new($2, $4, $7);
-			}
+			'{'
+				interface_body
+			'}' pop_scope			{
+	$$ = IDL_interface_new($2, $4, $7);
+	IDL_NODE_DECLSPEC($$) = $1;
+}
 |			interface_declspec
 			interface_catch_ident pop_scope	{
 	if ($1)
@@ -1287,6 +1287,7 @@ static IDL_tree list_chain(IDL_tree a, IDL_tree b, int filter_null)
 	}
 
 	p = IDL_list_new(b);
+	IDL_LIST(p).prev = IDL_LIST(a)._tail;
 	IDL_LIST(IDL_LIST(a)._tail).next = p;
 	IDL_LIST(a)._tail = p;
 
