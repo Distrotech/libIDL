@@ -43,7 +43,7 @@ newline			\n
 cpp_pragma		^#{whitespace}pragma{whitespace}.*
 cpp_status		^#.*
 b8_int			0[0-9]*
-b10_int			[1-9][0-9]*
+b10_int			\-?[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
 float_lit		\-?[0-9]*\.[0-9]+([eE]\-?[0-9]+)?|\-?[0-9]+\.?([eE]\-?[0-9]+)?
 fixed_lit		(\-?[0-9]*\.[0-9]+|\-?[0-9]+\.?[0-9]*)[dD]

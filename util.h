@@ -42,6 +42,10 @@ extern void		yyerror(const char *s);
 extern void		yyerrorl(const char *s, int ofs);
 extern void		yywarning(const char *s);
 extern void		yywarningl(const char *s, int ofs);
+extern void		yyerrorv(const char *fmt, ...);
+extern void		yyerrorlv(const char *fmt, int ofs, ...);
+extern void		yywarningv(const char *fmt, ...);
+extern void		yywarninglv(const char *fmt, int ofs, ...);
 
 extern char *		__IDL_cur_filename;
 extern int		__IDL_cur_line;

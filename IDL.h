@@ -52,11 +52,15 @@ struct _IDL_LIST {
 };
 #define IDL_LIST(a)			((a)->u.idl_list)
 extern IDL_tree				IDL_list_new(IDL_tree data);
+extern int				IDL_list_length(IDL_tree list);
+extern IDL_tree                         IDL_list_nth(IDL_tree list,
+						     int n);
 
 struct _IDL_GENTREE {
 	IDL_tree data;
 	IDL_tree siblings, _siblings_tail;
 	IDL_tree children;
+	IDL_tree _import;		/* Internal use, do not recurse */
 };
 #define IDL_GENTREE(a)			((a)->u.idl_gentree)
 extern IDL_tree				IDL_gentree_new(IDL_tree data);
@@ -130,7 +134,7 @@ extern IDL_tree				IDL_boolean_new(unsigned value);
 struct _IDL_IDENT {
 	char *str;
 	int _refs;
-	IDL_tree _ns_ref;		/* do not recurse */
+	IDL_tree _ns_ref;		/* Internal use, do not recurse */
 };
 #define IDL_IDENT(a)			((a)->u.idl_ident)
 #define IDL_IDENT_TO_NS(a)		((a)->u.idl_ident._ns_ref)
@@ -413,7 +417,7 @@ extern const char *			IDL_tree_type_names[];
 
 struct _IDL_tree_node {
 	IDL_tree_type _type;
-	IDL_tree up;			/* do not recurse */
+	IDL_tree up;			/* Do not recurse */
 	union {
 		struct _IDL_LIST idl_list;
 		struct _IDL_GENTREE idl_gentree;
@@ -493,9 +497,6 @@ extern IDL_tree				IDL_get_parent_node(IDL_tree p,
 							    IDL_tree_type type,
 							    int *scope_levels);
 
-extern int                              IDL_list_length(IDL_tree list);
-extern IDL_tree                         IDL_list_nth(IDL_tree list, int n);
-
 extern void				IDL_tree_free(IDL_tree root);
 
 extern char *				IDL_do_escapes(const char *s);
@@ -506,6 +507,9 @@ extern void				IDL_ns_free(IDL_ns ns);
 
 extern int				IDL_ns_prefix(IDL_ns ns, const char *s);
 
+extern IDL_tree				IDL_ns_resolve_this_scope_ident(IDL_ns ns,
+									IDL_tree scope,
+									IDL_tree ident);
 extern IDL_tree				IDL_ns_resolve_ident(IDL_ns ns,
 							     IDL_tree ident);
 

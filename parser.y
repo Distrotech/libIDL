@@ -23,11 +23,12 @@
 ***************************************************************************/
 %{
 #include <assert.h>
-#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <errno.h>
 #include "rename.h"
 #include "util.h"
 #include "IDL.h"
@@ -163,7 +164,7 @@ idl_init:		/* empty */			{
 idl_finish:		/* empty */
 	;
 
-specification:		/* empty */			{ yyerror("file is empty"); YYABORT; }
+specification:		/* empty */			{ yyerror("Empty file"); YYABORT; }
 |			definition_list
 	;
 
@@ -187,9 +188,19 @@ module:			TOK_MODULE new_or_prev_scope '{'
 			'}' pop_scope			{ $$ = IDL_module_new($2, $4); }
 	;
 
-interface_dcl:		TOK_INTERFACE new_or_prev_scope z_inheritance '{'
+interface_dcl:		TOK_INTERFACE new_or_prev_scope
+			pop_scope
+			z_inheritance			{ 
+	assert($2 != NULL);
+	assert(IDL_NODE_TYPE($2) == IDLN_IDENT);
+	assert(IDL_IDENT_TO_NS($2) != NULL);
+	assert(IDL_NODE_TYPE(IDL_IDENT_TO_NS($2)) == IDLN_GENTREE);
+	IDL_GENTREE(IDL_IDENT_TO_NS($2))._import = $4;
+	IDL_ns_push_scope(idl_ns, IDL_IDENT_TO_NS($2));
+}
+			'{'
 				interface_body
-			'}' pop_scope			{ $$ = IDL_interface_new($2, $3, $5); }
+			'}' pop_scope			{ $$ = IDL_interface_new($2, $4, $7); }
 	;
 
 forward_dcl:		TOK_INTERFACE
@@ -197,7 +208,21 @@ forward_dcl:		TOK_INTERFACE
 	;
 
 z_inheritance:		/* empty */			{ $$ = NULL; }
-|			':' scoped_name_list		{ $$ = $2; }
+|			':' scoped_name_list		{
+	IDL_tree p = $2;
+
+	assert(IDL_NODE_TYPE(p) == IDLN_LIST);
+	for (; p != NULL; p = IDL_LIST(p).next) {
+		assert(IDL_LIST(p).data != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(p).data) == IDLN_IDENT);
+		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) != IDLN_INTERFACE) {
+			yyerrorv("`%s' is not an interface",
+				 IDL_IDENT(IDL_LIST(p).data).str);
+			YYABORT;
+		}
+	}
+	$$ = $2;
+}
 	;
 
 scoped_name_list:	scoped_name			{ $$ = list_start($1); }
@@ -424,7 +449,7 @@ primary_expr:		scoped_name
 	case IDLN_WIDE_CHAR:
 		break;
 	default:
-		yyerror("illegal type in constant expression");
+		yyerror("Illegal type in constant expression");
 		YYABORT;
 		break;
 	}
@@ -461,7 +486,7 @@ scoped_name:		ns_scoped_name			{
 	;
 
 ns_scoped_name:		ns_prev_ident
-|			TOK_OP_SCOPE ns_global_ident		{ $$ = $2; }
+|			TOK_OP_SCOPE ns_global_ident	{ $$ = $2; }
 |			ns_scoped_name TOK_OP_SCOPE
 			ident				{
 	IDL_tree p;
@@ -479,8 +504,8 @@ ns_scoped_name:		ns_prev_ident
 		if (yydebug)
 			printf("'%s'\n", IDL_IDENT($3).str);
 #endif
+		yyerrorv("`%s' undeclared identifier", IDL_IDENT($3).str);
 		IDL_tree_free($3);
-		yyerror("undeclared identifier");
 		YYABORT;
 	}
 	IDL_tree_free($3);
@@ -710,8 +735,8 @@ ns_new_ident:		ident				{
 	IDL_tree p;
 
 	if ((p = IDL_ns_place_new(idl_ns, $1)) == NULL) {
+		yyerrorv("`%s' duplicate identifier", IDL_IDENT($1).str);
 		IDL_tree_free($1);
-		yyerror("duplicate identifier");
 		YYABORT;
 	}
 	assert(IDL_IDENT($1)._ns_ref == p);
@@ -724,8 +749,8 @@ ns_prev_ident:		ident				{
 	IDL_tree p;
 
 	if ((p = IDL_ns_resolve_ident(idl_ns, $1)) == NULL) {
+		yyerrorv("`%s' undeclared identifier", IDL_IDENT($1).str);
 		IDL_tree_free($1);
-		yyerror("undeclared identifier");
 		YYABORT;
 	}
 	IDL_tree_free($1);
@@ -775,8 +800,8 @@ ns_global_ident:	ident				{
 	IDL_tree p;
 
 	if ((p = IDL_ns_lookup_this_scope(idl_ns, IDL_NS(idl_ns).file, $1)) == NULL) {
+		yyerrorv("`%s' undeclared identifier", IDL_IDENT($1).str);
 		IDL_tree_free($1);
-		yyerror("undeclared identifier");
 		YYABORT;
 	}
 	IDL_tree_free($1);
@@ -794,7 +819,8 @@ string_lit_list:	string_lit			{ $$ = list_start($1); }
 
 positive_int_const:	TOK_INTEGER			{
 	if ($1 < 0) {
-		yywarning("cannot use negative value, using absolute value");
+		yywarningv("Cannot use negative value " 
+			   IDL_SB10_FMT ", using " IDL_SB10_FMT, $1, -$1);
 		$$ = IDL_integer_new(-$1);
 	}
 	else
@@ -871,7 +897,7 @@ void yywarningl(const char *s, int ofs)
 		(*idl_msgcb)(IDL_WARNING, idl_nwarnings, line,
 			     __IDL_cur_filename, s);
 	else
-		fprintf(stderr, "%s:%d: warning: %s\n",
+		fprintf(stderr, "%s:%d: Warning: %s\n",
 			__IDL_cur_filename, line, s);
 }
 
@@ -883,6 +909,54 @@ void yyerror(const char *s)
 void yywarning(const char *s)
 {
 	yywarningl(s, 0);
+}
+
+void yyerrorlv(const char *fmt, int ofs, ...)
+{
+	char *msg = (char *)malloc(strlen(fmt) + 2048);
+	va_list args;
+
+	va_start(args, ofs);
+	vsprintf(msg, fmt, args);
+	yyerrorl(msg, ofs);
+	va_end(args);
+	free(msg);
+}
+
+void yywarninglv(const char *fmt, int ofs, ...)
+{
+	char *msg = (char *)malloc(strlen(fmt) + 2048);
+	va_list args;
+
+	va_start(args, ofs);
+	vsprintf(msg, fmt, args);
+	yywarningl(msg, ofs);
+	va_end(args);
+	free(msg);
+}
+
+void yyerrorv(const char *fmt, ...)
+{
+	char *msg = (char *)malloc(strlen(fmt) + 2048);
+	va_list args;
+
+	va_start(args, fmt);
+	vsprintf(msg, fmt, args);
+	yyerror(msg);
+	va_end(args);
+	free(msg);
+}
+
+void yywarningv(const char *fmt, ...)
+{
+	char *msg = (char *)malloc(strlen(fmt) + 2048);
+	va_list args;
+
+	va_start(args, fmt);
+	vsprintf(msg, fmt, args);
+	yywarning(msg);
+	va_end(args);
+	free(msg);
 }
 
 const char *IDL_get_libver_string(void)
@@ -968,11 +1042,11 @@ char *IDL_do_escapes(const char *s)
 	return q;
 }
 
-int
-IDL_list_length(IDL_tree list)
+int IDL_list_length(IDL_tree list)
 {
 	int retval;
 	IDL_tree curitem;
+
 	for(curitem = list, retval = 0; curitem;
 	    curitem = IDL_LIST(curitem).next)
 		retval++;
@@ -980,8 +1054,7 @@ IDL_list_length(IDL_tree list)
 	return retval;
 }
 
-IDL_tree
-IDL_list_nth(IDL_tree list, int n)
+IDL_tree IDL_list_nth(IDL_tree list, int n)
 {
 	IDL_tree curitem;
 	int i;
@@ -1021,7 +1094,7 @@ void __IDL_tree_print(IDL_tree p)
 		break;
 
 	case IDLN_INTEGER:
-		printf("IDL integer: %ld\n", IDL_INTEGER(p).value);
+		printf("IDL integer: " IDL_SB10_FMT "\n", IDL_INTEGER(p).value);
 		break;
 		
 	case IDLN_STRING:
@@ -1033,7 +1106,7 @@ void __IDL_tree_print(IDL_tree p)
 		break;
 		
 	case IDLN_FIXED:
-		printf("IDL fixed: %g\n", IDL_FIXED(p).value);
+		printf("IDL fixed: %s\n", IDL_FIXED(p).value);
 		break;
 		
 	case IDLN_FLOAT:
@@ -1466,8 +1539,10 @@ static int my_strcmp(const char *a, const char *b)
 {
 	int rv = strcasecmp(a, b);
 	
-	if (idl_is_parsing && rv == 0 && strcmp(a, b) != 0)
-		yywarning("identifiers should remain same-case after first declaration");
+	if (idl_is_parsing && rv == 0 && strcmp(a, b) != 0) {
+		yywarningv("Case mismatch between `%s' and `%s' ", a, b);
+		yywarning("(Identifiers should be case-consistent after initial declaration)");
+	}
 
 	return rv;
 }
@@ -1507,13 +1582,13 @@ int IDL_ns_prefix(IDL_ns ns, const char *s)
 	return IDL_TRUE;
 }
 
-IDL_tree IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident)
+IDL_tree IDL_ns_resolve_this_scope_ident(IDL_ns ns, IDL_tree scope, IDL_tree ident)
 {
 	IDL_tree p, q;
 	
 	IDL_NS_ASSERTS;
 
-	p = IDL_NS(ns).current;
+	p = scope;
 
 	while (p != NULL) {
 
@@ -1528,9 +1603,14 @@ IDL_tree IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident)
 	return p;
 }
 
+IDL_tree IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident)
+{
+	return IDL_ns_resolve_this_scope_ident(ns, IDL_NS(ns).current, ident);
+}
+
 IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident)
 {
-	IDL_tree p;
+	IDL_tree p, q;
 	
 	IDL_NS_ASSERTS;
 
@@ -1539,14 +1619,43 @@ IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident)
 	
 	assert(IDL_NODE_TYPE(scope) == IDLN_GENTREE);
 
-	p = IDL_GENTREE(scope).children;
-	
-	for (; p != NULL; p = IDL_GENTREE(p).siblings) {
+	/* Search this namespace */
+	for (p = IDL_GENTREE(scope).children; p != NULL; p = IDL_GENTREE(p).siblings) {
 		if (IDL_GENTREE(p).data == NULL)
 			continue;
 		assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
 		if (identcmp(IDL_GENTREE(p).data, ident) == 0)
 			return p;
+	}
+
+	/* If there are inherited namespaces, look in those before giving up */
+	q = IDL_GENTREE(scope)._import;
+	if (!q)
+		return NULL;
+
+	assert(IDL_NODE_TYPE(q) == IDLN_LIST);
+	for (; q != NULL; q = IDL_LIST(q).next) {
+		IDL_tree r;
+		
+		assert(IDL_LIST(q).data != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(q).data) == IDLN_IDENT);
+		assert(IDL_IDENT_TO_NS(IDL_LIST(q).data) != NULL);
+		assert(IDL_NODE_TYPE(IDL_IDENT_TO_NS(IDL_LIST(q).data)) == IDLN_GENTREE);
+
+		/* Search inherited namespaces */
+		for (p = IDL_GENTREE(IDL_IDENT_TO_NS(IDL_LIST(q).data)).children;
+		     p != NULL; p = IDL_GENTREE(p).siblings) {
+			if (IDL_GENTREE(p).data == NULL)
+				continue;
+			assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
+			if (identcmp(IDL_GENTREE(p).data, ident) == 0)
+				return p;
+		}
+
+		/* Search up one level */
+		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(q).data)) == IDLN_INTERFACE &&
+		    (r = IDL_ns_lookup_this_scope(ns, IDL_IDENT_TO_NS(IDL_LIST(q).data), ident)))
+			return r;
 	}
 
 	return NULL;
@@ -2187,6 +2296,11 @@ IDL_tree IDL_interface_new(IDL_tree ident, IDL_tree inheritance_spec, IDL_tree b
 {
 	IDL_tree p = IDL_node_new(IDLN_INTERFACE);
 
+	/* If there was a forward declaration, then reset the up node
+	   so that we can assign the actual interface */
+	if (ident && IDL_NODE_UP(ident) &&
+	    IDL_NODE_TYPE(IDL_NODE_UP(ident)) == IDLN_FORWARD_DCL)
+		IDL_NODE_UP(ident) = NULL;
 	assign_up_node(p, ident);
 	assign_up_node(p, inheritance_spec);
 	assign_up_node(p, body);
@@ -2264,7 +2378,7 @@ IDL_tree IDL_attr_dcl_new(unsigned f_readonly,
 			  IDL_tree simple_declarations)
 {
 	IDL_tree p = IDL_node_new(IDLN_ATTR_DCL);
-	
+
 	assign_up_node(p, param_type_spec);
 	assign_up_node(p, simple_declarations);
 	IDL_ATTR_DCL(p).f_readonly = f_readonly;
@@ -2317,8 +2431,7 @@ IDL_tree IDL_forward_dcl_new(IDL_tree ident)
 {
 	IDL_tree p = IDL_node_new(IDLN_FORWARD_DCL);
 
-	/* forward declarations should let a later interface
-	   declaration assign the up node */
+	assign_up_node(p, ident);
 	IDL_FORWARD_DCL(p).ident = ident;
 
 	return p;
@@ -2443,6 +2556,8 @@ static IDL_tree IDL_binop_eval_integer(enum IDL_binop op, IDL_tree a, IDL_tree b
 }
 
 #if 0
+/* If we ever use something like gmp we could do fixed constant
+   evaluation here... */
 static IDL_tree IDL_binop_eval_fixed(enum IDL_binop op, IDL_tree a, IDL_tree b)
 {
 	IDL_tree p = NULL;
