@@ -1,3 +1,16 @@
+Version 0.7.2
+
+	+ workaround for FreeBSD (Mark)
+	+ update spec file (Ross Golder)
+	+ fix --version and --cflags output (Abel Cheung)
+	+ update build (Mark)
+
+Version 0.7.1
+
+	...
+
+Ancient History:
+
 * Status as of 4/24/99
 
 Version 0.6.8 Released

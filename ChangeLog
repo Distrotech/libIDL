@@ -1,3 +1,7 @@
+2002-01-09  Michael Meeks  <michael@ximian.com>
+
+	* Version 0.7.2
+
 2002-01-03  Mark McLoughlin  <mark@skynet.ie>
 
 	* lexer.l: lame workaround for FreeBSD bug.
