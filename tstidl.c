@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <glib.h>
 #include "util.h"
-#include "IDL.h"
 
 gboolean print_repo_id(IDL_tree p, gpointer user_data)
 {

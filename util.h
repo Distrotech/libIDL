@@ -32,52 +32,48 @@
 #elif defined(HAVE_WCSTR_H)
 #  include <wcstr.h>
 #endif
-
 #include <glib.h>
+#include "IDL.h"
 
-struct _IDL_tree_node;
-struct _IDL_ns;
+extern void		yyerror				(const char *s);
+extern void		yyerrorl			(const char *s, int ofs);
+extern void		yywarning			(int level, const char *s);
+extern void		yywarningl			(int level, const char *s, int ofs);
+extern void		yyerrorv			(const char *fmt, ...);
+extern void		yyerrorlv			(const char *fmt, int ofs, ...);
+extern void		yywarningv			(int level, const char *fmt, ...);
+extern void		yywarninglv			(int level, const char *fmt, int ofs, ...);
+extern void		yyerrornv			(IDL_tree p, const char *fmt, ...);
+extern void		yywarningnv			(IDL_tree p, int level, const char *fmt, ...);
 
-extern void			yyerror(const char *s);
-extern void			yyerrorl(const char *s, int ofs);
-extern void			yywarning(int level, const char *s);
-extern void			yywarningl(int level, const char *s, int ofs);
-extern void			yyerrorv(const char *fmt, ...);
-extern void			yyerrorlv(const char *fmt, int ofs, ...);
-extern void			yywarningv(int level, const char *fmt, ...);
-extern void			yywarninglv(int level, const char *fmt, int ofs, ...);
-extern void			yyerrornv(struct _IDL_tree_node *p, const char *fmt, ...);
-extern void			yywarningnv(struct _IDL_tree_node *p, int level, const char *fmt, ...);
-
-
-/* Functions not yet deemed public */
-extern guint			IDL_strcase_hash(gconstpointer v);
-extern gint			IDL_strcase_equal(gconstpointer a, gconstpointer b);
-extern gint			IDL_strcase_cmp(gconstpointer a, gconstpointer b);
-extern guint			IDL_ident_hash(gconstpointer v);
-extern gint			IDL_ident_equal(gconstpointer a, gconstpointer b);
-extern gint			IDL_ident_cmp(gconstpointer a, gconstpointer b);
-extern int			IDL_tree_get_node_info(struct _IDL_tree_node *tree,
-						       char **who, char **what);
-extern int			IDL_ns_check_for_ambiguous_inheritance(struct _IDL_tree_node *interface_ident,
-								       struct _IDL_tree_node *p);
-extern void			IDL_tree_process_forward_dcls(struct _IDL_tree_node **p, struct _IDL_ns *);
-extern void			IDL_tree_remove_inhibits(struct _IDL_tree_node **p, struct _IDL_ns *);
-extern void			IDL_tree_remove_empty_modules(struct _IDL_tree_node **p, struct _IDL_ns *);
+extern guint		IDL_strcase_hash		(gconstpointer v);
+extern gint		IDL_strcase_equal		(gconstpointer a, gconstpointer b);
+extern gint		IDL_strcase_cmp			(gconstpointer a, gconstpointer b);
+extern guint		IDL_ident_hash			(gconstpointer v);
+extern gint		IDL_ident_equal			(gconstpointer a, gconstpointer b);
+extern gint		IDL_ident_cmp			(gconstpointer a, gconstpointer b);
+extern int		IDL_tree_get_node_info		(IDL_tree tree,
+							 char **who, char **what);
+extern int		IDL_ns_check_for_ambiguous_inheritance
+							(IDL_tree interface_ident,
+							 IDL_tree p);
+extern void		IDL_tree_process_forward_dcls	(IDL_tree *p, IDL_ns ns);
+extern void		IDL_tree_remove_inhibits	(IDL_tree *p, IDL_ns ns);
+extern void		IDL_tree_remove_empty_modules	(IDL_tree *p, IDL_ns ns);
 
 #ifndef HAVE_CPP_PIPE_STDIN
-extern char *			__IDL_tmp_filename;
+extern char *				__IDL_tmp_filename;
 #endif
-extern const char *		__IDL_real_filename;
-extern char *			__IDL_cur_filename;
-extern int			__IDL_cur_line;
-extern GHashTable *		__IDL_filename_hash;
-extern int			__IDL_prev_token_line;
-extern int			__IDL_cur_token_line;
-extern struct _IDL_tree_node *	__IDL_root;
-extern struct _IDL_ns *		__IDL_root_ns;
-extern int			__IDL_is_okay;
-extern int			__IDL_is_parsing;
-extern unsigned long		__IDL_flags;
+extern const char *			__IDL_real_filename;
+extern char *				__IDL_cur_filename;
+extern int				__IDL_cur_line;
+extern GHashTable *			__IDL_filename_hash;
+extern int				__IDL_prev_token_line;
+extern int				__IDL_cur_token_line;
+extern IDL_tree				__IDL_root;
+extern IDL_ns				__IDL_root_ns;
+extern int				__IDL_is_okay;
+extern int				__IDL_is_parsing;
+extern unsigned long			__IDL_flags;
 
 #endif /* __UTIL_H */

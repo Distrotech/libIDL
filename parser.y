@@ -32,7 +32,6 @@
 #include <unistd.h>
 #include "rename.h"
 #include "util.h"
-#include "IDL.h"
 
 #define do_binop(rv,op,a,b)	do {			\
 	if (IDL_binop_chktypes(op, a, b))		\
@@ -1004,7 +1003,7 @@ string_lit_list:	string_lit			{ $$ = list_start($1, TRUE); }
 	;
 
 positive_int_const:	const_exp			{
-	IDL_tree literal;
+	IDL_tree literal, ident = NULL;
 	IDL_longlong_t value = 0;
 
 	if ((literal = IDL_resolve_const_exp($1, IDLN_INTEGER))) {
@@ -1012,14 +1011,27 @@ positive_int_const:	const_exp			{
 		value = IDL_INTEGER(literal).value;
 		IDL_tree_free($1);
 	}
+
+	if (literal && IDL_NODE_UP(literal) &&
+	    IDL_NODE_TYPE(IDL_NODE_UP(literal)) == IDLN_CONST_DCL)
+		ident = IDL_CONST_DCL(IDL_NODE_UP(literal)).ident;
 	
-	if (!literal) {
+	if (literal == NULL) {
 		if (!(__IDL_flags & IDLF_NO_EVAL_CONST))
 			yyerror("Could not resolve constant expression");
 		$$ = $1;
+	} else if (value == 0) {
+		yyerror("Zero array size is illegal");
+		if (ident)
+			yyerrornv(ident, "From constant declared here");
+		$$ = NULL;
 	} else if (value < 0) {
 		yywarningv(IDL_WARNING1, "Cannot use negative value " 
-			   IDL_SB10_FMT ", using " IDL_SB10_FMT, value, -value);
+			   IDL_SB10_FMT ", using " IDL_SB10_FMT,
+			   value, -value);
+		if (ident)
+			yywarningnv(ident,
+				    IDL_WARNING1, "From constant declared here");
 		$$ = IDL_integer_new(-value);
 	}
 	else

@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include "rename.h"
 #include "util.h"
-#include "IDL.h"
 
 const char *IDL_tree_type_names[] = {
 	"IDLN_NONE",

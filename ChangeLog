@@ -1,3 +1,8 @@
+1998-10-09  Andrew Veliath  <andrewtv@usa.net>
+
+	* parser.y: (positive_int_const) Improve errors and warnings for
+	nonsensical values.
+
 1998-10-08  Andrew Veliath  <andrewtv@usa.net>
 
 	* IDL.h (IDLF_NO_EVAL_CONST): New flag, obsoletes IDLF_EVAL_CONST,

@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include "rename.h"
 #include "util.h"
-#include "IDL.h"
 
 static int is_inheritance_conflict(IDL_tree p);
 

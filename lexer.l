@@ -29,7 +29,6 @@
 #include <string.h>
 #include "rename.h"
 #include "util.h"
-#include "IDL.h"
 #include "parser.h"
 
 #define tokreturn(token)	do {			\
