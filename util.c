@@ -410,16 +410,22 @@ int IDL_parse_filename_with_input (const char *filename,
 	__IDL_inputcb_user_data = input_cb_user_data;
 	__IDL_new_ident_comments = NULL;
 
-	data.init.filename = filename;
-	if ((*__IDL_inputcb) (
-		IDL_INPUT_REASON_INIT, &data, __IDL_inputcb_user_data))
-		return -1;
-	
 	__IDL_real_filename = filename;
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = tmpfilename;
 #endif
 	__IDL_filename_hash = IDL_NS (__IDL_root_ns).filename_hash;
+	data.init.filename = filename;
+	if ((*__IDL_inputcb) (
+		IDL_INPUT_REASON_INIT, &data, __IDL_inputcb_user_data)) {
+		IDL_ns_free (__IDL_root_ns);
+		__IDL_lex_cleanup ();
+		__IDL_real_filename = NULL;
+#ifndef HAVE_CPP_PIPE_STDIN
+		__IDL_tmp_filename = NULL;
+#endif
+		return -1;
+	}
 	rv = yyparse ();
 	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup ();
@@ -705,14 +711,7 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 	case IDLN_LIST:
 		if (!IDL_LIST (p).data)
 			break;
-#if 0
-		assert (IDL_LIST (p)._tail != NULL);
-		if (!IDL_LIST (IDL_LIST (p)._tail).data)
-			break;
-		dienow = IDL_tree_get_node_info (IDL_LIST (IDL_LIST (p)._tail).data, what, who);
-#else
 		dienow = IDL_tree_get_node_info (IDL_LIST (p).data, what, who);
-#endif
 		break;
 		
 	case IDLN_ATTR_DCL:
@@ -2178,8 +2177,7 @@ void IDL_tree_process_forward_dcls (IDL_tree *p, IDL_ns ns)
 /* Inhibit Creation Removal */
 static int load_inhibits (IDL_tree p, IDL_tree parent, GHashTable *table)
 {
-	if ((IDL_NODE_TYPE (p) == IDLN_INTERFACE ||
-	     IDL_NODE_TYPE (p) == IDLN_MODULE) &&
+	if (p != NULL &&
 	    IDL_NODE_UP (p) &&
 	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_LIST &&
 	    IDL_NODE_DECLSPEC (p) & IDLF_DECLSPEC_INHIBIT &&

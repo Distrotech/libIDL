@@ -1,3 +1,23 @@
+1999-02-11  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.5.9.
+
+1999-02-09  Tom Tromey  <tromey@cygnus.com>
+
+	* libIDL.texi: Use @pxref and not @xref in parentheses.
+
+1999-02-06  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* parser.y: Detect recursive structure members.
+
+	* util.c (IDL_parse_filename_with_input): Assign filename hash
+	before first call to callback.
+
+	* parser.y: Allow const_dcl, type_dcl and except_dcl to also be
+	inhibited.
+
+	* util.c (load_inhibits): Allow any discriminator to be inhibited.
+
 1999-01-02  Jeff Garzik  <jgarzik@pobox.com>
 
 	* util.c:

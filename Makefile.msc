@@ -14,7 +14,7 @@ GLIB_LIB = glib-1.1.lib
 ################################################################
 # Nothing much configurable below
 
-LIBIDL_REALVER = 0.5.8
+LIBIDL_REALVER = 0.5.9
 LIBIDL_VER = 0.5
 
 # cl -? described the options

@@ -87,6 +87,8 @@ static IDL_tree		zlist_chain			(IDL_tree a,
 static int		do_token_error			(IDL_tree p,
 							 const char *message,
 							 gboolean prev);
+
+static GHashTable *				struct_rdht;
 %}
 
 %union {
@@ -175,6 +177,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		codefrag
 %type <tree>		complex_declarator
 %type <tree>		const_dcl
+%type <tree>		const_dcl_def
 %type <tree>		const_exp
 %type <tree>		const_type
 %type <tree>		constr_type_spec
@@ -188,6 +191,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		enum_type
 %type <tree>		enumerator_list
 %type <tree>		except_dcl
+%type <tree>		except_dcl_def
 %type <tree>		export
 %type <tree>		export_list
 %type <tree>		fixed_array_size
@@ -247,6 +251,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		switch_type_spec
 %type <tree>		template_type_spec
 %type <tree>		type_dcl
+%type <tree>		type_dcl_def
 %type <tree>		type_declarator
 %type <tree>		type_spec
 %type <tree>		unary_expr
@@ -271,7 +276,17 @@ static int		do_token_error			(IDL_tree p,
 %%
 
 specification:		/* empty */			{ yyerror ("Empty file"); YYABORT; }
-|			definition_list			{ __IDL_root = $1; }
+|			init definition_list fini	{ __IDL_root = $2; }
+	;
+
+init:							{
+	struct_rdht = g_hash_table_new (g_direct_hash, g_direct_equal);
+}
+	;
+
+fini:							{
+	g_hash_table_destroy (struct_rdht);
+}
 	;
 
 definition_list:	definition			{ $$ = list_start ($1, TRUE); }
@@ -502,7 +517,15 @@ export:			type_dcl check_semicolon
 |			useless_semicolon
 	;
 
-type_dcl:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
+type_dcl:		z_declspec type_dcl_def		{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
+	;
+
+type_dcl_def:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
 |			struct_type
 |			union_type
 |			enum_type
@@ -542,9 +565,13 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
-struct_type:		TOK_STRUCT new_scope '{'
-				member_list
-			'}' pop_scope			{ $$ = IDL_type_struct_new ($2, $4); }
+struct_type:		TOK_STRUCT new_scope '{'	{
+	g_hash_table_insert (struct_rdht, $2, $2);
+}				member_list
+			'}' pop_scope			{
+	$$ = IDL_type_struct_new ($2, $5);
+	g_hash_table_remove (struct_rdht, $2);
+}
 	;
 
 union_type:		TOK_UNION new_scope TOK_SWITCH '('
@@ -583,14 +610,30 @@ case_label:		TOK_CASE const_exp ':'		{ $$ = $2; }
 |			TOK_DEFAULT ':'			{ $$ = NULL; }
 	;
 
-const_dcl:		TOK_CONST const_type new_ident
+const_dcl:		z_declspec const_dcl_def	{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
+	;
+
+const_dcl_def:		TOK_CONST const_type new_ident
 			'=' const_exp			{
 	$$ = IDL_const_dcl_new ($2, $3, $5);
 	/* Should probably do some type checking here... */
 }
 	;
 
-except_dcl:		TOK_EXCEPTION new_scope '{'
+except_dcl:		z_declspec except_dcl_def	{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
+	;
+
+except_dcl_def:		TOK_EXCEPTION new_scope '{'
 				member_zlist
 			'}' pop_scope			{ $$ = IDL_except_dcl_new ($2, $4); }
 	;
@@ -631,7 +674,7 @@ op_dcl:			is_noscript
 			is_context_expr			{
 	$$ = IDL_op_dcl_new ($2, $3, $4, $5.tree, $7, $8);
 	IDL_OP_DCL ($$).f_noscript = $1;
-	IDL_OP_DCL ($$).f_varargs = (gboolean) $5.data;
+	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($5.data);
 }
 	;
 
@@ -652,11 +695,11 @@ parameter_dcls:		'('
 			is_cvarargs
 			')'				{
 	$$.tree = $2;
-	$$.data = (gpointer) $3;
+	$$.data = GINT_TO_POINTER ($3);
 }
 |			'(' is_varargs ')'		{
 	$$.tree = NULL;
-	$$.data = (gpointer) $2;
+	$$.data = GINT_TO_POINTER ($2);
 }
 	;
 
@@ -830,7 +873,16 @@ member_list:		member				{ $$ = list_start ($1, TRUE); }
 	;
 
 member:			type_spec declarator_list
-			check_semicolon			{ $$ = IDL_member_new ($1, $2); }
+			check_semicolon			{
+	$$ = IDL_member_new ($1, $2);
+	if (IDL_NODE_TYPE ($1) == IDLN_IDENT &&
+	    g_hash_table_lookup (struct_rdht, $1)) {
+		char *s = IDL_ns_ident_to_qstring (IDL_LIST ($2).data, "::", 0);
+		char *s2 = IDL_ns_ident_to_qstring ($1, "::", 0);
+		yyerrorv ("Member `%s' recurses structure `%s'", s, s2);
+		free (s); free (s2);
+	}
+}
 	;
 
 base_type_spec:		floating_pt_type
@@ -1515,7 +1567,7 @@ void IDL_file_set (const char *filename, int line)
 
 	if (filename) {
 		__IDL_cur_filename = g_strdup (filename);
-		
+
 		if (
 #ifdef HAVE_CPP_PIPE_STDIN
 			!strlen (__IDL_cur_filename)
@@ -1526,7 +1578,7 @@ void IDL_file_set (const char *filename, int line)
 			free (__IDL_cur_filename);
 			__IDL_cur_filename = g_strdup (__IDL_real_filename);
 		}
-		
+
 		if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
 						  (gpointer) &orig, (gpointer) &fi)) {
 			free (__IDL_cur_filename);
