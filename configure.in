@@ -7,6 +7,8 @@
 #
 AC_INIT(IDL.h)
 AM_INIT_AUTOMAKE(libIDL, 0.1)
+LIBIDL_VERSION="$VERSION"
+AC_SUBST(LIBIDL_VERSION)
 CPP="/lib/cpp"
 AC_ARG_WITH(cpp,
 [  --with-cpp=PROGRAM      full path to C preprocessor [/lib/cpp]],
