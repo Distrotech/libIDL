@@ -26,9 +26,7 @@
 #ifndef __IDL_H
 #define __IDL_H
 
-#ifndef __G_LIB_H__
-#  error must include glib.h before this file
-#endif /* __G_LIB_H__ */
+#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {
