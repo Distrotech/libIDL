@@ -60,6 +60,12 @@ gboolean print_const_dcls (IDL_tree p, gpointer user_data)
 
 /* #define TEST_INPUT_CB */
 
+#ifdef _WIN32
+#  ifndef TEST_INPUT_CB
+#    define TEST_INPUT_CB
+#  endif
+#endif
+
 struct my_input_cb_data {
 	FILE *in;
 };
@@ -131,7 +137,7 @@ int main (int argc, char *argv[])
 #else
 	g_message ("IDL_parse_filename");
 	rv = IDL_parse_filename (fn, NULL, NULL, &tree, &ns,
-				 argc == 3 ? atoi (argv[2]) : IDLF_XPIDL, IDL_WARNING1);
+				 argc == 3 ? atoi (argv[2]) : 0, IDL_WARNING1);
 #endif
 
 	if (rv == IDL_SUCCESS) {
