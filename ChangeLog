@@ -1,3 +1,9 @@
+2001-08-23  Mark McLoughlin <mark@skynet.ie>
+
+        * libIDL/lexer.l, libIDL/parser.y,
+          libIDL/util.c: cast char to int for 
+	isspace() etc.
+
 2001-06-23  Martin Baulig  <baulig@suse.de>
 
 	* Makefile.am: Call the library libIDL-2.la, not libIDL.la.
