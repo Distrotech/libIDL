@@ -1,3 +1,7 @@
+2004-11-12  Jules Colding  <colding@omesc.com>
+
+	* parser.y: add octet_type to const_type rule.
+
 2004-11-05  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* parser.y:

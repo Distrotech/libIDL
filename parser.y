@@ -847,6 +847,7 @@ context_expr:		TOK_CONTEXT '('
 
 const_type:		integer_type
 |			char_type
+|			octet_type
 |			wide_char_type
 |			boolean_type
 |			floating_pt_type
