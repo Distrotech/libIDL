@@ -7,7 +7,7 @@
 #include "util.h"
 #include "IDL.h"
 
-int print_repo_id(IDL_tree p, gpointer user_data)
+gboolean print_repo_id(IDL_tree p, gpointer user_data)
 {
 	char *repo_id = NULL;
 
@@ -22,7 +22,7 @@ int print_repo_id(IDL_tree p, gpointer user_data)
 	if (repo_id)
 		printf("%s\n", repo_id);
 
-	return IDL_TRUE;
+	return TRUE;
 }
 
 int main(int argc, char *argv[])
@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
 	char *fn;
 	extern int __IDL_debug;
 
-	IDL_check_cast_enable(IDL_TRUE);
-	__IDL_debug = IDL_FALSE;
+	IDL_check_cast_enable(TRUE);
+	__IDL_debug = FALSE;
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: tstidl <filename> [fold constants, 0 or 1]\n");

@@ -79,7 +79,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_UNARYOP",
 };
 
-int				__IDL_check_type_casts = IDL_FALSE;
+int				__IDL_check_type_casts = FALSE;
 #ifndef HAVE_CPP_PIPE_STDIN
 char *				__IDL_tmp_filename = NULL;
 #endif
@@ -279,8 +279,8 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	__IDL_flags = parse_flags;
 	__IDL_root_ns = IDL_ns_new();
 
-	__IDL_is_parsing = IDL_TRUE;
-	__IDL_is_okay = IDL_TRUE;
+	__IDL_is_parsing = TRUE;
+	__IDL_is_okay = TRUE;
 	__IDL_lex_init();
 
 	__IDL_real_filename = filename;
@@ -289,7 +289,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 #endif
 	__IDL_filename_hash = g_hash_table_new(g_str_hash, g_str_equal);
 	rv = yyparse();
-	__IDL_is_parsing = IDL_FALSE;
+	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup();
 	__IDL_real_filename = NULL;
 #ifndef HAVE_CPP_PIPE_STDIN
@@ -350,7 +350,7 @@ void yyerrorl(const char *s, int ofs)
 		line = -1;
 
 	++__IDL_nerrors;
-	__IDL_is_okay = IDL_FALSE;
+	__IDL_is_okay = FALSE;
 	
 	if (__IDL_msgcb)
 		(*__IDL_msgcb)(IDL_ERROR, __IDL_nerrors, line, filename, s);
@@ -1211,15 +1211,15 @@ IDL_tree IDL_get_parent_node(IDL_tree p, IDL_tree_type type, int *levels)
 	return p;
 }
 
-int IDL_tree_walk_in_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_data)
+void IDL_tree_walk_in_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_data)
 {
 	assert(tree_func != NULL);
 
 	if (!p)
-		return IDL_TRUE;
+		return;
 	
 	if (!(*tree_func)(p, user_data))
-		return IDL_FALSE;
+		return;
 
 	switch (IDL_NODE_TYPE(p)) {
 	case IDLN_INTEGER:
@@ -1241,8 +1241,7 @@ int IDL_tree_walk_in_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_da
 		
 	case IDLN_LIST:
 		for (; p; p = IDL_LIST(p).next)
-			if (!IDL_tree_walk_in_order(IDL_LIST(p).data, tree_func, user_data))
-				return IDL_FALSE;
+			IDL_tree_walk_in_order(IDL_LIST(p).data, tree_func, user_data);
 		break;
 
 	case IDLN_GENTREE:
@@ -1250,167 +1249,120 @@ int IDL_tree_walk_in_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_da
 		break;
 
 	case IDLN_MEMBER:
-		if (!IDL_tree_walk_in_order(IDL_MEMBER(p).type_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_MEMBER(p).dcls, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_MEMBER(p).type_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_MEMBER(p).dcls, tree_func, user_data);
 		break;
 		
 	case IDLN_NATIVE:
-		if (!IDL_tree_walk_in_order(IDL_NATIVE(p).ident, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_NATIVE(p).ident, tree_func, user_data);
 		break;
 
 	case IDLN_TYPE_DCL:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_DCL(p).type_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_DCL(p).dcls, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_DCL(p).type_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_DCL(p).dcls, tree_func, user_data);
 		break;
 
 	case IDLN_CONST_DCL:
-		if (!IDL_tree_walk_in_order(IDL_CONST_DCL(p).const_type, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_CONST_DCL(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_CONST_DCL(p).const_exp, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_CONST_DCL(p).const_type, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_CONST_DCL(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_CONST_DCL(p).const_exp, tree_func, user_data);
 		break;
 		
 	case IDLN_EXCEPT_DCL:
-		if (!IDL_tree_walk_in_order(IDL_EXCEPT_DCL(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_EXCEPT_DCL(p).members, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_EXCEPT_DCL(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_EXCEPT_DCL(p).members, tree_func, user_data);
 		break;
 		
 	case IDLN_ATTR_DCL:
-		if (!IDL_tree_walk_in_order(IDL_ATTR_DCL(p).param_type_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_ATTR_DCL(p).simple_declarations, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_ATTR_DCL(p).param_type_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_ATTR_DCL(p).simple_declarations, tree_func, user_data);
 		break;
 		
 	case IDLN_OP_DCL:
-		if (!IDL_tree_walk_in_order(IDL_OP_DCL(p).op_type_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_OP_DCL(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_OP_DCL(p).parameter_dcls, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_OP_DCL(p).raises_expr, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_OP_DCL(p).context_expr, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_OP_DCL(p).op_type_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_OP_DCL(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_OP_DCL(p).parameter_dcls, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_OP_DCL(p).raises_expr, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_OP_DCL(p).context_expr, tree_func, user_data);
 		break;
 
 	case IDLN_PARAM_DCL:
-		if (!IDL_tree_walk_in_order(IDL_PARAM_DCL(p).param_type_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_PARAM_DCL(p).simple_declarator, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_PARAM_DCL(p).param_type_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_PARAM_DCL(p).simple_declarator, tree_func, user_data);
 		break;
 
 	case IDLN_FORWARD_DCL:
-		if (!IDL_tree_walk_in_order(IDL_FORWARD_DCL(p).ident, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_FORWARD_DCL(p).ident, tree_func, user_data);
 		break;
 		
 	case IDLN_TYPE_FIXED:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_FIXED(p).positive_int_const, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_FIXED(p).integer_lit, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_FIXED(p).positive_int_const, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_FIXED(p).integer_lit, tree_func, user_data);
 		break;
 
 	case IDLN_TYPE_STRING:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_STRING(p).positive_int_const, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_STRING(p).positive_int_const, tree_func, user_data);
 		break;
 
 	case IDLN_TYPE_WIDE_STRING:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_WIDE_STRING(p).positive_int_const, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_WIDE_STRING(p).positive_int_const, tree_func, user_data);
 		break;
 		
 	case IDLN_TYPE_ENUM:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_ENUM(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_ENUM(p).enumerator_list, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_ENUM(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_ENUM(p).enumerator_list, tree_func, user_data);
 		break;
 
 	case IDLN_TYPE_SEQUENCE:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_SEQUENCE(p).simple_type_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_SEQUENCE(p).positive_int_const, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_SEQUENCE(p).simple_type_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_SEQUENCE(p).positive_int_const, tree_func, user_data);
 		break;
 
 	case IDLN_TYPE_ARRAY:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_ARRAY(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_ARRAY(p).size_list, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_ARRAY(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_ARRAY(p).size_list, tree_func, user_data);
 		break;
 
 	case IDLN_TYPE_STRUCT:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_STRUCT(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_STRUCT(p).member_list, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_STRUCT(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_STRUCT(p).member_list, tree_func, user_data);
 		break;
 		
 	case IDLN_TYPE_UNION:
-		if (!IDL_tree_walk_in_order(IDL_TYPE_UNION(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_UNION(p).switch_type_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_TYPE_UNION(p).switch_body, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_TYPE_UNION(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_UNION(p).switch_type_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_TYPE_UNION(p).switch_body, tree_func, user_data);
 		break;
 
 	case IDLN_CASE_STMT:
-		if (!IDL_tree_walk_in_order(IDL_CASE_STMT(p).labels, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_CASE_STMT(p).element_spec, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_CASE_STMT(p).labels, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_CASE_STMT(p).element_spec, tree_func, user_data);
 		break;
 
 	case IDLN_INTERFACE:
-		if (!IDL_tree_walk_in_order(IDL_INTERFACE(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_INTERFACE(p).inheritance_spec, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_INTERFACE(p).body, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_INTERFACE(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_INTERFACE(p).inheritance_spec, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_INTERFACE(p).body, tree_func, user_data);
 		break;
 
 	case IDLN_MODULE:
-		if (!IDL_tree_walk_in_order(IDL_MODULE(p).ident, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_MODULE(p).definition_list, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_MODULE(p).ident, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_MODULE(p).definition_list, tree_func, user_data);
 		break;		
 
 	case IDLN_BINOP:
-		if (!IDL_tree_walk_in_order(IDL_BINOP(p).left, tree_func, user_data))
-			return IDL_FALSE;
-		if (!IDL_tree_walk_in_order(IDL_BINOP(p).right, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_BINOP(p).left, tree_func, user_data);
+		IDL_tree_walk_in_order(IDL_BINOP(p).right, tree_func, user_data);
 		break;
 
 	case IDLN_UNARYOP:
-		if (!IDL_tree_walk_in_order(IDL_UNARYOP(p).operand, tree_func, user_data))
-			return IDL_FALSE;
+		IDL_tree_walk_in_order(IDL_UNARYOP(p).operand, tree_func, user_data);
 		break;
 		
 	default:
 		g_warning("IDL_tree_walk_in_order: unknown node type %s\n", IDL_NODE_TYPE_NAME(p));
 		break;
 	}
-
-	return IDL_TRUE;
 }
 
 static void __IDL_tree_free(IDL_tree p);
@@ -1772,7 +1724,7 @@ static int load_forward_dcls(IDL_tree p, GHashTable *table)
 			free(s);
 	}
 
-	return IDL_TRUE;
+	return TRUE;
 }
 
 static int resolve_forward_dcls(IDL_tree p, GHashTable *table)
@@ -1787,7 +1739,7 @@ static int resolve_forward_dcls(IDL_tree p, GHashTable *table)
 		free(s);
 	}
 
-	return IDL_TRUE;
+	return TRUE;
 }
 
 static int print_unresolved_forward_dcls(char *s, IDL_tree p)
@@ -1843,7 +1795,7 @@ static int load_inhibits(IDL_tree p, GHashTable *table)
 		g_hash_table_insert(table, IDL_NODE_UP(p), list_head);
 	}
 	
-	return IDL_TRUE;
+	return TRUE;
 }
 
 void IDL_tree_remove_inhibits(IDL_tree *p, IDL_ns ns)
@@ -1877,7 +1829,7 @@ static int load_empty_modules(IDL_tree p, GHashTable *table)
 		g_hash_table_insert(table, IDL_NODE_UP(p), list_head);
 	}
 
-	return IDL_TRUE;
+	return TRUE;
 }
 
 void IDL_tree_remove_empty_modules(IDL_tree *p, IDL_ns ns)

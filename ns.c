@@ -86,7 +86,7 @@ int IDL_ns_prefix(IDL_ns ns, const char *s)
 	IDL_NS_ASSERTS;
 
 	if (s == NULL)
-		return IDL_FALSE;
+		return FALSE;
 
 	if (*s == '"')
 		r = g_strdup(s + 1);
@@ -102,7 +102,7 @@ int IDL_ns_prefix(IDL_ns ns, const char *s)
 
 	IDL_GENTREE(IDL_NS(ns).current)._cur_prefix = r;
 
-	return IDL_TRUE;
+	return TRUE;
 }
 
 IDL_tree IDL_ns_resolve_this_scope_ident(IDL_ns ns, IDL_tree scope, IDL_tree ident)
@@ -138,7 +138,7 @@ IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident, gbo
 	IDL_NS_ASSERTS;
 
 	if (conflict)
-		*conflict = IDL_TRUE;
+		*conflict = TRUE;
 
 	if (scope == NULL)
 		return NULL;
@@ -174,7 +174,7 @@ IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident, gbo
 			
 			/* This needs more work, it won't do full ambiguity detection */
 			if (conflict && !is_inheritance_conflict(p))
-				*conflict = IDL_FALSE;
+				*conflict = FALSE;
 			
 			return p;
 		}
@@ -371,12 +371,12 @@ static gboolean heap_insert_ident(IDL_tree interface_ident, GTree *heap, IDL_tre
 
 		free(newi); free(i1); free(i2);
 
-		return IDL_FALSE;
+		return FALSE;
 	}
 
 	g_tree_insert(heap, any, any);
 
-	return IDL_TRUE;
+	return TRUE;
 }
 
 static int is_visited_interface(GHashTable *visited_interfaces, IDL_tree scope)
@@ -403,19 +403,19 @@ struct insert_heap_cb_data {
 static int is_inheritance_conflict(IDL_tree p)
 {
 	if (IDL_GENTREE(p).data == NULL)
-		return IDL_FALSE;
+		return FALSE;
 
 	assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
 
 	if (IDL_NODE_UP(IDL_GENTREE(p).data) == NULL)
-		return IDL_FALSE;
+		return FALSE;
 
 	if (!(IDL_NODE_TYPE(IDL_NODE_UP(IDL_GENTREE(p).data)) == IDLN_OP_DCL ||
 	      (IDL_NODE_UP(IDL_GENTREE(p).data) &&
 	       IDL_NODE_TYPE(IDL_NODE_UP(IDL_NODE_UP(IDL_GENTREE(p).data))) == IDLN_ATTR_DCL)))
-		return IDL_FALSE;
+		return FALSE;
 
-	return IDL_TRUE;
+	return TRUE;
 }
 
 static void insert_heap_cb(IDL_tree ident, IDL_tree p, struct insert_heap_cb_data *data)
@@ -440,7 +440,7 @@ static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident
 	scope = IDL_IDENT_TO_NS(ident_scope);
 
 	if (!scope)
-		return IDL_TRUE;
+		return TRUE;
 
 	assert(IDL_NODE_TYPE(scope) == IDLN_GENTREE);
 	assert(IDL_GENTREE(scope).data != NULL);
@@ -449,7 +449,7 @@ static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident
 	assert(IDL_NODE_TYPE(IDL_NODE_UP(IDL_GENTREE(scope).data)) == IDLN_INTERFACE);
 
 	if (is_visited_interface(visited_interfaces, scope))
-		return IDL_TRUE;
+		return TRUE;
 
 	/* Search this namespace */
 	g_hash_table_foreach(IDL_GENTREE(scope).children, (GHFunc)insert_heap_cb, &data);

@@ -1,3 +1,15 @@
+Thu Aug 27 01:08:56 1998  Andrew Veliath  <andrewtv@usa.net>
+
+	* IDL.h: Removed IDL_TRUE and IDL_FALSE, so we can just use the
+	  glib TRUE and FALSE.  References switched...
+
+	* util.c (IDL_tree_walk_in_order): (...pre_order changed to the
+	more accurate ...in_order).  Behavior change, return value is now
+	void, and returning TRUE from the IDL_tree_func means traverse
+	this node, and FALSE means don't traverse this node, instead of
+	the previous return FALSE and stop traversal all together.  This
+	is much more useful for this context, I think.
+
 Wed Aug 26 01:48:12 1998  Andrew Veliath  <andrewtv@usa.net>
 
 	* util.c (IDL_tree_process_forward_dcls),

@@ -65,10 +65,10 @@ static int			IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b);
 static int			IDL_unaryop_chktypes(enum IDL_unaryop op, IDL_tree a);
 static IDL_tree			IDL_binop_eval(enum IDL_binop op, IDL_tree a, IDL_tree b);
 static IDL_tree			IDL_unaryop_eval(enum IDL_unaryop op, IDL_tree a);
-static IDL_tree			list_start(IDL_tree a, int filter_null);
-static IDL_tree			list_chain(IDL_tree a, IDL_tree b, int filter_null);
-static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b, int filter_null);
-static int			do_token_error(IDL_tree p, const char *message, int prev);
+static IDL_tree			list_start(IDL_tree a, gboolean filter_null);
+static IDL_tree			list_chain(IDL_tree a, IDL_tree b, gboolean filter_null);
+static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b, gboolean filter_null);
+static int			do_token_error(IDL_tree p, const char *message, gboolean prev);
 
 %}
 
@@ -240,13 +240,13 @@ specification:		/* empty */			{ yyerror("Empty file"); YYABORT; }
 |			definition_list			{ __IDL_root = $1; }
 	;
 
-definition_list:	definition			{ $$ = list_start($1, IDL_TRUE); }
-|			definition_list definition	{ $$ = list_chain($1, $2, IDL_TRUE); }
+definition_list:	definition			{ $$ = list_start($1, TRUE); }
+|			definition_list definition	{ $$ = list_chain($1, $2, TRUE); }
 	;
 
 check_semicolon:	';'
 |			/* empty */			{
-	if (do_token_error($<tree>0, "Missing semicolon after", 1))
+	if (do_token_error($<tree>0, "Missing semicolon after", TRUE))
 		YYABORT;
 }
 	;
@@ -259,14 +259,14 @@ useless_semicolon:	';'				{
 
 check_comma:		','
 |			/* empty */			{
-	if (do_token_error($<tree>0, "Missing comma after", 1))
+	if (do_token_error($<tree>0, "Missing comma after", TRUE))
 		YYABORT;
 }
 	;
 
 illegal_ident:		scoped_name			{
 	assert(IDL_NODE_UP($1) != NULL);
-	do_token_error(IDL_NODE_UP($1), "Illegal context for", 0);
+	do_token_error(IDL_NODE_UP($1), "Illegal context for", FALSE);
 }
 	;
 
@@ -289,7 +289,7 @@ module:			module_declspec new_or_prev_scope '{'
 
 	if (IDL_NODE_UP($2) != NULL &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
-		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
+		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", FALSE);
 		yyerrornv($2, "Previous declaration");
 		YYABORT;
 	}
@@ -317,7 +317,7 @@ module:			module_declspec new_or_prev_scope '{'
 			'}' pop_scope			{
 	if (IDL_NODE_UP($2) != NULL &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
-		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
+		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", FALSE);
 		yyerrornv($2, "Previous declaration");
 		YYABORT;
 	}
@@ -352,7 +352,7 @@ interface:		interface_declspec
 	if (IDL_NODE_UP($2) != NULL &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_INTERFACE &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_FORWARD_DCL) {
-		do_token_error(IDL_NODE_UP($2), "Interface definition conflicts with", 0);
+		do_token_error(IDL_NODE_UP($2), "Interface definition conflicts with", FALSE);
 		yyerrornv($2, "Previous declaration");
 		YYABORT;
 	} else if (IDL_NODE_UP($2) != NULL &&
@@ -368,7 +368,7 @@ interface:		interface_declspec
 	IDL_GENTREE(IDL_IDENT_TO_NS($2))._import = $4;
 	IDL_ns_push_scope(__IDL_root_ns, IDL_IDENT_TO_NS($2));
 	if (IDL_ns_check_for_ambiguous_inheritance($2, $4))
-		__IDL_is_okay = IDL_FALSE;
+		__IDL_is_okay = FALSE;
 }
 			'{'
 				interface_body
@@ -415,16 +415,16 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 }
 	;
 
-scoped_name_list:	scoped_name			{ $$ = list_start($1, IDL_TRUE); }
+scoped_name_list:	scoped_name			{ $$ = list_start($1, TRUE); }
 |			scoped_name_list
-			check_comma scoped_name		{ $$ = list_chain($1, $3, IDL_TRUE); }
+			check_comma scoped_name		{ $$ = list_chain($1, $3, TRUE); }
 	;
 
 interface_body:		export_list
 	;
 
 export_list:		/* empty */			{ $$ = NULL; }
-|			export_list export		{ $$ = zlist_chain($1, $2, IDL_TRUE); }
+|			export_list export		{ $$ = zlist_chain($1, $2, TRUE); }
 	;
 
 export:			type_dcl check_semicolon
@@ -481,19 +481,19 @@ switch_type_spec:	integer_type
 switch_body:		case_stmt_list
 	;
 
-case_stmt_list:		case_stmt			{ $$ = list_start($1, IDL_TRUE); }
-|			case_stmt_list case_stmt	{ $$ = list_chain($1, $2, IDL_TRUE); }
+case_stmt_list:		case_stmt			{ $$ = list_start($1, TRUE); }
+|			case_stmt_list case_stmt	{ $$ = list_chain($1, $2, TRUE); }
 	;
 
 case_stmt:		case_label_list
 			element_spec check_semicolon	{ $$ = IDL_case_stmt_new($1, $2); }
 	;
 
-element_spec:		type_spec declarator		{ $$ = IDL_member_new($1, list_start($2, IDL_TRUE)); }
+element_spec:		type_spec declarator		{ $$ = IDL_member_new($1, list_start($2, TRUE)); }
 	;
 
-case_label_list:	case_label			{ $$ = list_start($1, IDL_FALSE); }
-|			case_label_list case_label	{ $$ = list_chain($1, $2, IDL_FALSE); }
+case_label_list:	case_label			{ $$ = list_start($1, FALSE); }
+|			case_label_list case_label	{ $$ = list_chain($1, $2, FALSE); }
 	;
 
 case_label:		TOK_CASE const_exp ':'		{ $$ = $2; }
@@ -513,11 +513,11 @@ except_dcl:		TOK_EXCEPTION new_scope '{'
 	;
 
 member_zlist:		/* empty */			{ $$ = NULL; }
-|			member_zlist member		{ $$ = zlist_chain($1, $2, IDL_TRUE); }
+|			member_zlist member		{ $$ = zlist_chain($1, $2, TRUE); }
 	;
 
-is_readonly:		/* empty */			{ $$ = IDL_FALSE; }
-|			TOK_READONLY			{ $$ = IDL_TRUE; }
+is_readonly:		/* empty */			{ $$ = FALSE; }
+|			TOK_READONLY			{ $$ = TRUE; }
 	;
 
 attr_dcl:		is_readonly TOK_ATTRIBUTE
@@ -532,8 +532,8 @@ param_type_spec:	base_type_spec
 |			scoped_name
 	;
 
-is_oneway:		/* empty */			{ $$ = IDL_FALSE; }
-|			TOK_ONEWAY			{ $$ = IDL_TRUE; }
+is_oneway:		/* empty */			{ $$ = FALSE; }
+|			TOK_ONEWAY			{ $$ = TRUE; }
 	;
 
 op_dcl:			is_oneway op_type_spec
@@ -550,9 +550,9 @@ parameter_dcls:		'(' param_dcl_list ')'		{ $$ = $2; }
 |			'(' ')'				{ $$ = NULL; }
 	;
 
-param_dcl_list:		param_dcl			{ $$ = list_start($1, IDL_TRUE); }
+param_dcl_list:		param_dcl			{ $$ = list_start($1, TRUE); }
 |			param_dcl_list
-			check_comma param_dcl		{ $$ = list_chain($1, $3, IDL_TRUE); }
+			check_comma param_dcl		{ $$ = list_chain($1, $3, TRUE); }
 	;
 
 param_dcl:		param_attribute
@@ -693,13 +693,13 @@ ns_scoped_name:		ns_prev_ident
 }
 	;
 
-enumerator_list:	new_ident			{ $$ = list_start($1, IDL_TRUE); }
+enumerator_list:	new_ident			{ $$ = list_start($1, TRUE); }
 |			enumerator_list
-			check_comma new_ident		{ $$ = list_chain($1, $3, IDL_TRUE); }
+			check_comma new_ident		{ $$ = list_chain($1, $3, TRUE); }
 	;
 
-member_list:		member				{ $$ = list_start($1, IDL_TRUE); }
-|			member_list member		{ $$ = list_chain($1, $2, IDL_TRUE); }
+member_list:		member				{ $$ = list_start($1, TRUE); }
+|			member_list member		{ $$ = list_chain($1, $2, TRUE); }
 	;
 
 member:			type_spec declarator_list
@@ -743,8 +743,8 @@ fixed_pt_type:		TOK_FIXED '<'
 fixed_pt_const_type:	TOK_FIXED			{ $$ = IDL_type_fixed_new(NULL, NULL); }
 	;
 
-integer_type:		signed_int			{ $$ = IDL_type_integer_new(IDL_TRUE, $1); }
-|			unsigned_int			{ $$ = IDL_type_integer_new(IDL_FALSE, $1); }
+integer_type:		signed_int			{ $$ = IDL_type_integer_new(TRUE, $1); }
+|			unsigned_int			{ $$ = IDL_type_integer_new(FALSE, $1); }
 	;
 
 signed_int:		signed_short_int		{ $$ = IDL_INTEGER_TYPE_SHORT; }
@@ -805,9 +805,9 @@ wide_string_type:	TOK_WSTRING '<'
 |			TOK_WSTRING			{ $$ = IDL_type_wide_string_new(NULL); }
 	;
 
-declarator_list:	declarator			{ $$ = list_start($1, IDL_TRUE); }
+declarator_list:	declarator			{ $$ = list_start($1, TRUE); }
 |			declarator_list 
-			check_comma declarator		{ $$ = list_chain($1, $3, IDL_TRUE); }
+			check_comma declarator		{ $$ = list_chain($1, $3, TRUE); }
 	;
 
 declarator:		simple_declarator
@@ -820,18 +820,18 @@ simple_declarator:	new_ident
 complex_declarator:	array_declarator
 	;
 
-simple_declarator_list:	simple_declarator		{ $$ = list_start($1, IDL_TRUE); }
+simple_declarator_list:	simple_declarator		{ $$ = list_start($1, TRUE); }
 |			simple_declarator_list
-			check_comma simple_declarator	{ $$ = list_chain($1, $3, IDL_TRUE); }
+			check_comma simple_declarator	{ $$ = list_chain($1, $3, TRUE); }
 	;
 
 array_declarator:	new_ident
 			fixed_array_size_list		{ $$ = IDL_type_array_new($1, $2); }
 	;
 
-fixed_array_size_list:	fixed_array_size		{ $$ = list_start($1, IDL_TRUE); }
+fixed_array_size_list:	fixed_array_size		{ $$ = list_start($1, TRUE); }
 |			fixed_array_size_list
-			fixed_array_size		{ $$ = list_chain($1, $2, IDL_TRUE); }
+			fixed_array_size		{ $$ = list_chain($1, $2, TRUE); }
 	;
 
 fixed_array_size:	'[' 
@@ -905,7 +905,7 @@ ns_new_ident:		ident				{
 				q = IDL_NODE_UP(q);
 		
 		if (q) {
-			do_token_error(q, "Duplicate identifier conflicts with", 0);
+			do_token_error(q, "Duplicate identifier conflicts with", FALSE);
 			yyerrornv(q, "Previous declaration");
 		} else
 			yyerrorv("`%s' duplicate identifier", IDL_IDENT($1).str);
@@ -969,9 +969,9 @@ ns_global_ident:	ident				{
 }
 	;
 
-string_lit_list:	string_lit			{ $$ = list_start($1, IDL_TRUE); }
+string_lit_list:	string_lit			{ $$ = list_start($1, TRUE); }
 |			string_lit_list
-			check_comma string_lit		{ $$ = list_chain($1, $3, IDL_TRUE); }
+			check_comma string_lit		{ $$ = list_chain($1, $3, TRUE); }
 	;
 
 positive_int_const:	TOK_INTEGER			{
@@ -1007,8 +1007,8 @@ fixed_pt_lit:		TOK_FIXEDP			{ $$ = IDL_fixed_new($1); }
 floating_pt_lit:	TOK_FLOATP			{ $$ = IDL_float_new($1); }
 	;
 
-boolean_lit:		TOK_TRUE			{ $$ = IDL_boolean_new(IDL_TRUE); }
-|			TOK_FALSE			{ $$ = IDL_boolean_new(IDL_FALSE); }
+boolean_lit:		TOK_TRUE			{ $$ = IDL_boolean_new(TRUE); }
+|			TOK_FALSE			{ $$ = IDL_boolean_new(FALSE); }
 	;
 
 dqstring_cat:		dqstring
@@ -1261,7 +1261,7 @@ static IDL_declspec_t IDL_parse_declspec(const char *strspec)
 	return flags;
 }
 
-static int do_token_error(IDL_tree p, const char *message, int prev)
+static int do_token_error(IDL_tree p, const char *message, gboolean prev)
 {
 	int dienow;
 	char *what = NULL, *who = NULL;
@@ -1284,7 +1284,7 @@ static int do_token_error(IDL_tree p, const char *message, int prev)
 	return dienow;
 }
 
-static IDL_tree list_start(IDL_tree a, int filter_null)
+static IDL_tree list_start(IDL_tree a, gboolean filter_null)
 {
 	IDL_tree p;
 
@@ -1296,7 +1296,7 @@ static IDL_tree list_start(IDL_tree a, int filter_null)
 	return p;
 }
 
-static IDL_tree list_chain(IDL_tree a, IDL_tree b, int filter_null)
+static IDL_tree list_chain(IDL_tree a, IDL_tree b, gboolean filter_null)
 {
 	IDL_tree p;
 
@@ -1314,7 +1314,7 @@ static IDL_tree list_chain(IDL_tree a, IDL_tree b, int filter_null)
 	return a;
 }
 
-static IDL_tree zlist_chain(IDL_tree a, IDL_tree b, int filter_null)
+static IDL_tree zlist_chain(IDL_tree a, IDL_tree b, gboolean filter_null)
 {
 	if (a == NULL)
 		return list_start(b, filter_null);

@@ -35,9 +35,6 @@ extern "C" {
 #endif
 
 /* miscellaneous constants */
-#define IDL_FALSE			0
-#define IDL_TRUE			1
-
 #define IDL_SUCCESS			0
 #define IDL_ERROR			1
 #define IDL_WARNING1			2
@@ -542,7 +539,7 @@ typedef int				(*IDL_callback)(int level,
 							const char *filename,
 							const char *message);
 
-typedef int				(*IDL_tree_func)(IDL_tree p,
+typedef gboolean			(*IDL_tree_func)(IDL_tree p,
 							 gpointer user_data);
 
 extern IDL_tree				IDL_check_type_cast(const IDL_tree var,
@@ -574,7 +571,7 @@ extern IDL_tree				IDL_get_parent_node(IDL_tree p,
 							    IDL_tree_type type,
 							    int *scope_levels);
 
-extern int				IDL_tree_walk_in_order(IDL_tree p,
+extern void				IDL_tree_walk_in_order(IDL_tree p,
 							       IDL_tree_func tree_func,
 							       gpointer user_data);
 
