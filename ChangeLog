@@ -2,6 +2,9 @@
 
 	* Update version to 0.6.4.
 
+	* util.c (IDL_tree_to_IDL*): If IDL_ns is NULL, output flag
+	IDLF_OUTPUT_NO_QUALIFY_IDENTS is enabled automatically.
+
 	* IDL.h.new.in: Added a flags and data field to the end of the
 	IDL_tree node type, for application use. The application can
 	assume these will be initialized to zero. Should be backward

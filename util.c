@@ -3384,6 +3384,9 @@ void IDL_tree_to_IDL (IDL_tree p, IDL_ns ns, FILE *output, unsigned long output_
 	data.inline_props = TRUE;
 	data.su_def = FALSE;
 
+	if (ns == NULL)
+		data.flags |= IDLF_OUTPUT_NO_QUALIFY_IDENTS;
+
 	IDL_tree_walk (p, NULL,
 		       (IDL_tree_func) IDL_emit_node_pre_func,
 		       (IDL_tree_func) IDL_emit_node_post_func,
@@ -3403,6 +3406,9 @@ GString *IDL_tree_to_IDL_string (IDL_tree p, IDL_ns ns, unsigned long output_fla
 	data.literals = FALSE;
 	data.inline_props = TRUE;
 	data.su_def = FALSE;
+
+	if (ns == NULL)
+		data.flags |= IDLF_OUTPUT_NO_QUALIFY_IDENTS;
 
 	IDL_tree_walk (p, NULL,
 		       (IDL_tree_func) IDL_emit_node_pre_func,

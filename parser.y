@@ -1398,7 +1398,7 @@ static const char *IDL_ns_get_cur_prefix (IDL_ns ns)
 }
 
 gchar *IDL_ns_ident_make_repo_id (IDL_ns ns, IDL_tree p,
-				 const char *p_prefix, int *major, int *minor)
+				  const char *p_prefix, int *major, int *minor)
 {
 	GString *s = g_string_new (NULL);
 	const char *prefix;
