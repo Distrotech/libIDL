@@ -1232,8 +1232,8 @@ static IDL_declspec_t IDL_parse_declspec(const char *strspec)
 	if (strspec == NULL)
 		return flags;
 
-	if (strcmp(strspec, "nostubs") == 0)
-		flags |= IDLF_DECLSPEC_NOSTUBS;
+	if (strcmp(strspec, "inhibit") == 0)
+		flags |= IDLF_DECLSPEC_INHIBIT;
 	else if (__IDL_is_parsing)
 		yywarningv(IDL_WARNING1, "Ignoring unknown declspec `%s'", strspec);
 

@@ -169,7 +169,7 @@ const char *IDL_get_IDLver_string(void)
 static void IDL_tree_check_semantics(IDL_tree *p)
 {
 	IDL_tree_resolve_forward_dcls(*p);
-	IDL_tree_remove_nostubs(p);
+	IDL_tree_remove_inhibits(p);
 	IDL_tree_remove_empty_modules(p);
 	
 	if (*p == NULL)
@@ -1687,12 +1687,13 @@ void IDL_tree_resolve_forward_dcls(IDL_tree p)
 	g_hash_table_destroy(table);
 }
 
-static int load_nostubs(IDL_tree p, GHashTable *table)
+/* Inhibit Creation Removal */
+static int load_inhibits(IDL_tree p, GHashTable *table)
 {
 	if (IDL_NODE_TYPE(p) == IDLN_INTERFACE &&
 	    IDL_NODE_UP(p) &&
 	    IDL_NODE_TYPE(IDL_NODE_UP(p)) == IDLN_LIST &&
-	    IDL_NODE_DECLSPEC(p) & IDLF_DECLSPEC_NOSTUBS &&
+	    IDL_NODE_DECLSPEC(p) & IDLF_DECLSPEC_INHIBIT &&
 	    !g_hash_table_lookup_extended(table, IDL_NODE_UP(p), NULL, NULL)) {
 		
 		IDL_tree *list_head = NULL;
@@ -1708,7 +1709,7 @@ static int load_nostubs(IDL_tree p, GHashTable *table)
 	return IDL_TRUE;
 }
 
-static int remove_nostubs(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
+static int remove_inhibits(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
 {
 	assert(p != NULL);
 	
@@ -1722,16 +1723,17 @@ static int remove_nostubs(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
 	return TRUE;
 }
 
-void IDL_tree_remove_nostubs(struct _IDL_tree_node **p)
+void IDL_tree_remove_inhibits(struct _IDL_tree_node **p)
 {
 	GHashTable *table = g_hash_table_new(g_direct_hash, g_direct_equal);
 
-	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_nostubs, table);
-	g_hash_table_foreach(table, (GHFunc)remove_nostubs, p);
-	g_message("IDL_tree_remove_nostubs: %d interface(s) removed", g_hash_table_size(table));
+	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_inhibits, table);
+	g_hash_table_foreach(table, (GHFunc)remove_inhibits, p);
+	g_message("IDL_tree_remove_inhibits: %d node(s) removed", g_hash_table_size(table));
 	g_hash_table_destroy(table);
 }
 
+/* Multi-Pass Empty Module Removal */
 static int load_empty_modules(IDL_tree p, GHashTable *table)
 {
 	if (IDL_NODE_TYPE(p) == IDLN_MODULE &&

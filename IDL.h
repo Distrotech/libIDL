@@ -52,7 +52,7 @@ extern "C" {
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
-#define IDLF_DECLSPEC_NOSTUBS		(1UL << 1)
+#define IDLF_DECLSPEC_INHIBIT		(1UL << 1)
 
 /* type casting checks */
 #define IDL_check_cast_enable(boolean)	do {	\

@@ -165,7 +165,7 @@ wstring			tokreturn(TOK_WSTRING);
 \<\<			tokreturn(TOK_OP_SHL);
 {declspec}		{
 	char *s = g_strdup(yytext);
-	sscanf(yytext, "__declspec %*[(] %[A-Za-z] %*[)]", s);
+	sscanf(yytext, "__declspec %*[(] %[A-Za-z_] %*[)]", s);
 	yylval.str = s;
 	tokreturn(TOK_DECLSPEC);
 }
