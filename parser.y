@@ -318,6 +318,7 @@ module:			module_declspec new_or_prev_scope '{'
 	if (IDL_NODE_UP($2) != NULL &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
 		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
+		yyerrornv($2, "Previous declaration");
 		YYABORT;
 	}
 	yywarningv(IDL_WARNING1,
@@ -352,6 +353,7 @@ interface:		interface_declspec
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_INTERFACE &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_FORWARD_DCL) {
 		do_token_error(IDL_NODE_UP($2), "Interface definition conflicts with", 0);
+		yyerrornv($2, "Previous declaration");
 		YYABORT;
 	} else if (IDL_NODE_UP($2) != NULL &&
 		   IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_FORWARD_DCL) {

@@ -301,10 +301,12 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	free(tmpfilename);
 #endif
 
-	IDL_tree_optimize(&__IDL_root, __IDL_root_ns);
+	if (__IDL_root != NULL) {
+		IDL_tree_optimize(&__IDL_root, __IDL_root_ns);
 
-	if (__IDL_root == NULL)
-		yyerror("File does not generate any useful information");
+		if (__IDL_root == NULL)
+			yyerror("File empty after optimization");
+	}
 
 	__IDL_msgcb = NULL;
 
@@ -1707,8 +1709,8 @@ char *IDL_do_escapes(const char *s)
 
 int IDL_list_length(IDL_tree list)
 {
-	int length;
 	IDL_tree curitem;
+	int length;
 
 	for(curitem = list, length = 0; curitem;
 	    curitem = IDL_LIST(curitem).next)
@@ -1721,19 +1723,12 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 {
 	IDL_tree curitem;
 	int i;
+
 	for(curitem = list, i = 0; i < n && curitem;
-	    curitem = IDL_LIST(curitem).next, i++)
-		/* */;
+	    curitem = IDL_LIST(curitem).next, i++) ;
+
 	return curitem;
 }
-
-#if 0
-static int inc_refs(IDL_tree p)
-{
-	++IDL_NODE_REFS(p);
-	return TRUE;
-}
-#endif
 
 struct remove_list_node_data {
 	IDL_tree *root;
@@ -1757,7 +1752,7 @@ static int remove_list_node(IDL_tree p, IDL_tree *list_head, struct remove_list_
 		  We shouldn't need this since we have removed it from the tree,
 		  but we might need it for multiple declspec(inhibits) in the same
 		  subtree.
-		  IDL_tree_walk_pre_order(p, (IDL_tree_func)inc_refs, NULL);
+		  IDL_tree_walk_pre_order(p, (IDL_tree_func)inc_node_ref, NULL);
 		*/
 	} else
 		IDL_tree_free(p);
@@ -1816,21 +1811,14 @@ void IDL_tree_process_forward_dcls(IDL_tree *p, IDL_ns ns)
 	struct remove_list_node_data data;
 	GHashTable *table = g_hash_table_new(IDL_strcase_hash, IDL_strcase_equal);
 	GHashTable *node_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-	int total, unresolved;
 
 	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_forward_dcls, table);
-	total = g_hash_table_size(table);
 	IDL_tree_walk_pre_order(*p, (IDL_tree_func)resolve_forward_dcls, table);
-	unresolved = g_hash_table_size(table);
 	g_hash_table_foreach(table, (GHFunc)print_unresolved_forward_dcls, NULL);
 	g_hash_table_foreach(table, (GHFunc)load_forward_dcls_to_node_hash, node_hash);
 	data.root = p;
 	data.removed_nodes = NULL;
 	g_hash_table_foreach(node_hash, (GHFunc)remove_list_node, &data);
-	g_message("IDL_tree_process_forward_dcls: %d of %d forward declarations resolved",
-		  total - unresolved, total);
-	g_message("IDL_tree_process_forward_dcls: %d unresolved forward declarations removed",
-		  unresolved);
 	g_hash_table_destroy(node_hash);
 	g_hash_table_destroy(table);
 }
@@ -1867,7 +1855,6 @@ void IDL_tree_remove_inhibits(IDL_tree *p, IDL_ns ns)
 	data.root = p;
 	data.removed_nodes = IDL_NS(ns).inhibits;
 	g_hash_table_foreach(table, (GHFunc)remove_list_node, &data);
-	g_message("IDL_tree_remove_inhibits: %d subtree(s) removed", g_hash_table_size(table));
 	g_hash_table_destroy(table);
 }
 
@@ -1897,18 +1884,15 @@ void IDL_tree_remove_empty_modules(IDL_tree *p, IDL_ns ns)
 {
 	struct remove_list_node_data data;
 	gboolean done = FALSE;
-	int count = 0;
 
 	data.root = p;
 	data.removed_nodes = NULL;
 
 	while (!done) {
 		GHashTable *table = g_hash_table_new(g_direct_hash, g_direct_equal);
-		g_message("IDL_tree_remove_empty_modules: removing empty modules, pass #%d", ++count);
 		IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_empty_modules, table);
 		done = g_hash_table_size(table) == 0;
 		g_hash_table_foreach(table, (GHFunc)remove_list_node, &data);
-		g_message("IDL_tree_remove_empty_modules: %d empty module(s) removed", g_hash_table_size(table));
 		g_hash_table_destroy(table);
 	}
 }

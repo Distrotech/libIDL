@@ -1,3 +1,14 @@
+Wed Aug 26 01:48:12 1998  Andrew Veliath  <andrewtv@usa.net>
+
+	* util.c (IDL_tree_process_forward_dcls),
+		(IDL_tree_remove_inhibits),
+		(IDL_tree_remove_empty_modules): Remove debugging messages.
+
+	* util.c (IDL_parse_filename): Only run optimization if tree is
+	  non-NULL, and improve useless file message.
+
+	* parser.y: Complete previous declaration context error messages.
+
 1998-08-25  Andrew Veliath  <andrewtv@usa.net>
 
 	* Update libIDL version to 0.4.0.
