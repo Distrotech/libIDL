@@ -171,7 +171,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 {
 	extern void __IDL_lex_init(void);
 	extern void __IDL_lex_cleanup(void);
-	int yyparse(void);
+	extern int yyparse(void);
 	extern FILE *__IDL_in;
 	FILE *input;
 	char *cmd;
@@ -1594,7 +1594,7 @@ static int resolve_forward_dcls(IDL_tree p, GHashTable *table)
 
 static int print_unresolved_forward_dcls(char *s)
 {
-	yywarningv(IDL_WARNING1, "Unresolved forward declaration %s", s);
+	yywarningv(IDL_WARNING1, "Unresolved forward declaration `%s'", s);
 	free(s);
 
 	return TRUE;
