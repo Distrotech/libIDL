@@ -1505,7 +1505,7 @@ void IDL_tree_walk_in_order (IDL_tree p, IDL_tree_func tree_func, gpointer user_
 
 	case IDLN_INTERFACE:
 		IDL_tree_walk_in_order (IDL_INTERFACE (p).ident, tree_func, user_data);
-		IDL_tree_walk_in_order (IDL_INTERFACE (p).iid, tree_func, user_data);
+		IDL_tree_walk_in_order (IDL_INTERFACE (p).infotag, tree_func, user_data);
 		IDL_tree_walk_in_order (IDL_INTERFACE (p).inheritance_spec, tree_func, user_data);
 		IDL_tree_walk_in_order (IDL_INTERFACE (p).body, tree_func, user_data);
 		break;
@@ -1749,7 +1749,7 @@ void IDL_tree_free (IDL_tree p)
 		
 	case IDLN_INTERFACE:
 		IDL_tree_free (IDL_INTERFACE (p).ident);
-		IDL_tree_free (IDL_INTERFACE (p).iid);
+		IDL_tree_free (IDL_INTERFACE (p).infotag);
 		IDL_tree_free (IDL_INTERFACE (p).inheritance_spec);
 		IDL_tree_free (IDL_INTERFACE (p).body);
 		__IDL_tree_free (p);

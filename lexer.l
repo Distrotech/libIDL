@@ -77,7 +77,7 @@ declspec		__declspec{whitespace}\({whitespace}[A-Za-z]*{whitespace}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
-iid_ident		[A-Za-z0-9_\-]+
+infotag_ident		\[[A-Za-z]*[\{\(][A-Za-z0-9_\-]+[\}\)]\]
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
@@ -226,9 +226,9 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-{iid_ident}		{
+{infotag_ident}		{
 	yylval.str = g_strdup (yytext);
-	tokreturn (TOK_IID_IDENT);
+	tokreturn (TOK_INFOTAG);
 }
 {sqstring}		{
 	yylval.str = g_strdup (yytext + 1);

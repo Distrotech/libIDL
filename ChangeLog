@@ -1,5 +1,10 @@
 1998-11-28  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* lexer.l, parser.y, util.c, IDL.h: Change iid_ident to
+	infotag_ident (TOK_IID_IDENT -> TOK_INFOTAG), which is more unique
+	in scanning, and slightly more general.  Change infotag syntax to
+	precede the interface, after the declaration spec (if any).
+
 	* util.c (IDL_tree_free): Update for interface iid, and varargs.
 	(IDL_tree_walk_in_order): Same.
 	(IDL_type_varargs_new): New function.

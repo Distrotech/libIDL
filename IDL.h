@@ -374,7 +374,7 @@ extern IDL_tree		IDL_case_stmt_new		(IDL_tree labels,
 
 struct _IDL_INTERFACE {
 	IDL_tree ident;
-	IDL_tree iid;		/* XPIDL extension */
+	IDL_tree infotag;		/* XPIDL extension */
 	IDL_tree inheritance_spec;
 	IDL_tree body;
 };

@@ -137,8 +137,8 @@ static int		do_token_error			(IDL_tree p,
 %token			TOK_WSTRING
 %token <floatp>		TOK_FLOATP
 %token <integer>	TOK_INTEGER
-%token <str>		TOK_IDENT TOK_IID_IDENT
-%token <str>		TOK_DECLSPEC TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
+%token <str>		TOK_DECLSPEC TOK_INFOTAG
+%token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
 %token			TOK_TYPECODE
 
 /* Non-Terminals */
@@ -180,12 +180,12 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		fixed_pt_type
 %type <tree>		floating_pt_lit
 %type <tree>		floating_pt_type
-%type <tree>		ident iid_ident
+%type <tree>		ident
 %type <tree>		illegal_ident
+%type <tree>		infotag
 %type <tree>		integer_lit
 %type <tree>		integer_type
 %type <tree>		interface
-%type <tree>		interface_iid
 %type <tree>		interface_body
 %type <tree>		interface_catch_ident
 %type <tree>		is_context_expr
@@ -241,9 +241,10 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		wide_string_type
 %type <tree>		xor_expr
 %type <tree>		z_inheritance
+%type <tree>		z_infotag
 %type <tree>		typecode_type
 
-%type <declspec>	z_declspec interface_declspec module_declspec
+%type <declspec>	z_declspec module_declspec
 %type <integer>		signed_int unsigned_int is_readonly is_oneway
 %type <paramattr>	param_attribute
 %type <str>		sqstring dqstring dqstring_cat
@@ -356,66 +357,67 @@ interface_catch_ident:	new_or_prev_scope
 }
 	;
 
-interface_declspec:	z_declspec TOK_INTERFACE
-	;
-
-interface_iid:		/* empty */			{ $$ = NULL; }
-|			'[' iid_ident ']'		{ $$ = $2; }
-	;
-
-interface:		interface_declspec
+interface:		z_declspec
+			z_infotag
+			TOK_INTERFACE
 			interface_catch_ident
-			interface_iid
 			pop_scope
 			z_inheritance			{
-	assert ($2 != NULL);
-	assert (IDL_NODE_TYPE ($2) == IDLN_IDENT);
-	assert (IDL_IDENT_TO_NS ($2) != NULL);
-	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($2)) == IDLN_GENTREE);
-	if (IDL_NODE_UP ($2) != NULL &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_INTERFACE &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_FORWARD_DCL) {
-		do_token_error (IDL_NODE_UP ($2), "Interface definition conflicts with", FALSE);
-		yyerrornv ($2, "Previous declaration");
+	assert ($4 != NULL);
+	assert (IDL_NODE_TYPE ($4) == IDLN_IDENT);
+	assert (IDL_IDENT_TO_NS ($4) != NULL);
+	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($4)) == IDLN_GENTREE);
+	if (IDL_NODE_UP ($4) != NULL &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_INTERFACE &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
+		do_token_error (IDL_NODE_UP ($4), "Interface definition conflicts with", FALSE);
+		yyerrornv ($4, "Previous declaration");
 		YYABORT;
-	} else if (IDL_NODE_UP ($2) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_FORWARD_DCL) {
-		yyerrorv ("Cannot redeclare interface `%s'", IDL_IDENT ($2).str);
-		yyerrornv ($2, "Previous declaration of interface `%s'", IDL_IDENT ($2).str);
+	} else if (IDL_NODE_UP ($4) != NULL &&
+		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
+		yyerrorv ("Cannot redeclare interface `%s'", IDL_IDENT ($4).str);
+		yyerrornv ($4, "Previous declaration of interface `%s'", IDL_IDENT ($4).str);
 		YYABORT;
-	} else if (IDL_NODE_UP ($2) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($2)) == IDLN_FORWARD_DCL) {
-		$2->_file = __IDL_cur_filename;
-		$2->_line = __IDL_cur_line;
+	} else if (IDL_NODE_UP ($4) != NULL &&
+		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL) {
+		$4->_file = __IDL_cur_filename;
+		$4->_line = __IDL_cur_line;
 	}
-	IDL_GENTREE (IDL_IDENT_TO_NS ($2))._import = $5;
-	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($2));
-	if (IDL_ns_check_for_ambiguous_inheritance ($2, $5))
+	IDL_GENTREE (IDL_IDENT_TO_NS ($4))._import = $6;
+	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($4));
+	if (IDL_ns_check_for_ambiguous_inheritance ($4, $6))
 		__IDL_is_okay = FALSE;
 }
 			'{'
 				interface_body
 			'}' pop_scope			{
- 	$$ = IDL_interface_new ($2, $5, $8);
+ 	$$ = IDL_interface_new ($4, $6, $9);
 	IDL_NODE_DECLSPEC ($$) = $1;
 
-	/* Check for XPIDL interface IID tag */
-	if ($3 != NULL) {
+	/* Check for XPIDL interface tag */
+	if ($2 != NULL) {
 		if (__IDL_flags & IDLF_XPIDL)
-			IDL_INTERFACE ($$).iid = $3;
+			IDL_INTERFACE ($$).infotag = $2;
 		else {
-			yyerrornv ($3, "Cannot have IID interface tag when XPIDL syntax is not enabled");
-			IDL_tree_free ($3);
+			yyerrornv ($2,
+				   "Cannot have interface tag %s when XPIDL syntax is not enabled",
+				   IDL_IDENT ($2).str);
+			IDL_tree_free ($2);
 		}
 	}
 }
-|			interface_declspec
+|			z_declspec
+			z_infotag
+			TOK_INTERFACE
 			interface_catch_ident pop_scope	{
-	if ($1)
-		yywarningv (IDL_WARNING1,
-			   "Useless declspec for forward declaration `%s'",
-			   IDL_IDENT ($2));
-	$$ = IDL_forward_dcl_new ($2);
+	if ($1) yywarningv (IDL_WARNING1,
+			    "Ignoring useless declspec for forward declaration `%s'",
+			    IDL_IDENT ($4));
+	if ($2) yywarningv (IDL_WARNING1,
+			    "Ignoring useless interface tag %s for forward declaration `%s'",
+			    IDL_IDENT ($2).str,
+			    IDL_IDENT ($4));
+	$$ = IDL_forward_dcl_new ($4);
 }
 	;
 
@@ -907,8 +909,7 @@ fixed_array_size:	'['
 			']'				{ $$ = $2; }
 	;
 
-iid_ident:		TOK_IID_IDENT			{ $$ = IDL_ident_new ($1); }
-|			ident
+infotag:		TOK_INFOTAG			{ $$ = IDL_ident_new ($1); }
 	;
 
 ident:			TOK_IDENT			{ $$ = IDL_ident_new ($1); }
@@ -1098,6 +1099,10 @@ z_declspec:		/* empty */			{ $$ = 0; }
 	$$ = IDL_parse_declspec ($1);
 	free ($1);
 }
+	;
+
+z_infotag:		/* empty */			{ $$ = NULL; }
+|			infotag
 	;
 
 integer_lit:		TOK_INTEGER			{ $$ = IDL_integer_new ($1); }
