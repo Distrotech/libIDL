@@ -1,3 +1,7 @@
+libIDL 0.8.2:
+
+	* Support new versions of flex (Jody Goldberg)
+
 libIDL 0.8.1:
 
 	* add '_' prefix escaped keyword support (Nick Lewycky)

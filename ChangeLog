@@ -1,3 +1,7 @@
+2003-05-26  Mark McLoughlin  <mark@skynet.ie>
+
+	* configure.in: Version 0.8.2.
+
 2003-05-08  Jody Goldberg <jody@gnome.org>
 
 	* lexer.l (__IDL_lex_cleanup) : newer versions of flex do not require
