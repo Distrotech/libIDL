@@ -202,10 +202,10 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	char *cmd;
 	size_t cmd_len;
 #ifdef HAVE_CPP_PIPE_STDIN
-	char *fmt = CPP_PROGRAM " - %s%s %s < \"%s\" 2>/dev/null";
+	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " - %s%s %s < \"%s\" 2>/dev/null";
 	char *wd = "", *dirend;
 #else
-	char *fmt = CPP_PROGRAM " -I- -I%s %s \"%s\" 2>/dev/null";
+	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " -I- -I%s %s \"%s\" 2>/dev/null";
 	char *s, *tmpfilename;
 	char cwd[2048];
 	gchar *linkto;

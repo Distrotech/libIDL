@@ -64,6 +64,7 @@ if [[ "$ac_cv_cpp_accept_idl" = "no" ]]; then
 	AC_MSG_WARN(CPP does not accept IDL)
 fi
 AC_CPP_PIPE_STDIN
+AC_CPP_NOSTDINC
 CPP_PROGRAM="$CPP"
 AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 
