@@ -60,7 +60,7 @@
 } while (0)
 
 extern int			yylex(void);
-
+static IDL_declspec_t		IDL_parse_declspec(const char *strspec);
 static int			IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b);
 static int			IDL_unaryop_chktypes(enum IDL_unaryop op, IDL_tree a);
 static IDL_tree			IDL_binop_eval(enum IDL_binop op, IDL_tree a, IDL_tree b);
@@ -75,7 +75,8 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 %union {
 	IDL_tree tree;
 	char *str;
-	IDL_long_t integer;
+	IDL_declspec_t declspec;
+	IDL_longlong_t integer;
 	double floatp;
 	enum IDL_unaryop unaryop;
 	enum IDL_param_attr paramattr;
@@ -125,7 +126,7 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 %token			TOK_WSTRING
 %token <floatp>		TOK_FLOATP
 %token <integer>	TOK_INTEGER
-%token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
+%token <str>		TOK_DECLSPEC TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
 
 /* Non-Terminals */
 %type <tree>		add_expr
@@ -166,7 +167,6 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 %type <tree>		fixed_pt_type
 %type <tree>		floating_pt_lit
 %type <tree>		floating_pt_type
-%type <tree>		forward_dcl
 %type <tree>		ident
 %type <tree>		illegal_ident
 %type <tree>		integer_lit
@@ -174,7 +174,6 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 %type <tree>		interface
 %type <tree>		interface_body
 %type <tree>		interface_catch_ident
-%type <tree>		interface_dcl
 %type <tree>		is_context_expr
 %type <tree>		is_raises_expr
 %type <tree>		literal
@@ -229,6 +228,7 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 %type <tree>		xor_expr
 %type <tree>		z_inheritance
 
+%type <declspec>	z_declspec interface_declspec
 %type <integer>		signed_int unsigned_int is_readonly is_oneway
 %type <paramattr>	param_attribute
 %type <str>		sqstring dqstring dqstring_cat
@@ -279,10 +279,6 @@ definition:		type_dcl check_semicolon
 |			useless_semicolon
 	;
 
-interface:		interface_dcl
-|			forward_dcl
-	;
-
 module:			TOK_MODULE new_or_prev_scope '{'
 				definition_list
 			'}' pop_scope			{
@@ -328,9 +324,13 @@ interface_catch_ident:	new_or_prev_scope
 }
 	;
 
-interface_dcl:		TOK_INTERFACE interface_catch_ident
+interface_declspec:	z_declspec TOK_INTERFACE
+	;
+
+interface:		interface_declspec
+			interface_catch_ident
 			pop_scope
-			z_inheritance			{ 
+			z_inheritance			{
 	assert($2 != NULL);
 	assert(IDL_NODE_TYPE($2) == IDLN_IDENT);
 	assert(IDL_IDENT_TO_NS($2) != NULL);
@@ -350,13 +350,24 @@ interface_dcl:		TOK_INTERFACE interface_catch_ident
 	if (IDL_ns_check_for_ambiguous_inheritance($2, $4))
 		__IDL_is_okay = IDL_FALSE;
 }
-			'{'
-				interface_body
-			'}' pop_scope			{ $$ = IDL_interface_new($2, $4, $7); }
-	;
-
-forward_dcl:		TOK_INTERFACE
-			interface_catch_ident pop_scope	{ $$ = IDL_forward_dcl_new($2); }
+			'{' interface_body '}'
+			pop_scope			{
+				IDL_NODE_DECLSPEC($2) = $1;
+				if (IDL_NODE_DECLSPEC($2) & IDLF_DECLSPEC_NOSTUBS) {
+					IDL_tree_free($4);
+					IDL_tree_free($7);
+					$$ = NULL;
+				} else
+					$$ = IDL_interface_new($2, $4, $7);
+			}
+|			interface_declspec
+			interface_catch_ident pop_scope	{
+	if ($1)
+		yywarningv(IDL_WARNING1,
+			   "Useless declspec for forward declaration `%s'",
+			   IDL_IDENT($2));
+	$$ = IDL_forward_dcl_new($2);
+}
 	;
 
 z_inheritance:		/* empty */			{ $$ = NULL; }
@@ -951,6 +962,12 @@ positive_int_const:	TOK_INTEGER			{
 }
 	;
 
+z_declspec:		/* empty */			{ $$ = 0; }
+|			TOK_DECLSPEC			{
+	$$ = IDL_parse_declspec($1);
+	free($1);
+}
+	;
 
 integer_lit:		TOK_INTEGER			{ $$ = IDL_integer_new($1); }
 	;
@@ -1204,6 +1221,21 @@ void __IDL_do_pragma(const char *s)
 		IDL_ns_ID(__IDL_root_ns, s);
 	else if (strcmp(directive, "version") == 0)
 		IDL_ns_version(__IDL_root_ns, s);
+}
+
+static IDL_declspec_t IDL_parse_declspec(const char *strspec)
+{
+	IDL_declspec_t flags = IDLF_DECLSPEC_EXIST;
+
+	if (strspec == NULL)
+		return flags;
+
+	if (strcmp(strspec, "nostubs") == 0)
+		flags |= IDLF_DECLSPEC_NOSTUBS;
+	else if (__IDL_is_parsing)
+		yywarningv(IDL_WARNING1, "Ignoring unknown declspec `%s'", strspec);
+
+	return flags;
 }
 
 static int do_token_error(IDL_tree p, const char *message, int prev)

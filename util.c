@@ -168,7 +168,8 @@ const char *IDL_get_IDLver_string(void)
 
 static void IDL_tree_check_semantics(IDL_tree p)
 {
-	IDL_tree_resolve_forward_dcls(p);
+	/* will update later for new declspecs 
+	   IDL_tree_resolve_forward_dcls(p); */
 }
 
 int IDL_parse_filename(const char *filename, const char *cpp_args,
@@ -622,7 +623,7 @@ IDL_tree IDL_gentree_new_sibling(IDL_tree from, IDL_tree data)
 	return p;
 }
 
-IDL_tree IDL_integer_new(IDL_long_t value)
+IDL_tree IDL_integer_new(IDL_longlong_t value)
 {
 	IDL_tree p = IDL_node_new(IDLN_INTEGER);
 

@@ -49,6 +49,10 @@ extern "C" {
 #define IDLF_EVAL_CONST			(1UL << 0)
 #define IDLF_PREFIX_FILENAME		(1UL << 1)
 
+/* declaration specification flags */
+#define IDLF_DECLSPEC_EXIST		(1UL << 0)
+#define IDLF_DECLSPEC_NOSTUBS		(1UL << 1)
+
 /* type casting checks */
 #define IDL_check_cast_enable(boolean)	do {	\
 	extern int __IDL_check_type_casts;	\
@@ -59,6 +63,26 @@ extern "C" {
 			    __FILE__, __LINE__,			\
 			    G_GNUC_PRETTY_FUNCTION)->u.name)
 
+#ifdef HAVE_GINT64
+typedef gint64				IDL_longlong_t;
+typedef guint64				IDL_ulonglong_t;
+#else
+typedef long				IDL_longlong_t;
+typedef unsigned long			IDL_ulonglong_t;
+#  warning 64-bit integer type not available, using 32-bit instead
+#endif /* HAVE_GINT64 */
+#if (SIZEOF_LONG < 8) && defined(__GNUC__)
+#  define IDL_B8_FMT			"%llo"
+#  define IDL_UB10_FMT			"%llu"
+#  define IDL_SB10_FMT			"%lld"
+#  define IDL_B16_FMT			"%llx"
+#else
+#  define IDL_B8_FMT			"%lo"
+#  define IDL_UB10_FMT			"%lu"
+#  define IDL_SB10_FMT			"%ld"
+#  define IDL_B16_FMT			"%lx"
+#endif
+typedef unsigned int			IDL_declspec_t;
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
 
@@ -96,32 +120,11 @@ extern IDL_tree				IDL_gentree_chain_sibling(IDL_tree from,
 extern IDL_tree				IDL_gentree_chain_child(IDL_tree from,
 								IDL_tree data);
 
-#ifdef HAVE_GINT64
-typedef gint64				IDL_long_t;
-typedef guint64				IDL_ulong_t;
-#else
-typedef long				IDL_long_t;
-typedef unsigned long			IDL_ulong_t;
-#  warning 64-bit integer type not available, using 32-bit instead
-#endif /* HAVE_GINT64 */
-
-#if (SIZEOF_LONG < 8) && defined(__GNUC__)
-#  define IDL_B8_FMT			"%llo"
-#  define IDL_UB10_FMT			"%llu"
-#  define IDL_SB10_FMT			"%lld"
-#  define IDL_B16_FMT			"%llx"
-#else
-#  define IDL_B8_FMT			"%lo"
-#  define IDL_UB10_FMT			"%lu"
-#  define IDL_SB10_FMT			"%ld"
-#  define IDL_B16_FMT			"%lx"
-#endif
-
 struct _IDL_INTEGER {
-	IDL_long_t value;
+	IDL_longlong_t value;
 };
 #define IDL_INTEGER(a)			IDL_CHECK_CAST(a, IDLN_INTEGER, idl_integer)
-extern IDL_tree				IDL_integer_new(IDL_long_t value);
+extern IDL_tree				IDL_integer_new(IDL_longlong_t value);
 
 struct _IDL_STRING {
 	char *value;
@@ -463,6 +466,7 @@ extern const char *			IDL_tree_type_names[];
 struct _IDL_tree_node {
 	IDL_tree_type _type;
 	IDL_tree up;			/* Do not recurse */
+	IDL_declspec_t declspec;
 	union {
 		struct _IDL_LIST idl_list;
 		struct _IDL_GENTREE idl_gentree;
@@ -504,6 +508,7 @@ struct _IDL_tree_node {
 #define IDL_NODE_TYPE(a)		((a)->_type)
 #define IDL_NODE_TYPE_NAME(a)		(IDL_tree_type_names[IDL_NODE_TYPE(a)])
 #define IDL_NODE_UP(a)			((a)->up)
+#define IDL_NODE_DECLSPEC(a)		((a)->declspec)
 #define IDL_NODE_IS_SCOPED(a)				\
 	(IDL_NODE_TYPE(a) == IDLN_IDENT ||		\
 	 IDL_NODE_TYPE(a) == IDLN_INTERFACE ||		\

@@ -57,6 +57,7 @@ b10_uint		-[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
 float_lit		-?[0-9]*\.[0-9]+([eE]-?[0-9]+)?|-?[0-9]+\.?([eE]-?[0-9]+)?
 fixed_lit		(-?[0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
+declspec		__declspec{whitespace}\({whitespace}[A-Za-z]*{whitespace}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
@@ -162,7 +163,13 @@ wstring			tokreturn(TOK_WSTRING);
 ::			tokreturn(TOK_OP_SCOPE);
 \>\>			tokreturn(TOK_OP_SHR);
 \<\<			tokreturn(TOK_OP_SHL);
-{happy_ident}	{
+{declspec}		{
+	char *s = g_strdup(yytext);
+	sscanf(yytext, "__declspec %*[(] %[A-Za-z] %*[)]", s);
+	yylval.str = s;
+	tokreturn(TOK_DECLSPEC);
+}
+{happy_ident}		{
 	if ((*yytext == 'O' || *yytext == 'o') &&
 	    IDL_strcase_equal(yytext + 1, "bject"))
 		tokreturn(TOK_OBJECT);
