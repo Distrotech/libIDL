@@ -185,7 +185,8 @@ static void IDL_tree_optimize (IDL_tree *p, IDL_ns ns)
 {
 	if (!(__IDL_flags & IDLF_IGNORE_FORWARDS))
 		IDL_tree_process_forward_dcls (p, ns);
-	IDL_tree_remove_inhibits (p, ns);
+	if (!(__IDL_flags & IDLF_INHIBIT_TAG_ONLY))
+		IDL_tree_remove_inhibits (p, ns);
 	IDL_tree_remove_empty_modules (p, ns);
 }
 
@@ -2304,15 +2305,18 @@ static int load_inhibits (IDL_tree_func_data *tfd, GHashTable *table)
 	return TRUE;
 }
 
-void IDL_tree_remove_inhibits (IDL_tree *p, IDL_ns ns)
+void IDL_tree_remove_inhibits (IDL_tree *tree, IDL_ns ns)
 {
 	RemoveListNodeData data;
 	GHashTable *table = g_hash_table_new (g_direct_hash, g_direct_equal);
 	gint removed;
 
-	IDL_tree_walk_in_order (*p, (IDL_tree_func) load_inhibits, table);
+	g_return_if_fail (tree != NULL);
+	g_return_if_fail (ns != NULL);
+
+	IDL_tree_walk_in_order (*tree, (IDL_tree_func) load_inhibits, table);
 	removed = g_hash_table_size (table);
-	data.root = p;
+	data.root = tree;
 	data.removed_nodes = IDL_NS (ns).inhibits;
 	g_hash_table_foreach (table, (GHFunc) remove_list_node, &data);
 	g_hash_table_destroy (table);

@@ -54,6 +54,7 @@ extern "C" {
 #define IDLF_PREFIX_FILENAME		(1UL << 3)
 #define IDLF_IGNORE_FORWARDS		(1UL << 4)
 #define IDLF_PEDANTIC			(1UL << 5)
+#define IDLF_INHIBIT_TAG_ONLY		(1UL << 6)
 
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)
@@ -761,6 +762,9 @@ extern gboolean		IDL_tree_property_remove	(IDL_tree tree,
 
 extern void		IDL_tree_properties_copy	(IDL_tree from_tree,
 							 IDL_tree to_tree);
+
+extern void		IDL_tree_remove_inhibits	(IDL_tree *tree,
+							 IDL_ns ns);
 
 extern void		IDL_tree_walk			(IDL_tree p,
 							 IDL_tree_func_data *current,

@@ -1,3 +1,11 @@
+1999-04-01  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* IDL.h.new.in (IDL_tree_remove_inhibits): Move prototype here
+	from util.h.
+
+	* util.c (IDL_tree_optimize): Skip inhibit removal if
+	the IDLF_INHIBIT_TAG_ONLY parse flag is specified.
+
 1999-03-29  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.6.
