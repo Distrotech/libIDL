@@ -1405,16 +1405,22 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 
 int IDL_inhibit_get (void)
 {
+	g_return_val_if_fail (__IDL_is_parsing, -1);
+
 	return __IDL_inhibits;
 }
 
 void IDL_inhibit_push (void)
 {
+	g_return_if_fail (__IDL_is_parsing);
+
 	++__IDL_inhibits;
 }
 
 void IDL_inhibit_pop (void)
 {
+	g_return_if_fail (__IDL_is_parsing);
+
 	if (--__IDL_inhibits < 0)
 		__IDL_inhibits = 0;
 }
@@ -1432,8 +1438,8 @@ void __IDL_do_pragma (const char *s)
 	int n;
 	char directive[256];
 
-	if (!s)
-		return;
+	g_return_if_fail (__IDL_is_parsing);
+	g_return_if_fail (s != NULL);
 
 	if (sscanf (s, "%255s%n", directive, &n) < 1)
 		return;
@@ -1470,6 +1476,8 @@ void IDL_file_set (const char *filename, int line)
 	IDL_fileinfo *fi;
 	char *orig;
 
+	g_return_if_fail (__IDL_is_parsing);
+
 	if (filename) {
 		__IDL_cur_filename = g_strdup (filename);
 		
@@ -1502,6 +1510,8 @@ void IDL_file_set (const char *filename, int line)
 
 void IDL_file_get (const char **filename, int *line)
 {
+	g_return_if_fail (__IDL_is_parsing);
+
 	if (filename)
 		*filename = __IDL_cur_filename;
 
