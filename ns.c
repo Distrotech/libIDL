@@ -120,12 +120,9 @@ IDL_tree IDL_ns_resolve_this_scope_ident (IDL_ns ns, IDL_tree scope, IDL_tree id
 	p = scope;
 
 	while (p != NULL) {
-
 		q = IDL_ns_lookup_this_scope (ns, p, ident, NULL);
-		
 		if (q != NULL)
 			return q;
-
 		p = IDL_NODE_UP (p);
 	}
 
@@ -167,7 +164,7 @@ IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gb
 	assert (IDL_NODE_TYPE (q) == IDLN_LIST);
 	for (; q != NULL; q = IDL_LIST (q).next) {
 		IDL_tree r;
-		
+
 		assert (IDL_LIST (q).data != NULL);
 		assert (IDL_NODE_TYPE (IDL_LIST (q).data) == IDLN_IDENT);
 		assert (IDL_IDENT_TO_NS (IDL_LIST (q).data) != NULL);
@@ -179,11 +176,11 @@ IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gb
 			ident, NULL, (gpointer)&p)) {
 			assert (IDL_GENTREE (p).data != NULL);
 			assert (IDL_NODE_TYPE (IDL_GENTREE (p).data) == IDLN_IDENT);
-			
+
 			/* This needs more work, it won't do full ambiguity detection */
 			if (conflict && !is_inheritance_conflict (p))
 				*conflict = FALSE;
-			
+
 			return p;
 		}
 
@@ -347,25 +344,70 @@ int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 	g_return_val_if_fail (ns != NULL, 1);
 	g_return_val_if_fail (ident != NULL, 1);
 
-	while (parent && IDL_NODE_TYPE (parent) == IDLN_LIST)
-		parent = IDL_NODE_UP (parent);
-
-	if (parent == NULL ||
-	    (scope_here = IDL_tree_get_scope (parent)) == NULL ||
-	    (scope_ident = IDL_tree_get_scope (ident)) == NULL)
+#ifdef DEBUGNS
+	if (parent == NULL)
 		return 1;
+
+	debugf ("Start type: %s", IDL_NODE_TYPE_NAME (parent));
+#endif
+	while (parent && !IDL_NODE_IS_SCOPED (parent)) {
+		parent = IDL_NODE_UP (parent);
+#ifdef DEBUGNS
+		if (parent)
+			debugf ("Type up: %s", IDL_NODE_TYPE_NAME (parent));
+#endif
+	}
+	if (parent == NULL) {
+#ifdef DEBUGNS
+		debugf ("No end type");
+#endif
+		return 1;
+	}
+#ifdef DEBUGNS
+	debugf ("End type: %s", IDL_NODE_TYPE_NAME (parent));
+#endif
+
+	if ((scope_here = IDL_tree_get_scope (parent)) == NULL ||
+	    (scope_ident = IDL_tree_get_scope (ident)) == NULL) {
+#ifdef DEBUGNS
+		g_warning ("Failed");
+#endif
+		return 1;
+	}
 
 	assert (IDL_NODE_TYPE (scope_here) == IDLN_GENTREE);
 	assert (IDL_NODE_TYPE (scope_ident) == IDLN_GENTREE);
 
 	for (levels = 1; scope_ident;
 	     ++levels, scope_ident = IDL_NODE_UP (scope_ident)) {
+#ifdef DEBUGNS
+		IDL_tree scope;
+		char *s, *s3;
 
+		if (scope_ident == IDL_NS (ns).global)
+			break;
+		s = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_ident).data, "::", 0);
+		s3 = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_here).data, "::", 0);
+		debugf ("Searching for ident %s from scope %s", s, s3);
+		g_free (s); g_free (s3);
+#endif
 		p = IDL_ns_resolve_this_scope_ident (
 			ns, scope_here, IDL_GENTREE (scope_ident).data);
-		if (p)
+		if (p == scope_ident)
 			return levels;
+#ifdef DEBUGNS
+		if (p) {
+			char *s2 = IDL_ns_ident_to_qstring (IDL_GENTREE (p).data, "::",
+							    0);
+			debugf ("Rejected scope %s", s2);
+			g_free (s2);
+		}
+#endif
 	}
+
+#ifdef DEBUGNS
+	debugf ("Fall through");
+#endif
 
 	return 1;
 }

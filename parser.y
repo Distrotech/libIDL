@@ -87,8 +87,6 @@ static IDL_tree		zlist_chain			(IDL_tree a,
 static int		do_token_error			(IDL_tree p,
 							 const char *message,
 							 gboolean prev);
-
-static GHashTable *				struct_rdht;
 %}
 
 %union {
@@ -276,17 +274,7 @@ static GHashTable *				struct_rdht;
 %%
 
 specification:		/* empty */			{ yyerror ("Empty file"); YYABORT; }
-|			init definition_list fini	{ __IDL_root = $2; }
-	;
-
-init:							{
-	struct_rdht = g_hash_table_new (g_direct_hash, g_direct_equal);
-}
-	;
-
-fini:							{
-	g_hash_table_destroy (struct_rdht);
-}
+|			definition_list			{ __IDL_root = $1; }
 	;
 
 definition_list:	definition			{ $$ = list_start ($1, TRUE); }
@@ -567,19 +555,29 @@ constr_type_spec:	struct_type
 	;
 
 struct_type:		TOK_STRUCT new_scope '{'	{
-	g_hash_table_insert (struct_rdht, $2, $2);
+	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
+	$$ = IDL_type_struct_new ($2, NULL);
 }				member_list
 			'}' pop_scope			{
-	$$ = IDL_type_struct_new ($2, $5);
-	g_hash_table_remove (struct_rdht, $2);
+	g_hash_table_remove (__IDL_structunion_ht, $2);
+	$$ = $<tree>4;
+	IDL_TYPE_STRUCT ($$).member_list = $5;
+	IDL_NODE_UP (IDL_TYPE_STRUCT ($$).member_list) = $$;
 }
 	;
 
 union_type:		TOK_UNION new_scope TOK_SWITCH '('
 				switch_type_spec
-			')' '{'
-				switch_body
-			'}' pop_scope			{ $$ = IDL_type_union_new ($2, $5, $8); }
+			')' '{'				{
+	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
+	$$ = IDL_type_union_new ($2, $5, NULL);
+}				switch_body
+			'}' pop_scope			{
+	g_hash_table_remove (__IDL_structunion_ht, $2);
+	$$ = $<tree>8;
+	IDL_TYPE_UNION ($$).switch_body = $9;
+	IDL_NODE_UP (IDL_TYPE_UNION ($$).switch_body) = $$;
+}
 	;
 
 switch_type_spec:	integer_type
@@ -600,7 +598,18 @@ case_stmt:		case_label_list
 			element_spec check_semicolon	{ $$ = IDL_case_stmt_new ($1, $2); }
 	;
 
-element_spec:		type_spec declarator		{ $$ = IDL_member_new ($1, list_start ($2, TRUE)); }
+element_spec:		type_spec declarator		{
+	char *s;
+
+	$$ = IDL_member_new ($1, list_start ($2, TRUE));
+	if (IDL_NODE_TYPE ($1) == IDLN_IDENT &&
+	    g_hash_table_lookup (__IDL_structunion_ht, $1)) {
+		s = IDL_ns_ident_to_qstring ($2, "::", 0);
+		yyerrorv ("Member `%s'", s);
+		do_token_error (IDL_NODE_UP ($1), "recurses", TRUE);
+		g_free (s);
+	}
+}
 	;
 
 case_label_list:	case_label			{ $$ = list_start ($1, FALSE); }
@@ -890,14 +899,15 @@ member_list:		member				{ $$ = list_start ($1, TRUE); }
 
 member:			type_spec declarator_list
 			check_semicolon			{
+	char *s;
+
 	$$ = IDL_member_new ($1, $2);
 	if (IDL_NODE_TYPE ($1) == IDLN_IDENT &&
-	    g_hash_table_lookup (struct_rdht, $1)) {
-		char *s = IDL_ns_ident_to_qstring (IDL_LIST ($2).data, "::", 0);
-		char *s2 = IDL_ns_ident_to_qstring ($1, "::", 0);
-		yyerrorv ("Member `%s' recurses", s);
-		IDL_tree_error ($1, "structure `%s'", s2);
-		g_free (s); g_free (s2);
+	    g_hash_table_lookup (__IDL_structunion_ht, $1)) {
+		s = IDL_ns_ident_to_qstring (IDL_LIST ($2).data, "::", 0);
+		yyerrorv ("Member `%s'", s);
+		do_token_error (IDL_NODE_UP ($1), "recurses", TRUE);
+		g_free (s);
 	}
 }
 	;
