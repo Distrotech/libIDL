@@ -123,8 +123,6 @@ dqstring		\"[^\"\n]*[\"\n]
 	tokreturn(TOK_FLOATP);
 }
 FALSE			tokreturn(TOK_FALSE);
-Object			tokreturn(TOK_OBJECT);
-object			tokreturn(TOK_OBJECT);
 TRUE			tokreturn(TOK_TRUE);
 any			tokreturn(TOK_ANY);
 attribute		tokreturn(TOK_ATTRIBUTE);
@@ -164,7 +162,10 @@ wstring			tokreturn(TOK_WSTRING);
 ::			tokreturn(TOK_OP_SCOPE);
 \>\>			tokreturn(TOK_OP_SHR);
 \<\<			tokreturn(TOK_OP_SHL);
-{happy_ident}		{
+{happy_ident}	{
+	if ((*yytext == 'O' || *yytext == 'o') &&
+	    IDL_strcase_equal(yytext + 1, "bject"))
+		tokreturn(TOK_OBJECT);
 	yylval.str = g_strdup(yytext);
 	tokreturn(TOK_IDENT);
 }
