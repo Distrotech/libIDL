@@ -1,5 +1,7 @@
 1999-03-29  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* Update version to 0.6.6.
+
 	* util.c (load_inhibits): Don't recurse inhibited nodes.
 
 1999-03-23  Andrew T. Veliath  <andrewtv@usa.net>
