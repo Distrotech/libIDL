@@ -72,6 +72,8 @@
 		BEGIN (INITIAL);
 
 extern void		__IDL_do_pragma			(const char *s);
+static int		count_nl			(const char *s);
+
 #ifdef YYDEBUG
 extern int				yydebug;
 #endif
@@ -83,7 +85,8 @@ static GSList *				codefrag_list;
 static GSList *				codefrag_list_tail;
 %}
 
-whitespace		[ \t\f\r]*
+whitespace		[ \t\v\f]*
+whitespacenl		[ \t\v\f\r\n]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^{whitespace}#.*
@@ -93,7 +96,7 @@ b10_uint		[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
 float_lit		-?[0-9]*\.[0-9]+([eE]-?[0-9]+)?|-?[0-9]+\.?([eE]-?[0-9]+)?
 fixed_lit		(-?[0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
-declspec		__declspec{whitespace}\({whitespace}[A-Za-z]*{whitespace}\)
+declspec		__declspec{whitespacenl}\({whitespacenl}[A-Za-z]*{whitespacenl}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
@@ -117,13 +120,17 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	SELECT_START;
 
-<XP,CFRG>^%\{.*						{
+<INITIAL,XP,CFRG>^%\{.*					{
 	char *s = yytext + 2;
 
 	while (isspace (*s)) ++s;
 	codefrag_desc = g_strdup (s);
 	codefrag_list = codefrag_list_tail = NULL;
-	BEGIN (CFRGX);
+
+	if (!(__IDL_flags & IDLF_XPIDL || __IDL_flags & IDLF_CODEFRAGS))
+		yyerror ("Code fragment syntax not enabled");
+	else
+		BEGIN (CFRGX);
 }
 <CFRGX>^%\}.*						{
 	yylval.tree = IDL_codefrag_new (codefrag_desc, codefrag_list);
@@ -250,8 +257,11 @@ wstring			tokreturn (TOK_WSTRING);
 \<\<			tokreturn (TOK_OP_SHL);
 {declspec}						{
 	char *s = g_strdup (yytext);
+
+	/* Get the parenthesized expression (ignoring whitespace) */
 	sscanf (yytext, "__declspec %*[(] %[A-Za-z_] %*[)]", s);
 	yylval.str = s;
+	__IDL_cur_line += count_nl (yytext);
 	tokreturn (TOK_DECLSPEC);
 }
 {happy_ident}						{
@@ -331,6 +341,17 @@ void __IDL_lex_cleanup (void)
 int yywrap (void)
 {
 	return 1;
+}
+
+static int count_nl (const char *s)
+{
+	int i;
+
+	for (i = 0;
+	     (s = strchr (s, '\n')) != NULL;
+	     ++s, ++i) ;
+
+	return i;
 }
 
 /*

@@ -2,6 +2,9 @@
 
 	* Update version to 0.6.4.
 
+	* lexer.l: Allow more whitespace in __declspec, and generate error
+	if we see a code fragment and the syntax isn't enabled.
+
 	* parser.y: Much improved error messages about illegal types in
 	attributes, operations and parameters.  Also, explicit errors
 	added for missing struct, union and enum definitions with missing

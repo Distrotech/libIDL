@@ -548,7 +548,7 @@ type_dcl_def:		z_props TOK_TYPEDEF
 	if (__IDL_flags & IDLF_XPIDL)
 		__IDL_flagsi |= IDLFP_NATIVE;
 	else {
-		yyerror ("Native extensions not enabled");
+		yyerror ("Native syntax not enabled");
 		YYABORT;
 	}
 }			TOK_NATIVE_TYPE			{
