@@ -479,16 +479,10 @@ extern IDL_tree				IDL_ns_lookup_cur_scope(IDL_ns ns,
 extern IDL_tree				IDL_ns_place_new(IDL_ns ns,
 							 IDL_tree ident);
 
-extern IDL_tree				IDL_ns_push_scope_new(IDL_ns ns,
-							      IDL_tree ident);
+extern void				IDL_ns_push_scope(IDL_ns ns,
+							  IDL_tree ident);
 
-extern IDL_tree				IDL_ns_push_scope_prev(IDL_ns ns,
-							       IDL_tree ident);
-
-extern IDL_tree				IDL_ns_push_scope_new_or_prev(IDL_ns ns,
-								      IDL_tree ident);
-
-extern IDL_tree				IDL_ns_pop_scope(IDL_ns ns);
+extern void				IDL_ns_pop_scope(IDL_ns ns);
 
 extern IDL_tree				IDL_ns_qualified_ident_new(IDL_tree nsid);
 

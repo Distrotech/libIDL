@@ -128,7 +128,8 @@ static int			idl_is_parsing = IDL_FALSE;
 %type <tree>			any_type object_type enum_type scoped_name
 %type <tree>			case_list case_label fixed_array_size_list
 %type <tree>			fixed_array_size positive_int_const ns_global_ident
-%type <tree>			ns_scoped_name ns_prev_ident ns_new_ident ns_new_or_prev_ident
+%type <tree>			ns_scoped_name ns_prev_ident ns_new_ident
+%type <tree>			ns_new_or_prev_ident cur_ns_new_or_prev_ident
 %type <tree>			param_type_spec op_type_spec parameter_dcls
 %type <tree>			is_raises_expr is_context_expr param_dcl_list
 %type <tree>			param_dcl raises_expr context_expr
@@ -181,63 +182,17 @@ interface:		interface_dcl
 |			forward_dcl
 	;
 
-new_scope:		/* empty */			{
-	assert($<tree>0 != NULL);
-	assert(IDL_NODE_TYPE($<tree>0) == IDLN_IDENT);
-	if (IDL_ns_push_scope_new(idl_ns, $<tree>0) == NULL) {
-#ifdef YYDEBUG
-		if (yydebug)
-			printf("ident: %s\n", IDL_IDENT($<tree>0).str);
-#endif
-		IDL_tree_free($<tree>0);
-		yyerror("redeclared scoping identifier");
-		YYABORT;
-	}
-#ifdef YYDEBUG
-	if (yydebug)
-		printf("entering new scope of %s\n", 
-		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
-#endif
-}
-	;
-
-new_or_prev_scope:	/* empty */			{
-	assert($<tree>0 != NULL);
-	assert(IDL_NODE_TYPE($<tree>0) == IDLN_IDENT);
-	if (IDL_ns_push_scope_new_or_prev(idl_ns, $<tree>0) == NULL) {
-		IDL_tree_free($<tree>0);
-		yyerror("IDL_ns_push_scope_new_or_prev: internal error");
-		YYABORT;
-	}
-#ifdef YYDEBUG
-	if (yydebug)
-		printf("entering new/prev scope of %s\n", 
-		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
-#endif
-}
-	;
-
-pop_scope:		/* empty */			{
-#ifdef YYDEBUG
-	if (yydebug)
-		printf("scope to parent of %s\n", 
-		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
-#endif
-	IDL_ns_pop_scope(idl_ns);
-}
-	;
-
-module:			TOK_MODULE ident new_or_prev_scope '{'
+module:			TOK_MODULE new_or_prev_scope '{'
 				definition_list
-			'}' pop_scope			{ $$ = IDL_module_new($2, $5); }
+			'}' pop_scope			{ $$ = IDL_module_new($2, $4); }
 	;
 
-interface_dcl:		TOK_INTERFACE ident new_or_prev_scope z_inheritence '{'
+interface_dcl:		TOK_INTERFACE new_or_prev_scope z_inheritence '{'
 				interface_body
-			'}' pop_scope			{ $$ = IDL_interface_new($2, $4, $6); }
+			'}' pop_scope			{ $$ = IDL_interface_new($2, $3, $5); }
 	;
 
-forward_dcl:		TOK_INTERFACE ident
+forward_dcl:		TOK_INTERFACE
 			new_or_prev_scope pop_scope	{ $$ = IDL_forward_dcl_new($2); }
 	;
 
@@ -288,16 +243,16 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
-struct_type:		TOK_STRUCT ident new_scope '{'
+struct_type:		TOK_STRUCT new_scope '{'
 				member_list
-			'}' pop_scope			{ $$ = IDL_type_struct_new($2, $5); }
+			'}' pop_scope			{ $$ = IDL_type_struct_new($2, $4); }
 	;
 
-union_type:		TOK_UNION ident new_scope TOK_SWITCH '('
+union_type:		TOK_UNION new_scope TOK_SWITCH '('
 				switch_type_spec
 			')' '{'
 				switch_body
-			'}' pop_scope			{ $$ = IDL_type_union_new($2, $6, $9); }
+			'}' pop_scope			{ $$ = IDL_type_union_new($2, $5, $8); }
 	;
 
 switch_type_spec:	integer_type
@@ -322,9 +277,9 @@ const_dcl:		TOK_CONST const_type new_ident
 			'=' const_exp			{ $$ = IDL_const_dcl_new($2, $3, $5); }
 	;
 
-except_dcl:		TOK_EXCEPTION ident new_scope '{'
+except_dcl:		TOK_EXCEPTION new_scope '{'
 				member_zlist
-			'}' pop_scope			{ $$ = IDL_except_dcl_new($2, $5); }
+			'}' pop_scope			{ $$ = IDL_except_dcl_new($2, $4); }
 	;
 
 member_zlist:		/* empty */			{ $$ = NULL; }
@@ -352,9 +307,9 @@ is_oneway:		/* empty */			{ $$ = IDL_FALSE; }
 	;
 
 op_dcl:			is_oneway op_type_spec
-			ident new_scope parameter_dcls pop_scope
+			new_scope parameter_dcls pop_scope
 			is_raises_expr
-			is_context_expr			{ $$ = IDL_op_dcl_new($1, $2, $3, $5, $7, $8); }
+			is_context_expr			{ $$ = IDL_op_dcl_new($1, $2, $3, $4, $6, $7); }
 	;
 
 op_type_spec:		param_type_spec
@@ -479,9 +434,9 @@ literal:		integer_lit
 |			boolean_lit
 	;
 
-enum_type:		TOK_ENUM ident new_scope '{'
+enum_type:		TOK_ENUM new_scope '{'
 				enumerator_list
-			'}' pop_scope			{ $$ = IDL_type_enum_new($2, $5); }
+			'}' pop_scope			{ $$ = IDL_type_enum_new($2, $4); }
 	;
 
 scoped_name:		ns_scoped_name			{
@@ -701,6 +656,44 @@ global_ident:		ns_global_ident			{
 }
 	;
 
+new_scope:		ns_new_ident			{
+	IDL_ns_push_scope(idl_ns, $1);
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("entering new/prev scope of %s\n", 
+		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
+#endif
+	assert(IDL_NODE_TYPE(IDL_GENTREE($1).data) == IDLN_IDENT);
+	$$ = IDL_GENTREE($1).data;
+}
+	;
+
+new_or_prev_scope:	cur_ns_new_or_prev_ident	{
+	IDL_ns_push_scope(idl_ns, $1);
+	assert(IDL_NS(idl_ns).current != NULL);
+	assert(IDL_NODE_TYPE(IDL_NS(idl_ns).current) == IDLN_GENTREE);
+	assert(IDL_GENTREE(IDL_NS(idl_ns).current).data != NULL);
+	assert(IDL_NODE_TYPE(IDL_GENTREE(IDL_NS(idl_ns).current).data) == IDLN_IDENT);
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("entering new/prev scope of %s\n", 
+		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
+#endif
+	assert(IDL_NODE_TYPE(IDL_GENTREE($1).data) == IDLN_IDENT);
+	$$ = IDL_GENTREE($1).data;
+}
+	;
+
+pop_scope:		/* empty */			{
+#ifdef YYDEBUG
+	if (yydebug)
+		printf("scope to parent of %s\n", 
+		       IDL_IDENT(IDL_GENTREE(IDL_NS(idl_ns).current).data).str);
+#endif
+	IDL_ns_pop_scope(idl_ns);
+}
+	;
+
 ns_new_ident:		ident				{
 	IDL_tree p;
 
@@ -729,11 +722,28 @@ ns_prev_ident:		ident				{
 	$$ = p;
 }
 	;
-
 ns_new_or_prev_ident:	ident				{
 	IDL_tree p;
 
 	if ((p = IDL_ns_resolve_ident(idl_ns, $1)) == NULL) {
+		p = IDL_ns_place_new(idl_ns, $1);
+		assert(p != NULL);
+		assert(IDL_IDENT($1)._ns_ref == p);
+	} else {
+		IDL_tree_free($1);
+		assert(IDL_GENTREE(p).data != NULL);
+		assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
+		++IDL_IDENT(IDL_GENTREE(p).data)._refs;
+	}
+	$$ = p;
+}
+	;
+
+cur_ns_new_or_prev_ident:
+			ident				{
+	IDL_tree p;
+
+	if ((p = IDL_ns_lookup_cur_scope(idl_ns, $1)) == NULL) {
 		p = IDL_ns_place_new(idl_ns, $1);
 		assert(p != NULL);
 		assert(IDL_IDENT($1)._ns_ref == p);
@@ -1524,81 +1534,28 @@ IDL_tree IDL_ns_place_new(IDL_ns ns, IDL_tree ident)
 
 	IDL_IDENT_TO_NS(ident) = p;
 
+	assert(IDL_GENTREE(IDL_IDENT_TO_NS(ident)).parent == IDL_NS(ns).current);
+
 	return p;
 }
 
-IDL_tree IDL_ns_push_scope_new(IDL_ns ns, IDL_tree ident)
+void IDL_ns_push_scope(IDL_ns ns, IDL_tree ns_ident)
 {
-	IDL_tree p, q;
-
 	IDL_NS_ASSERTS;
 
-	p = IDL_ns_lookup_cur_scope(ns, ident);
+	assert(IDL_NODE_TYPE(ns_ident) == IDLN_GENTREE);
+	assert(IDL_NODE_TYPE(IDL_GENTREE(ns_ident).data) == IDLN_IDENT);
+	assert(IDL_NS(ns).current == IDL_GENTREE(ns_ident).parent);
 
-	if (p != NULL) {
-		assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
-		return NULL;
-	}
-
-	q = IDL_NS(ns).current;
-
-	p = IDL_gentree_chain_child(IDL_NS(ns).current, ident);
-
-	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
-	assert(IDL_GENTREE(p).data == ident);
-	
-	IDL_NS(ns).current = p;
-	IDL_IDENT_TO_NS(ident) = p;
-	
-	return q;
+	IDL_NS(ns).current = ns_ident;
 }
 
-IDL_tree IDL_ns_push_scope_prev(IDL_ns ns, IDL_tree ident)
+void IDL_ns_pop_scope(IDL_ns ns)
 {
-	IDL_tree p, q;
-
 	IDL_NS_ASSERTS;
 
-	p = IDL_ns_lookup_cur_scope(ns, ident);
-
-	if (p == NULL)
-		return NULL;
-
-	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
-
-	q = IDL_NS(ns).current;
-	
-	IDL_NS(ns).current = p;
-	
-	return q;
-}
-
-IDL_tree IDL_ns_push_scope_new_or_prev(IDL_ns ns, IDL_tree ident)
-{
-	IDL_tree p;
-
-	IDL_NS_ASSERTS;
-
-	if ((p = IDL_ns_push_scope_prev(ns, ident)) == NULL) {
-		return IDL_ns_push_scope_new(ns, ident);
-	} else
-		return p;
-}
-
-IDL_tree IDL_ns_pop_scope(IDL_ns ns)
-{
-	IDL_tree q;
-
-	IDL_NS_ASSERTS;
-
-	q = IDL_NS(ns).current;
-
-	if (IDL_GENTREE(IDL_NS(ns).current).parent)
+	if (IDL_GENTREE(IDL_NS(ns).current).parent != NULL)
 		IDL_NS(ns).current = IDL_GENTREE(IDL_NS(ns).current).parent;
-	else
-		return NULL;
-
-	return q;
 }
 
 IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
@@ -1628,10 +1585,10 @@ char *IDL_ns_ident_to_qstring(IDL_tree ns_ident, const char *join)
 	int len, joinlen;
 	char *s;
 
-	assert(IDL_NODE_TYPE(ns_ident) == IDLN_GENTREE);
-
 	if (ns_ident == NULL)
 		return NULL;
+
+	assert(IDL_NODE_TYPE(ns_ident) == IDLN_GENTREE);
 
 	l = IDL_ns_qualified_ident_new(ns_ident);
 
