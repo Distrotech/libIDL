@@ -29,7 +29,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>
 #include "rename.h"
 #include "util.h"
 

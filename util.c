@@ -28,7 +28,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>
+#ifndef WIN32
+#  include <unistd.h>
+#endif
 #include "rename.h"
 #include "util.h"
 
