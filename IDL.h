@@ -494,6 +494,7 @@ extern IDL_tree				IDL_get_parent_node(IDL_tree p,
 							    int *scope_levels);
 
 extern int                              IDL_list_length(IDL_tree list);
+extern IDL_tree                         IDL_list_nth(IDL_tree list, int n);
 
 extern void				IDL_tree_free(IDL_tree root);
 

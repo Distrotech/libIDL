@@ -980,6 +980,17 @@ IDL_list_length(IDL_tree list)
 	return retval;
 }
 
+IDL_tree
+IDL_list_nth(IDL_tree list, int n)
+{
+	IDL_tree curitem;
+	int i;
+	for(curitem = list, i = 0; i < n && curitem;
+	    curitem = IDL_LIST(curitem).next, i++)
+		/* */;
+	return curitem;
+}
+
 void __IDL_tree_print(IDL_tree p)
 {
 	IDL_tree q, r;
