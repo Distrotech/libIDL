@@ -343,6 +343,37 @@ char *IDL_ns_ident_to_qstring (IDL_tree ns_ident, const char *join, int levels)
 	return s;
 }
 
+int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
+{
+	IDL_tree p, scope_here, scope_ident;
+	int levels;
+
+	g_return_val_if_fail (ns != NULL, 1);
+	g_return_val_if_fail (ident != NULL, 1);
+
+	while (parent && IDL_NODE_TYPE (parent) == IDLN_LIST)
+		parent = IDL_NODE_UP (parent);
+
+	if (parent == NULL ||
+	    (scope_here = IDL_tree_get_scope (parent)) == NULL ||
+	    (scope_ident = IDL_tree_get_scope (ident)) == NULL)
+		return 1;
+
+	assert (IDL_NODE_TYPE (scope_here) == IDLN_GENTREE);
+	assert (IDL_NODE_TYPE (scope_ident) == IDLN_GENTREE);
+
+	for (levels = 1; scope_ident;
+	     ++levels, scope_ident = IDL_NODE_UP (scope_ident)) {
+
+		p = IDL_ns_resolve_this_scope_ident (
+			ns, scope_here, IDL_GENTREE (scope_ident).data);
+		if (p)
+			return levels;
+	}
+
+	return 1;
+}
+
 /* If insertion was made, return true, else there was a collision */
 static gboolean heap_insert_ident (IDL_tree interface_ident, GTree *heap, IDL_tree any)
 {

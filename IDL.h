@@ -58,7 +58,7 @@ extern "C" {
 
 /* output flags */
 #define IDLF_OUTPUT_NO_NEWLINES		(1UL << 0)
-#define IDLF_OUTPUT_QUALIFY_IDENTS	(1UL << 1)
+#define IDLF_OUTPUT_NO_QUALIFY_IDENTS	(1UL << 1)
 #define IDLF_OUTPUT_CODEFRAGS		(1UL << 2)
 
 #ifdef _WIN32
@@ -643,6 +643,7 @@ typedef int		(*IDL_msg_callback)		(int level,
 							 const char *message);
 
 typedef gboolean	(*IDL_tree_func)		(IDL_tree p,
+							 IDL_tree scope,
 							 gpointer user_data);
 	
 extern IDL_tree		IDL_check_type_cast		(const IDL_tree var,
@@ -695,6 +696,8 @@ extern IDL_tree		IDL_get_parent_node		(IDL_tree p,
 							 IDL_tree_type type,
 							 int *scope_levels);
 
+extern IDL_tree		IDL_tree_get_scope		(IDL_tree p);
+
 extern int		IDL_tree_get_node_info		(IDL_tree tree,
 							 char **who,
 							 char **what);
@@ -719,6 +722,7 @@ extern gboolean		IDL_tree_property_remove	(IDL_tree tree,
 							 const char *key);
 
 extern void		IDL_tree_walk			(IDL_tree p,
+							 IDL_tree parent,
 							 IDL_tree_func pre_tree_func,
 							 IDL_tree_func post_tree_func,
 							 gpointer user_data);
@@ -730,6 +734,7 @@ extern void		IDL_tree_walk_in_order		(IDL_tree p,
 extern void		IDL_tree_free			(IDL_tree root);
 
 extern void		IDL_tree_to_IDL			(IDL_tree p,
+							 IDL_ns ns,
 							 FILE *output,
 							 unsigned long output_flags);
 
@@ -771,6 +776,10 @@ extern IDL_tree		IDL_ns_qualified_ident_new	(IDL_tree nsid);
 extern char *		IDL_ns_ident_to_qstring		(IDL_tree ns_ident,
 							 const char *join,
 							 int scope_levels);
+
+extern int		IDL_ns_scope_levels_from_here	(IDL_ns ns,
+							 IDL_tree ident,
+							 IDL_tree parent);
 
 extern char *		IDL_ns_ident_make_repo_id	(IDL_ns ns,
 							 IDL_tree p,

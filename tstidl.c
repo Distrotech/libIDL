@@ -19,7 +19,7 @@ struct walk_data {
 	IDL_ns ns;
 };
 
-gboolean print_repo_id (IDL_tree p, struct walk_data data)
+gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data data)
 {
 	char *repo_id = NULL;
 
@@ -83,7 +83,7 @@ gboolean print_repo_id (IDL_tree p, struct walk_data data)
 	return TRUE;
 }
 
-gboolean print_ident_comments (IDL_tree p, struct walk_data data)
+gboolean print_ident_comments (IDL_tree p, IDL_tree parent, struct walk_data data)
 {
 	GSList *list;
 
@@ -99,7 +99,7 @@ gboolean print_ident_comments (IDL_tree p, struct walk_data data)
 	return TRUE;
 }
 
-gboolean print_const_dcls (IDL_tree p, struct walk_data data)
+gboolean print_const_dcls (IDL_tree p, IDL_tree parent, struct walk_data data)
 {
 	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL &&
 	    IDL_NODE_TYPE (IDL_CONST_DCL (p).const_exp) == IDLN_INTEGER) {
@@ -225,7 +225,7 @@ int main (int argc, char *argv[])
 	printf ("\nIdentifiers\n");
 	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_ident_comments, &data);
 	printf ("\nIDL tree to IDL\n");
-	IDL_tree_to_IDL (tree, stdout, parse_flags >> 24);
+	IDL_tree_to_IDL (tree, ns, stdout, parse_flags >> 24);
 	IDL_ns_free (ns);
 	IDL_tree_free (tree);
 	
