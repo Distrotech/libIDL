@@ -875,7 +875,7 @@ void yywarning(const char *s)
 
 char *IDL_get_libver_string(void)
 {
-	return LIBIDL_VERSION;
+	return VERSION;
 }
 
 char *IDL_get_IDLver_string(void)

@@ -7,8 +7,8 @@
 #
 AC_INIT(IDL.h)
 AM_INIT_AUTOMAKE(libIDL, 0.1)
-LIBIDL_VERSION="$VERSION"
-AC_SUBST(LIBIDL_VERSION)
+AC_PROG_CC
+AC_PROG_CPP
 CPP="/lib/cpp"
 AC_ARG_WITH(cpp,
 [  --with-cpp=PROGRAM      full path to C preprocessor [/lib/cpp]],
@@ -19,9 +19,7 @@ if [[ ! -x "$CPP" ]]; then
 else
     AC_MSG_RESULT(found and executable)
 fi
-CPP_PROGRAM="$CPP"
-AC_SUBST(CPP_PROGRAM)
-AC_PROG_CC
+AC_DEFINE(CPP_PROGRAM, "$CPP")
 AM_PROG_LEX
 if [[ "$LEX" = "flex" ]]; then
     LFLAGS="-8"

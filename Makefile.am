@@ -8,10 +8,7 @@
 # Copyright (C) 1998 Andrew Veliath <andrewtv@usa.net>
 # Licensed under the GNU General Public License version 2
 #
-
-CFLAGS = -g -O2 -DYYDEBUG=1 -DIDL_LIBRARY \
-	-DLIBIDL_VERSION="\"@LIBIDL_VERSION@\"" \
-	-DCPP_PROGRAM="\"@CPP_PROGRAM@\""
+CFLAGS = -g -O2 -DYYDEBUG=1 -DIDL_LIBRARY
 YFLAGS = -d -v
 LFLAGS = @LFLAGS@
 # we don't want the lex library
