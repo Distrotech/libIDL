@@ -1,6 +1,6 @@
-/**************************************************************************
+ /**************************************************************************
 
-    idl.h (IDL AST and namespace components)
+    IDL.h (IDL AST and namespace components)
 
     Copyright (C) 1998 Andrew Veliath
 
@@ -445,6 +445,8 @@ struct _IDL_ns {
 	IDL_tree current;
 };
 #define IDL_NS(a)			(*a)
+
+extern char *				IDL_get_version_string(void);
 
 typedef int				(*IDL_callback)(int level, int num, int line,
 							const char *filename, const char *s);
