@@ -35,6 +35,10 @@
 #include <glib.h>
 #include "IDL.h"
 
+#ifdef WIN32
+#  define alloca
+#endif
+
 extern void		yyerror				(const char *s);
 extern void		yyerrorl			(const char *s, int ofs);
 extern void		yywarning			(int level, const char *s);

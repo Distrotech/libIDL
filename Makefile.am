@@ -17,8 +17,8 @@ parser.c parser.h: $(srcdir)/parser.y
 	test -f y.tab.h && mv -f y.tab.h parser.h
 
 MOSTLYCLEANFILES	= parser.output y.output
-DISTCLEANFILES		= parser.c parser.h lexer.c
-EXTRA_DIST		= BUGS parser.y lexer.l
+MAINTAINERCLEANFILES	= parser.c parser.h lexer.c
+EXTRA_DIST		= BUGS parser.y lexer.l Makefile.msc README.win32
 info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
 lib_LTLIBRARIES		= libIDL.la

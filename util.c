@@ -79,7 +79,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_UNARYOP",
 };
 
-int					__IDL_check_type_casts = FALSE;
+IDL_EXPORT int				__IDL_check_type_casts = FALSE;
 #ifndef HAVE_CPP_PIPE_STDIN
 char *					__IDL_tmp_filename = NULL;
 #endif
@@ -209,8 +209,10 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		return -1;
 	}
 
+#ifndef WIN32
 	if (access (filename, R_OK))
 		return -1;
+#endif
 
 #ifdef HAVE_CPP_PIPE_STDIN
 	if ((dirend = strrchr (filename, '/'))) {

@@ -1,0 +1,64 @@
+## -*- mode: makefile -*-
+## Makefile for building the libIDL dll with Microsoft C
+## Use: nmake -f Makefile.msc install
+
+# Change this to wherever you want to install the DLLs. This directory
+# should be in your PATH.
+BIN = C:\Bin
+
+################################################################
+
+# Nothing much configurable below
+GLIB_INCLUDES=-I/Devel/glib
+GLIB_LIB=glib-1.1.lib
+
+# cl -? described the options
+CC = cl -G5 -GF -Ox -W3 -D_DLL -nologo
+
+LDFLAGS = /link /nodefaultlib:libc msvcrt.lib # /debug:full /debugtype:cv 
+INSTALL = copy
+TOUCH = copy makefile.msc+nul
+
+LIBIDL_VER = 0.5
+
+CFLAGS = -I. $(GLIB_INCLUDES)
+
+all :						\
+	libIDL-$(LIBIDL_VER).dll		\
+	tstidl.exe
+
+install : all
+	$(INSTALL) libIDL-$(LIBIDL_VER).dll $(BIN)
+
+libIDL_OBJECTS =				\
+	parser.obj				\
+	lexer.obj				\
+	ns.obj					\
+	util.obj
+
+libIDL-$(LIBIDL_VER).dll : $(libIDL_OBJECTS)
+	$(CC) $(CFLAGS) -MD -LD -FelibIDL-$(LIBIDL_VER).dll $(libIDL_OBJECTS) $(GLIB_LIB) user32.lib advapi32.lib $(LDFLAGS) /def:libIDL.def
+
+.c.obj :
+	$(CC) $(CFLAGS) -GD -c -DPACKAGE=\"libIDL\" -DVERSION=\"$(LIBIDL_VER)\" -DHAVE_CPP_PIPE_STDIN=1 -DCPP_PROGRAM="\"notsupported\"" -DYYTEXT_POINTER=1 -DSTDC_HEADERS=1 -DHAVE_STDDEF_H=1 -DHAVE_WCHAR_H=1 -DYYDEBUG=1 -DIDL_LIBRARY $<
+
+tstidl.exe : libIDL-$(LIBIDL_VER).dll tstidl.obj
+	$(CC) $(CFLAGS) -MD -Fetstidl.exe tstidl.obj libIDL-$(LIBIDL_VER).lib $(GLIB_LIB) $(LDFLAGS) /map
+
+tstidl.obj : tstidl.c
+	$(CC) -c $(CFLAGS) tstidl.c
+
+clean:
+	del config.h
+	del *.exe
+	del *.obj
+	del *.dll
+	del *.lib
+	del *.err
+	del *.map
+	del *.sym
+	del *.exp
+	del *.lk1
+	del *.mk1
+	del *.pdb
+	del *.ilk

@@ -106,10 +106,13 @@ int main (int argc, char *argv[])
 	IDL_tree tree;
 	IDL_ns ns;
 	char *fn;
-	extern int __IDL_debug;
 
+#ifndef WIN32
+	{ extern int __IDL_debug;
+	__IDL_debug = FALSE; }
+#endif
+	
 	IDL_check_cast_enable (TRUE);
-	__IDL_debug = FALSE;
 
 	if (argc < 2) {
 		fprintf (stderr, "usage: tstidl <filename> [inhibit constant folding (0 or 1)]\n");

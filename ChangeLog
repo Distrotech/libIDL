@@ -1,3 +1,23 @@
+1998-11-27  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* util.h (alloca): Define if compiling for Win32.
+
+	* Makefile.am (MAINTAINERCLEANFILES): Change to maintainer clean
+	from dist clean for parser.c, lexer.c.  It's nice to have the
+	generated parsers around from flex and bison, especially for
+	Win32.
+
+	* util.c (IDL_parse_filename): Don't use access under Win32.
+	IDL_EXPORT __IDL_check_type_casts.
+
+	* IDL.h (IDL_IMPORT): Add definitions required for Win32.
+
+	* Makefile.msc:
+	README.win32: New files.
+
+	* Makefile.am: Define YYERROR_VERBOSE for slightly better messages
+	in unhandled error situations.
+
 1998-11-20  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* tstidl.c (print_ident_comments): Print out identifiers and any
