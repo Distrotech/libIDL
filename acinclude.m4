@@ -31,10 +31,9 @@ AC_DEFUN(AC_UPDATE_IF_CHANGED,
 	[if test -f "$2"; then
 		if cmp -s "$1" "$2" 2>/dev/null; then
 			echo "$1 is unchanged"
-			rm -f "$2"
 		else
 			echo "$1 has changed"
 			rm -f "$1"
-			mv "$2" "$1"
+			cp "$2" "$1"
 		fi
 	fi])

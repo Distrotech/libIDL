@@ -1,7 +1,9 @@
 1999-03-19  Raja R Harinath  <harinath@cs.umn.edu>
 
 	* Makefile.am (IDL.h): Add rule to autoupdate IDL.h.
-
+	* acinclude.m4 (AC_UPDATE_IF_CHANGED): Don't remove intermediate
+	file.  This prevents unnecessary rebuilding of IDL.h.new.
+	
 1999-03-18  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.4.
