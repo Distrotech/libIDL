@@ -1622,7 +1622,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	int yyparse(void);
 	extern FILE *__IDL_in;
 	FILE *input;
-	char *fmt = CPP " %s %s";
+	char *fmt = CPP_PROGRAM " %s %s";
 	char *cmd;
 	int rv;
 
