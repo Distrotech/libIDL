@@ -47,9 +47,6 @@ libIDL_2_la_SOURCES	= parser.c parser.h lexer.c \
 libIDL_2_la_LDFLAGS	= -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)	\
 			  -release $(LT_RELEASE)
 
-m4datadir		= $(datadir)/aclocal
-m4data_DATA		= libIDL.m4
-
 tstidl_SOURCES		= tstidl.c
 tstidl_LDADD		= libIDL-2.la @GLIB_LIBS@
 

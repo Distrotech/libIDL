@@ -1,3 +1,10 @@
+2001-08-02  Havoc Pennington  <hp@pobox.com>
+
+	* Makefile.am: remove libIDL.m4 from build. It collided with
+	libIDL 1, and we are in a pkg-config age. If we want to keep
+	libIDL.m4 vs PKG_CHECK_MODULES(libIDL-2.0), the m4 macro 
+	needs renaming.
+
 2001-08-23  Mark McLoughlin <mark@skynet.ie>
 
         * libIDL/lexer.l, libIDL/parser.y,
