@@ -2,6 +2,10 @@
 
 	* Update version to 0.6.4.
 
+	* util.c (IDL_tree_error): 
+	(IDL_tree_warning): If node is NULL, omit file and line number
+	information gracefully.
+
 	* parser.y: Error out with better message if one tries to use a
 	void type in an attribute or parameter.
 

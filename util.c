@@ -615,10 +615,13 @@ void IDL_tree_error (IDL_tree p, const char *fmt, ...)
 	gchar *msg;
 	va_list args;
 
-	g_return_if_fail (p != NULL);
-
-	__IDL_cur_filename = p->_file;
-	__IDL_cur_line = p->_line;
+	if (p) {
+		__IDL_cur_filename = p->_file;
+		__IDL_cur_line = p->_line;
+	} else {
+		__IDL_cur_filename = NULL;
+		__IDL_cur_line = -1;
+	}
 
 	va_start (args, fmt);
 
@@ -640,10 +643,13 @@ void IDL_tree_warning (IDL_tree p, int level, const char *fmt, ...)
 	gchar *msg;
 	va_list args;
 
-	g_return_if_fail (p != NULL);
-
-	__IDL_cur_filename = p->_file;
-	__IDL_cur_line = p->_line;
+	if (p) {
+		__IDL_cur_filename = p->_file;
+		__IDL_cur_line = p->_line;
+	} else {
+		__IDL_cur_filename = NULL;
+		__IDL_cur_line = -1;
+	}
 
 	va_start (args, fmt);
 
