@@ -28,7 +28,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
-#ifndef _WIN32
+#ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
 #include "rename.h"
@@ -247,7 +247,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		return -1;
 	}
 
-#ifndef NO_ACCESS
+#ifdef HAVE_ACCESS
 	if (access (filename, R_OK))
 		return -1;
 #endif
@@ -304,7 +304,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 	strcpy (tmpfilename, s);
 	strcat (tmpfilename, ".c");
-#ifndef NO_SYMLINK
+#ifdef HAVE_SYMLINK
 	if (symlink (linkto, tmpfilename) < 0) {
 		g_free (linkto);
 		g_free (tmpfilename);
@@ -328,7 +328,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		    cwd, cpp_args ? cpp_args : "", tmpfilename, cpperrs);
 #endif
 
-#ifndef NO_POPEN
+#ifdef HAVE_POPEN
 	input = popen (cmd, "r");
 #else
 	input = fopen (cmd, "r");
@@ -364,7 +364,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = NULL;
 #endif
-#ifndef NO_POPEN
+#ifdef HAVE_POPEN
 	pclose (input);
 #else
 	fclose (input);

@@ -67,6 +67,7 @@ if [[ "$HAVE_YACC" = "no" ]]; then
 	AC_MSG_ERROR($YACC is not usable as yacc - consider using bison)
 fi
 
+AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 AM_MAINTAINER_MODE
 
@@ -77,6 +78,7 @@ AC_SUBST(LIBIDL_CFLAGS)
 
 AC_STDC_HEADERS
 AC_CHECK_HEADERS(stddef.h)
+AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(wchar.h, HAVE_WCHAR_H=1)
 AC_CHECK_HEADERS(wcstr.h, HAVE_WCSTR_H=1)
 if test -z "$HAVE_WCHAR_H"; then 
@@ -87,6 +89,7 @@ if test -z "$HAVE_WCSTR_H"; then
 fi
 AC_SUBST(HAVE_WCHAR_H)
 AC_SUBST(HAVE_WCSTR_H)
+AC_CHECK_FUNCS(popen symlink access)
 
 dnl glib requires a 64-bit type
 dnl to support win32 add __int64

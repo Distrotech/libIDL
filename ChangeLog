@@ -1,3 +1,16 @@
+2003-04-12  Masahiro Sakai  <sakai@tom.sfc.keio.ac.jp>
+
+	* Makefile.am: add -no-undefined to libIDL_2_la_LDFLAGS.
+	
+	* IDL.h.new.in, tstidl.c: use G_PLATFORM_WIN32 and G_OS_WIN32
+	instead of _WIN32.
+
+	* configure.in: add AC_LIBTOOL_WIN32_DLL call and check for
+	unistd.h, popen(), symlink() and access().
+
+	* util.c, util.h: use HAVE_UNISTD_H, HAVE_POPEN, HAVE_SYMLINK and
+	HAVE_ACCESS instead of _WIN32, NO_POPEN, NO_SYMLINK and NO_ACCESS.
+
 2002-10-17  Mark McLoughlin  <mark@skynet.ie>
 
 	* Makefile.am: don't distribute built sources.

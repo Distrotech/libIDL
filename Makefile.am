@@ -49,7 +49,7 @@ BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h stamp-parser
 
 libIDL_2_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h
-libIDL_2_la_LDFLAGS	= -version-info $(LT_VERSION) $(LIBIDL_LIBS)
+libIDL_2_la_LDFLAGS	= -version-info $(LT_VERSION) $(LIBIDL_LIBS) -no-undefined
 
 tstidl_SOURCES		= tstidl.c
 tstidl_LDADD		= libIDL-2.la $(LIBIDL_LIBS)

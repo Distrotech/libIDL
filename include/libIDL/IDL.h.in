@@ -85,8 +85,8 @@ extern "C" {
 #define IDLF_OUTPUT_PROPERTIES		(1UL << 2)
 #define IDLF_OUTPUT_CODEFRAGS		(1UL << 3)
 
-#ifdef _WIN32
-#  define IDL_EXPORT			__declspec (dllexport)
+#ifdef G_PLATFORM_WIN32
+#  define IDL_EXPORT			/* assume auto-export */
 #  define IDL_IMPORT			__declspec (dllimport)
 #else
 #  define IDL_EXPORT			/* empty */

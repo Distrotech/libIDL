@@ -35,19 +35,6 @@
 #include <glib.h>
 #include "IDL.h"
 
-#ifdef _WIN32
-#  define alloca
-#  define NO_ACCESS
-#endif
-
-#ifdef XP_MAC
-#  include <alloca.h>
-#  define alloca
-#  define NO_ACCESS
-#  define NO_SYMLINK
-#  define NO_POPEN
-#endif
-
 /* Internal parse flags */
 #define IDLFP_PROPERTIES	(1UL << 0)
 #define IDLFP_NATIVE		(1UL << 1)
