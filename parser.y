@@ -81,58 +81,157 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 	enum IDL_param_attr paramattr;
 }
 
-%token				TOK_ANY TOK_ATTRIBUTE TOK_BOOLEAN TOK_CASE TOK_CHAR
-%token				TOK_CONST TOK_CONTEXT TOK_DEFAULT TOK_DOUBLE TOK_ENUM
-%token				TOK_EXCEPTION TOK_FALSE TOK_FIXED TOK_FLOAT TOK_IN 
-%token				TOK_INOUT TOK_INTERFACE TOK_LONG TOK_MODULE TOK_NATIVE TOK_OBJECT
-%token				TOK_OCTET TOK_ONEWAY TOK_OUT TOK_RAISES TOK_READONLY 
-%token				TOK_SEQUENCE TOK_SHORT TOK_STRING TOK_STRUCT TOK_SWITCH
-%token				TOK_TRUE TOK_TYPEDEF TOK_UNSIGNED TOK_UNION TOK_VOID
-%token				TOK_WCHAR TOK_WSTRING TOK_OP_SCOPE TOK_OP_SHR TOK_OP_SHL
+/* Terminals */
+%token			TOK_ANY
+%token			TOK_ATTRIBUTE
+%token			TOK_BOOLEAN
+%token			TOK_CASE
+%token			TOK_CHAR
+%token			TOK_CONST
+%token			TOK_CONTEXT
+%token			TOK_DEFAULT
+%token			TOK_DOUBLE
+%token			TOK_ENUM
+%token			TOK_EXCEPTION
+%token			TOK_FALSE
+%token			TOK_FIXED
+%token			TOK_FLOAT
+%token			TOK_IN 
+%token			TOK_INOUT
+%token			TOK_INTERFACE
+%token			TOK_LONG
+%token			TOK_MODULE
+%token			TOK_NATIVE
+%token			TOK_OBJECT
+%token			TOK_OCTET
+%token			TOK_ONEWAY
+%token			TOK_OP_SCOPE
+%token			TOK_OP_SHL
+%token			TOK_OP_SHR
+%token			TOK_OUT
+%token			TOK_RAISES
+%token			TOK_READONLY 
+%token			TOK_SEQUENCE
+%token			TOK_SHORT
+%token			TOK_STRING
+%token			TOK_STRUCT
+%token			TOK_SWITCH
+%token			TOK_TRUE
+%token			TOK_TYPEDEF
+%token			TOK_UNION
+%token			TOK_UNSIGNED
+%token			TOK_VOID
+%token			TOK_WCHAR
+%token			TOK_WSTRING
+%token <floatp>		TOK_FLOATP
+%token <integer>	TOK_INTEGER
+%token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
 
-%token <str>			TOK_IDENT TOK_SQSTRING TOK_DQSTRING
-%token <str>			TOK_FIXEDP
-%token <integer>		TOK_INTEGER
-%token <floatp>			TOK_FLOATP
+/* Non-Terminals */
+%type <tree>		add_expr
+%type <tree>		and_expr
+%type <tree>		any_type
+%type <tree>		array_declarator
+%type <tree>		attr_dcl
+%type <tree>		base_type_spec
+%type <tree>		boolean_lit
+%type <tree>		boolean_type
+%type <tree>		case_label
+%type <tree>		case_label_list
+%type <tree>		case_stmt
+%type <tree>		case_stmt_list
+%type <tree>		char_lit
+%type <tree>		char_type
+%type <tree>		complex_declarator
+%type <tree>		const_dcl
+%type <tree>		const_exp
+%type <tree>		const_type
+%type <tree>		constr_type_spec
+%type <tree>		context_expr
+%type <tree>		cur_ns_new_or_prev_ident
+%type <tree>		declarator
+%type <tree>		declarator_list
+%type <tree>		definition
+%type <tree>		definition_list
+%type <tree>		element_spec
+%type <tree>		enum_type
+%type <tree>		enumerator_list
+%type <tree>		except_dcl
+%type <tree>		export
+%type <tree>		export_list
+%type <tree>		fixed_array_size
+%type <tree>		fixed_array_size_list
+%type <tree>		fixed_pt_const_type
+%type <tree>		fixed_pt_lit
+%type <tree>		fixed_pt_type
+%type <tree>		floating_pt_lit
+%type <tree>		floating_pt_type
+%type <tree>		forward_dcl
+%type <tree>		ident
+%type <tree>		illegal_ident
+%type <tree>		integer_lit
+%type <tree>		integer_type
+%type <tree>		interface
+%type <tree>		interface_body
+%type <tree>		interface_dcl
+%type <tree>		is_context_expr
+%type <tree>		is_raises_expr
+%type <tree>		literal
+%type <tree>		member
+%type <tree>		member_list
+%type <tree>		member_zlist
+%type <tree>		module
+%type <tree>		mult_expr
+%type <tree>		new_ident
+%type <tree>		new_or_prev_scope
+%type <tree>		new_scope
+%type <tree>		ns_global_ident
+%type <tree>		ns_new_ident
+%type <tree>		ns_prev_ident
+%type <tree>		ns_scoped_name
+%type <tree>		object_type
+%type <tree>		octet_type
+%type <tree>		op_dcl
+%type <tree>		op_type_spec
+%type <tree>		or_expr
+%type <tree>		param_dcl
+%type <tree>		param_dcl_list
+%type <tree>		param_type_spec
+%type <tree>		parameter_dcls
+%type <tree>		pop_scope
+%type <tree>		positive_int_const
+%type <tree>		primary_expr
+%type <tree>		raises_expr
+%type <tree>		scoped_name
+%type <tree>		scoped_name_list
+%type <tree>		sequence_type
+%type <tree>		shift_expr
+%type <tree>		simple_declarator
+%type <tree>		simple_declarator_list
+%type <tree>		simple_type_spec
+%type <tree>		specification
+%type <tree>		string_lit
+%type <tree>		string_lit_list
+%type <tree>		string_type
+%type <tree>		struct_type
+%type <tree>		switch_body
+%type <tree>		switch_type_spec
+%type <tree>		template_type_spec
+%type <tree>		type_dcl
+%type <tree>		type_declarator
+%type <tree>		type_spec
+%type <tree>		unary_expr
+%type <tree>		union_type
+%type <tree>		useless_semicolon
+%type <tree>		wide_char_type
+%type <tree>		wide_string_type
+%type <tree>		xor_expr
+%type <tree>		z_inheritance
 
-%type <tree>			specification
-%type <tree>			definition_list definition
-%type <tree>			new_scope new_or_prev_scope pop_scope
-%type <tree>			type_dcl const_dcl except_dcl attr_dcl op_dcl
-%type <tree>			type_spec type_declarator declarator_list declarator
-%type <tree>			simple_type_spec constr_type_spec base_type_spec
-%type <tree>			template_type_spec sequence_type array_declarator
-%type <tree>			simple_declarator complex_declarator simple_declarator_list
-%type <tree>			member member_list member_zlist enumerator_list
-%type <tree>			switch_type_spec switch_body struct_type union_type
-%type <tree>			interface interface_dcl forward_dcl scoped_name_list
-%type <tree>			interface_body z_inheritance export_list export module
-%type <tree>			const_type new_ident illegal_ident
-/*
-%type <tree>			prev_ident new_or_prev_ident global_ident ns_new_or_prev_ident 
-*/
-%type <tree>			ident floating_pt_type integer_type
-%type <tree>			char_type wide_char_type boolean_type octet_type
-%type <tree>			string_type wide_string_type fixed_pt_type fixed_pt_const_type
-%type <tree>			any_type object_type enum_type scoped_name
-%type <tree>			case_stmt case_label case_label_list fixed_array_size_list
-%type <tree>			case_stmt_list fixed_array_size positive_int_const
-%type <tree>			ns_scoped_name ns_prev_ident ns_new_ident ns_global_ident
-%type <tree>			cur_ns_new_or_prev_ident useless_semicolon
-%type <tree>			param_type_spec op_type_spec parameter_dcls
-%type <tree>			is_raises_expr is_context_expr param_dcl_list
-%type <tree>			param_dcl raises_expr context_expr element_spec
-%type <tree>			const_exp or_expr xor_expr and_expr shift_expr
-%type <tree>			add_expr mult_expr unary_expr primary_expr literal
-%type <tree>			integer_lit
-%type <tree>			string_lit char_lit /* wide_string_lit wide_char_lit */ 
-%type <tree>			fixed_pt_lit floating_pt_lit
-%type <tree>			boolean_lit
-%type <tree>			string_lit_list
-%type <str>			sqstring dqstring dqstring_cat
-%type <integer>			signed_int unsigned_int is_readonly is_oneway
-%type <unaryop>			unary_op
-%type <paramattr>		param_attribute
+%type <integer>		signed_int unsigned_int is_readonly is_oneway
+%type <paramattr>	param_attribute
+%type <str>		sqstring dqstring dqstring_cat
+%type <unaryop>		unary_op
 
 %%
 
@@ -484,13 +583,7 @@ primary_expr:		scoped_name
 
 literal:		integer_lit
 |			string_lit
-/*
-|			wide_string_lit
-*/
 |			char_lit
-/*
-|			wide_char_lit
-*/
 |			fixed_pt_lit
 |			floating_pt_lit
 |			boolean_lit
@@ -695,33 +788,6 @@ new_ident:		ns_new_ident			{
 }
 	;
 
-/*
-
-prev_ident:		ns_prev_ident			{
-	assert($1 != NULL);
-	assert(IDL_NODE_TYPE($1) == IDLN_GENTREE);
-	assert(IDL_NODE_TYPE(IDL_GENTREE($1).data) == IDLN_IDENT);
-	$$ = IDL_GENTREE($1).data;
-}
-	;
-
-new_or_prev_ident:	ns_new_or_prev_ident		{
-	assert($1 != NULL);
-	assert(IDL_NODE_TYPE($1) == IDLN_GENTREE);
-	assert(IDL_NODE_TYPE(IDL_GENTREE($1).data) == IDLN_IDENT);
-	$$ = IDL_GENTREE($1).data;
-}
-	;
-
-global_ident:		ns_global_ident			{
-	assert($1 != NULL);
-	assert(IDL_NODE_TYPE($1) == IDLN_GENTREE);
-	assert(IDL_NODE_TYPE(IDL_GENTREE($1).data) == IDLN_IDENT);
-	$$ = IDL_GENTREE($1).data;
-}
-	;
-*/
-
 new_scope:		ns_new_ident			{
 	IDL_ns_push_scope(__IDL_root_ns, $1);
 #ifdef YYDEBUG
@@ -805,26 +871,6 @@ ns_prev_ident:		ident				{
 	$$ = p;
 }
 	;
-
-/*
-
-ns_new_or_prev_ident:	ident				{
-	IDL_tree p;
-
-	if ((p = IDL_ns_resolve_ident(__IDL_root_ns, $1)) == NULL) {
-		p = IDL_ns_place_new(__IDL_root_ns, $1);
-		assert(p != NULL);
-		assert(IDL_IDENT($1)._ns_ref == p);
-	} else {
-		IDL_tree_free($1);
-		assert(IDL_GENTREE(p).data != NULL);
-		assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
-	}
-	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
-	$$ = p;
-}
-	;
-*/
 
 cur_ns_new_or_prev_ident:
 			ident				{
@@ -1312,44 +1358,6 @@ static IDL_tree IDL_binop_eval_integer(enum IDL_binop op, IDL_tree a, IDL_tree b
 	return p;
 }
 
-#if 0
-/* If we ever use something like gmp we could do fixed constant
-   evaluation here... */
-static IDL_tree IDL_binop_eval_fixed(enum IDL_binop op, IDL_tree a, IDL_tree b)
-{
-	IDL_tree p = NULL;
-
-	assert(IDL_NODE_TYPE(a) == IDLN_FIXED);
-
-	switch (op) {
-	case IDL_BINOP_MULT:
-		p = IDL_fixed_new(IDL_FIXED(a).value * IDL_FIXED(b).value);
-		break;
-
-	case IDL_BINOP_DIV:
-		if (IDL_FIXED(b).value == 0.0) {
-			yyerror("Divide by zero in constant expression");
-			return NULL;
-		}
-		p = IDL_fixed_new(IDL_FIXED(a).value / IDL_FIXED(b).value);
-		break;
-
-	case IDL_BINOP_ADD:
-		p = IDL_fixed_new(IDL_FIXED(a).value + IDL_FIXED(b).value);
-		break;
-
-	case IDL_BINOP_SUB:
-		p = IDL_fixed_new(IDL_FIXED(a).value - IDL_FIXED(b).value);
-		break;
-
-	default:
-		break;
-	}
-
-	return p;
-}
-#endif
-
 static IDL_tree IDL_binop_eval_float(enum IDL_binop op, IDL_tree a, IDL_tree b)
 {
 	IDL_tree p = NULL;
@@ -1390,9 +1398,6 @@ static IDL_tree IDL_binop_eval(enum IDL_binop op, IDL_tree a, IDL_tree b)
 
 	switch (IDL_NODE_TYPE(a)) {
 	case IDLN_INTEGER: return IDL_binop_eval_integer(op, a, b);
-#if 0
-	case IDLN_FIXED: return IDL_binop_eval_fixed(op, a, b);
-#endif
 	case IDLN_FLOAT: return IDL_binop_eval_float(op, a, b);
 	default: return NULL;
 	}
@@ -1431,11 +1436,6 @@ static IDL_tree IDL_unaryop_eval_fixed(enum IDL_unaryop op, IDL_tree a)
 	case IDL_UNARYOP_PLUS:
 		p = IDL_fixed_new(IDL_FIXED(a).value);
 		break;
-#if 0
-	case IDL_UNARYOP_MINUS:
-		p = IDL_fixed_new(-IDL_FIXED(a).value);
-		break;
-#endif
 
 	default:
 		break;
