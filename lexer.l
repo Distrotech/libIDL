@@ -99,11 +99,10 @@ newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^{whitespace}#.*
 b8_int			0[0-9]*
-b10_int			-[1-9][0-9]*
 b10_uint		[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
-float_lit		-?[0-9]*\.[0-9]+([eE]-?[0-9]+)?|-?[0-9]+\.?([eE]-?[0-9]+)?
-fixed_lit		(-?[0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
+float_lit		[0-9]*\.[0-9]+([eE]-?[0-9]+)?|[0-9]+\.?([eE]-?[0-9]+)?
+fixed_lit		([0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
 declspec		__declspec{whitespacenl}\({whitespacenl}[A-Za-z]*{whitespacenl}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
@@ -201,10 +200,6 @@ dqstring		\"[^\"\n]*[\"\n]
 <*>{whitespace}						;
 {b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
-	tokreturn (TOK_INTEGER);
-}
-{b10_int}						{
-	sscanf (yytext, "%" IDL_LL "d", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
 {b10_uint}						{
