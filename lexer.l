@@ -124,6 +124,7 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 FALSE			tokreturn(TOK_FALSE);
 Object			tokreturn(TOK_OBJECT);
+object			tokreturn(TOK_OBJECT);
 TRUE			tokreturn(TOK_TRUE);
 any			tokreturn(TOK_ANY);
 attribute		tokreturn(TOK_ATTRIBUTE);
