@@ -30,10 +30,13 @@ gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data data)
 		 IDL_NODE_UP (IDL_NODE_UP (p)) != NULL &&
 		 IDL_NODE_TYPE (IDL_NODE_UP (IDL_NODE_UP (p))) == IDLN_ATTR_DCL)
 		repo_id = IDL_IDENT_REPO_ID (p);
-
 	if (repo_id)
 		printf ("%s\n", repo_id);
+	return TRUE;
+}
 
+gboolean print_xpidl_exts (IDL_tree p, IDL_tree parent, struct walk_data data)
+{
 	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE) {
 		const char *val;
 
@@ -41,11 +44,10 @@ gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data data)
 		if (val) printf ("\tXPIDL IID:\"%s\"\n", val);
 	}
 
-
 	if (IDL_NODE_TYPE (p) == IDLN_PARAM_DCL) {
 		IDL_tree op = IDL_NODE_UP (IDL_NODE_UP (p));
 		IDL_tree ident;
-		IDL_tree q;		
+		IDL_tree q;
 		const char *val;
 
 		assert (IDL_NODE_TYPE (op) == IDLN_OP_DCL);
@@ -63,23 +65,21 @@ gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data data)
 						"`%s' not found in parameter list",
 						val);
 			}
-
 			IDL_tree_free (ident);
 		}
 	}
 	
-	if (IDL_NODE_TYPE (p) == IDLN_NATIVE) {
-		if (IDL_NATIVE (p).user_type)
-			g_message ("XPIDL native type: \"%s\"", IDL_NATIVE (p).user_type);
-	}
+	if (IDL_NODE_TYPE (p) == IDLN_NATIVE &&
+	    IDL_NATIVE (p).user_type)
+		g_message ("XPIDL native type: \"%s\"", IDL_NATIVE (p).user_type);
 
 	if (IDL_NODE_TYPE (p) == IDLN_CODEFRAG) {
 		GSList *slist = IDL_CODEFRAG (p).lines;
+
 		g_message ("XPIDL code fragment desc.: \"%s\"", IDL_CODEFRAG (p).desc);
 		for (; slist; slist = slist->next)
 			g_message ("XPIDL code fragment line.: \"%s\"", (char *) slist->data);
 	}
-	
 	return TRUE;
 }
 
@@ -95,7 +95,6 @@ gboolean print_ident_comments (IDL_tree p, IDL_tree parent, struct walk_data dat
 			printf ("%s\n", comment);
 		}
 	}
-
 	return TRUE;
 }
 
@@ -181,6 +180,8 @@ int main (int argc, char *argv[])
 	
 	IDL_check_cast_enable (TRUE);
 
+	g_message ("libIDL version %s", IDL_get_libver_string ());
+
 	if (argc < 2) {
 		fprintf (stderr, "usage: tstidl <filename> [parse flags, hex]\n");
 		exit (1);
@@ -189,7 +190,7 @@ int main (int argc, char *argv[])
 	fn = argv[1];
 	if (argc >= 3)
 		sscanf (argv[2], "%lx", &parse_flags);
-	
+
 #ifdef TEST_INPUT_CB
 	{ struct my_input_cb_data input_cb_data;
 	g_message ("IDL_parse_filename_with_input");
@@ -218,13 +219,27 @@ int main (int argc, char *argv[])
 	data.tree = tree;
 	data.ns = ns;
 	
-	printf ("Repository IDs\n");
+	g_print ("--------------------------------------\n");
+	g_message ("Repository IDs");
+	g_print ("--------------------------------------\n");
 	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_repo_id, &data);
-	printf ("\nConstant Declarations\n");
+	g_print ("\n--------------------------------------\n");
+	g_message ("XPIDL extensions");
+	g_print ("--------------------------------------\n");
+	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_xpidl_exts, &data);
+#if 0
+	g_print ("\n--------------------------------------\n");
+	g_message ("Constant Declarations");
+	g_print ("--------------------------------------\n");
 	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_const_dcls, &data);
-	printf ("\nIdentifiers\n");
+	g_print ("\n--------------------------------------\n");
+	g_message ("Identifiers");
+	g_print ("--------------------------------------\n");
 	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_ident_comments, &data);
-	printf ("\nIDL tree to IDL\n");
+#endif
+	g_print ("\n--------------------------------------\n");
+	g_message ("IDL_tree_to_IDL");
+	g_print ("--------------------------------------\n");
 	IDL_tree_to_IDL (tree, ns, stdout, parse_flags >> 24);
 	IDL_ns_free (ns);
 	IDL_tree_free (tree);

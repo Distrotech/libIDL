@@ -1,11 +1,15 @@
 1998-12-16  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* Update version to 0.5.8
+
 	* util.c (IDL_emit_IDL_ident): Use IDL_ns_scope_levels_from_here
 	and parent from callback to automatically determine the minimal
 	necessary scoping for the identifier; this should allow much more
 	IDL from IDL_tree_to_IDL to be fed back unchanged.
 	(IDL_tree_get_scope): New function.
-	(IDL_tree_to_IDL): Updated to also take an IDL_ns parameter.
+	(IDL_tree_to_IDL): Updated to also take an IDL_ns parameter.  Use
+	G_GNUC_PRINTF for data output function.  Add new functions to
+	handle XPIDL property output for IDL generation.
 
 	* IDL.h, ns.c (IDL_ns_scope_levels_from_here): New function,
 	determines the minimal level of scoping to prepend to a identifier

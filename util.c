@@ -2263,7 +2263,14 @@ typedef struct {
 	unsigned long flags;
 	gboolean idents;
 	gboolean literals;
+	gboolean inline_props;
 } IDL_output_data;
+
+static int dataf (IDL_output_data *data, const char *fmt, ...)
+G_GNUC_PRINTF (2, 3);
+
+static int idataf (IDL_output_data *data, const char *fmt, ...)
+G_GNUC_PRINTF (2, 3);
 
 static int dataf (IDL_output_data *data, const char *fmt, ...)
 {
@@ -2362,6 +2369,62 @@ static void IDL_output_delim (IDL_tree p, IDL_tree parent, IDL_output_data *data
 		       &delim);
 }
 
+typedef struct {
+	IDL_output_data *data;
+	gboolean hit;
+} IDL_property_emit_data;
+
+static void IDL_emit_IDL_property (const char *key, const char *value,
+				   IDL_property_emit_data *emit_data)
+{
+	IDL_output_data *data = emit_data->data;
+
+	if (!emit_data->hit)
+		emit_data->hit = TRUE;
+	else
+		dataf (emit_data->data, DELIM_COMMA);
+	if (!data->inline_props) {
+		nl ();
+		doindent ();
+	}
+	if (value && *value)
+		dataf (emit_data->data, "%s%s(%s)",
+		       key, DELIM_SPACE, value);
+	else
+		dataf (emit_data->data, "%s", key);
+}
+
+static gboolean IDL_emit_IDL_properties (IDL_tree p, IDL_tree parent, IDL_output_data *data)
+{
+	IDL_property_emit_data emit_data;
+
+	if (IDL_NODE_PROPERTIES (p) &&
+	    data->flags & IDLF_OUTPUT_PROPERTIES &&
+	    g_hash_table_size (IDL_NODE_PROPERTIES (p)) > 0) {
+		emit_data.data = data;
+		emit_data.hit = FALSE;
+		if (!data->inline_props)
+			idataf (data, "[" DELIM_SPACE);
+		else
+			dataf (data, "[");
+		indent ();
+		g_hash_table_foreach (IDL_NODE_PROPERTIES (p),
+				      (GHFunc) IDL_emit_IDL_property,
+				      &emit_data);
+		unindent ();
+		if (!data->inline_props) {
+			nl ();
+			doindent ();
+		}
+		dataf (data, "]");
+		if (!data->inline_props)
+			nl ();
+		else
+			dataf (data, DELIM_SPACE);
+	}
+	return TRUE;
+}
+
 static gboolean IDL_emit_IDL_sc (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
 	dataf (data, ";"); nl ();
@@ -2370,7 +2433,7 @@ static gboolean IDL_emit_IDL_sc (IDL_tree p, IDL_tree parent, IDL_output_data *d
 
 static gboolean IDL_emit_IDL_indent (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
-	idataf (data, "");
+	doindent ();
 	return TRUE;
 }
 
@@ -2435,19 +2498,23 @@ static gboolean IDL_emit_IDL_literal (IDL_tree p, IDL_tree parent, IDL_output_da
 		break;
 
 	case IDLN_WIDE_CHAR:
-		dataf (data, "'%s'", IDL_WIDE_CHAR (p).value);
+/*		dataf (data, "'%s'", IDL_WIDE_CHAR (p).value); */
+		g_warning ("IDL_emit_IDL_literal: %s is currently unhandled",
+			   "Wide character output");
 		break;
 
 	case IDLN_BOOLEAN:
 		dataf (data, "%s", IDL_BOOLEAN (p).value ? "TRUE" : "FALSE");
 		break;
-		
+
 	case IDLN_STRING:
 		dataf (data, "\"%s\"", IDL_STRING (p).value);
 		break;
 
 	case IDLN_WIDE_STRING:
-		dataf (data, "\"%s\"", IDL_STRING (p).value);
+/*		dataf (data, "\"%s\"", IDL_STRING (p).value); */
+		g_warning ("IDL_emit_IDL_literal: %s is currently unhandled",
+			   "Wide string output");
 		break;
 
 	default:
@@ -2493,7 +2560,7 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree p, IDL_tree parent, IDL_output_d
 		break;
 
 	case IDLN_TYPE_OBJECT:
-		dataf (data, "object");
+		dataf (data, "Object");
 		break;
 
 	case IDLN_TYPE_TYPECODE:
@@ -2504,7 +2571,7 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree p, IDL_tree parent, IDL_output_d
 		switch (IDL_TYPE_FLOAT (p).f_type) {
 		case IDL_FLOAT_TYPE_FLOAT: dataf (data, "float"); break;
 		case IDL_FLOAT_TYPE_DOUBLE: dataf (data, "double"); break;
-		case IDL_FLOAT_TYPE_LONGDOUBLE: dataf (data, "long double"); break;
+		case IDL_FLOAT_TYPE_LONGDOUBLE: dataf (data, "long" DELIM_SPACE "double"); break;
 		}
 		break;
 
@@ -2518,11 +2585,11 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree p, IDL_tree parent, IDL_output_d
 
 	case IDLN_TYPE_INTEGER:
 		if (!IDL_TYPE_INTEGER (p).f_signed)
-			dataf (data, "unsigned ");
+			dataf (data, "unsigned" DELIM_SPACE);
 		switch (IDL_TYPE_INTEGER (p).f_type) {
 		case IDL_INTEGER_TYPE_SHORT: dataf (data, "short"); break;
 		case IDL_INTEGER_TYPE_LONG: dataf (data, "long"); break;
-		case IDL_INTEGER_TYPE_LONGLONG: dataf (data, "long long"); break;
+		case IDL_INTEGER_TYPE_LONGLONG: dataf (data, "long" DELIM_SPACE "long"); break;
 		}
 		break;
 
@@ -2547,11 +2614,11 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree p, IDL_tree parent, IDL_output_d
 	case IDLN_TYPE_ENUM:
 		idataf (data, "enum" DELIM_SPACE);
 		IDL_emit_IDL_ident (IDL_TYPE_ENUM (p).ident, parent, data);
-		dataf (data, " {" DELIM_SPACE);
+		dataf (data, DELIM_SPACE "{" DELIM_SPACE);
 		IDL_output_delim (IDL_TYPE_ENUM (p).enumerator_list, parent, data,
 				  (IDL_tree_func) IDL_emit_IDL_ident, NULL,
 				  IDLN_IDENT, IDLN_NONE, TRUE, DELIM_COMMA);
-		dataf (data, " };"); nl ();
+		dataf (data, DELIM_SPACE "};"); nl ();
 		return FALSE;
 
 	case IDLN_TYPE_ARRAY:
@@ -2634,6 +2701,8 @@ static gboolean IDL_emit_IDL_module_pre (IDL_tree p, IDL_tree parent, IDL_output
 
 static gboolean IDL_emit_IDL_interface_pre (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
+	data->inline_props = FALSE;
+	IDL_emit_IDL_properties (p, parent, data);
 	idataf (data, "interface" DELIM_SPACE);
 	IDL_emit_IDL_ident (IDL_INTERFACE (p).ident, parent, data);
 	dataf (data, DELIM_SPACE);
@@ -2728,6 +2797,8 @@ static gboolean IDL_emit_IDL_param_dcl_pre (IDL_tree p, IDL_tree parent, IDL_out
 	case IDL_PARAM_OUT: dataf (data, "out" DELIM_SPACE); break;
 	case IDL_PARAM_INOUT: dataf (data, "inout" DELIM_SPACE); break;
 	}
+	data->inline_props = TRUE;
+	IDL_emit_IDL_properties (p, parent, data);
 	data->idents = TRUE;
 	IDL_tree_walk (IDL_PARAM_DCL (p).param_type_spec, parent,
 		       (IDL_tree_func) IDL_emit_node_pre_func,
@@ -3013,6 +3084,7 @@ void IDL_tree_to_IDL (IDL_tree p, IDL_ns ns, FILE *output, unsigned long flags)
 	data.ilev = 0;
 	data.idents = FALSE;
 	data.literals = FALSE;
+	data.inline_props = TRUE;
 
 	IDL_tree_walk (p, NULL,
 		       (IDL_tree_func) IDL_emit_node_pre_func,
