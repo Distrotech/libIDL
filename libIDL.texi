@@ -103,7 +103,7 @@ main (int argc, char *argv[])
 			perror (fn);
 		exit (1);
 	@}
-	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_repo_id, NULL);
+	IDL_tree_walk_in_order (tree, print_repo_id, NULL);
 	IDL_ns_free (ns);
 	IDL_tree_free (tree);
 
@@ -147,6 +147,7 @@ warning or error occurs.
 
 @item
 IDL_tree_func
+
 Defined as typedef gboolean (*IDL_tree_func)(IDL_tree TREE, gpointer
 DATA).  A function of this type is passed to IDL_tree_walk_in_order to
 traverse the tree.
@@ -217,7 +218,7 @@ namespace.
 MAX_MESSAGE_LEVEL:
 
 This specifies the maximum message level to display.  Possible values
-are -1 or no messages, IDL_ERROR for errors only, or IDL_WARNING1,
+are -1 for no messages, IDL_ERROR for errors only, or IDL_WARNING1,
 IDL_WARNING2 and IDL_WARNING3.  A typical value is IDL_WARNING1, which
 will limit verbosity.  IDL_WARNINGMAX is defined as the value in which
 all messages will be displayed.
