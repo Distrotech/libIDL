@@ -1,3 +1,7 @@
+2000-08-28 Elliot Lee <sopwith@redhat.com>
+	* util.c (is_recursive_walker): Fix segfault when past was NULL (aka data type has
+	no parent).
+
 2000-07-14  Michael Meeks  <michael@helixcode.com>
 
 	* parser.y (positive_int_const): incr. ref count.

@@ -3562,7 +3562,7 @@ is_recursive_walker (IDL_tree_func_data *tfd, gpointer data) {
 	if ( IDL_NODE_TYPE(tfd->tree) == IDLN_IDENT ) {
 	    IDL_tree def = IDL_NODE_UP(tfd->tree);
 	    IDL_tree_func_data *past = tfd->up;
-	    if ( past->tree == def )
+	    if (past && past->tree == def )
 	    	return FALSE;	/* IDENT that is name of this type */
 
 	    for ( ; past; past = past->up) {
