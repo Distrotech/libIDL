@@ -1702,27 +1702,8 @@ void IDL_tree_walk (IDL_tree p, IDL_tree_func_data *current,
 	tfs.start = p;
 
 	tfd.state = &tfs;
+	tfd.up = current;
 	tfd.tree = p;
-
-	if (current) {
-#ifdef DEBUGWALK
-		IDL_tree_func_data *uptfd;
-#endif
-
-		tfd.up = current;
-#ifdef DEBUGWALK
-		printf ("\nRestarting TRAVERSAL from NODE %s (up %s), current stack:\n",
-			IDL_NODE_TYPE_NAME (p), IDL_NODE_TYPE_NAME (p->up));
-		for (uptfd = current; uptfd && uptfd->tree; uptfd = uptfd->up) {
-			if (uptfd->tree)
-				printf ("Nodes: %s\n",
-					IDL_NODE_TYPE_NAME (uptfd->tree));
-			else
-				printf ("- No up node!\n");
-		}
-#endif
-	} else
-		tfd.up = NULL;
 
 	IDL_tree_walk_real (&tfd, &data);
 }
@@ -2574,27 +2555,31 @@ static gboolean IDL_emit_IDL_ident_real (IDL_tree_func_data *tfd, IDL_output_dat
 	char *s;
 	int levels;
 
-	up_path = tfd;
-	up_real = tfd->tree;
-	while (up_path && up_real) {
-		if (IDL_NODE_TYPE (up_path->tree) != IDL_NODE_TYPE (up_real))
-			break;
-		up_path = up_path->up;
-		up_real = IDL_NODE_UP (up_real);
-	}
-
-	if (!up_real)
-		scope = tfd->tree;
-	else
-		assert (up_path != NULL);
-		scope = up_path->tree ? up_path->tree : up_real;
-
 	assert (IDL_NODE_TYPE (tfd->tree) == IDLN_IDENT);
 
 	if (data->flags & IDLF_OUTPUT_NO_QUALIFY_IDENTS)
 		dataf (data, "%s", IDL_IDENT (tfd->tree).str);
 	else {
 		/* Determine minimal required levels of scoping */
+
+		up_path = tfd;
+		up_real = tfd->tree;
+		while (up_path && up_real) {
+			if (IDL_NODE_TYPE (up_path->tree) != IDL_NODE_TYPE (up_real))
+				break;
+			up_path = up_path->up;
+			up_real = IDL_NODE_UP (up_real);
+		}
+
+		if (!up_real)
+			scope = tfd->tree;
+		else {
+			assert (up_path != NULL);
+			scope = up_path->tree ? up_path->tree : up_real;
+		}
+
+		assert (IDL_NODE_TYPE (tfd->tree) == IDLN_IDENT);
+
 		levels = IDL_ns_scope_levels_from_here (data->ns, tfd->tree, scope);
 		s = IDL_ns_ident_to_qstring (IDL_IDENT_TO_NS (tfd->tree), "::", levels);
 		dataf (data, "%s", s);
