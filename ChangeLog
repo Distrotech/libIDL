@@ -1,3 +1,8 @@
+2003-05-08  Jody Goldberg <jody@gnome.org>
+
+	* lexer.l (__IDL_lex_cleanup) : newer versions of flex do not require
+	  YY_NEW_FILE.
+
 2003-05-03  Michael Meeks  <michael@ximian.com>
 
 	* Version 0.8.1

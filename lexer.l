@@ -390,7 +390,9 @@ void __IDL_lex_init (void)
 void __IDL_lex_cleanup (void)
 {
 	__IDL_cur_filename = NULL;
-	YY_NEW_FILE;
+#ifdef YY_NEW_FILE
+	YY_NEW_FILE; /* obsolete with newer versions of flex */
+#endif
 }
 
 int yywrap (void)
