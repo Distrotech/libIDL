@@ -2270,14 +2270,14 @@ static int load_inhibits (IDLTreeFuncData *tfd, GHashTable *table)
 	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_LIST &&
 	    IDL_NODE_DECLSPEC (p) & IDLF_DECLSPEC_INHIBIT &&
 	    !g_hash_table_lookup_extended (table, IDL_NODE_UP (p), NULL, NULL)) {
-		
+
 		IDL_tree *list_head = NULL;
-		
+
 		if (IDL_NODE_UP (IDL_NODE_UP (p))) {
 			assert (IDL_NODE_TYPE (IDL_NODE_UP (IDL_NODE_UP (p))) == IDLN_MODULE);
 			list_head = &IDL_MODULE (IDL_NODE_UP (IDL_NODE_UP (p))).definition_list;
 		}
-		
+
 		g_hash_table_insert (table, IDL_NODE_UP (p), list_head);
 	}
 	
@@ -2312,14 +2312,14 @@ static int load_empty_modules (IDLTreeFuncData *tfd, GHashTable *table)
 	    IDL_NODE_UP (p) &&
 	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_LIST &&
 	    !g_hash_table_lookup_extended (table, IDL_NODE_UP (p), NULL, NULL)) {
-		
+
 		IDL_tree *list_head = NULL;
-		
+
 		if (IDL_NODE_UP (IDL_NODE_UP (p))) {
 			assert (IDL_NODE_TYPE (IDL_NODE_UP (IDL_NODE_UP (p))) == IDLN_MODULE);
 			list_head = &IDL_MODULE (IDL_NODE_UP (IDL_NODE_UP (p))).definition_list;
 		}
-		
+
 		g_hash_table_insert (table, IDL_NODE_UP (p), list_head);
 	}
 
@@ -2974,19 +2974,9 @@ static gboolean IDL_emit_IDL_attr_dcl_pre (IDLTreeFuncData *tfd, IDL_output_data
 		       data);
 	data->idents = idents;
 	dataf (data, DELIM_SPACE);
-#if 1
 	IDL_output_delim (IDL_ATTR_DCL (tfd->tree).simple_declarations, tfd, data,
 			  (IDL_tree_func) IDL_emit_IDL_ident_force_pre, NULL,
 			  IDLN_IDENT, IDLN_NONE, TRUE, DELIM_COMMA);
-#else
-	idents = data->idents;
-	data->idents = TRUE;
-	IDL_tree_walk (IDL_ATTR_DCL (tfd->tree).simple_declarations, tfd,
-		       (IDL_tree_func) IDL_emit_node_pre_func,
-		       (IDL_tree_func) IDL_emit_node_post_func,
-		       data);
-	data->idents = idents;
-#endif
 	IDL_emit_IDL_sc (tfd, data);
 
 	return FALSE;
