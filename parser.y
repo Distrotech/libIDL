@@ -37,8 +37,8 @@
 		YYABORT;			\
 	if (flags & IDLF_EVAL_CONST) {		\
 		rv = IDL_binop_eval(op, a, b);	\
-		__IDL_tree_free(a, IDL_TRUE);	\
-		__IDL_tree_free(b, IDL_TRUE);	\
+		__IDL_tree_free(a);		\
+		__IDL_tree_free(b);		\
 		if (!rv) YYABORT;		\
 	} else {				\
 		rv = IDL_binop_new(op, a, b);	\
@@ -50,7 +50,7 @@
 		YYABORT;			\
 	if (flags & IDLF_EVAL_CONST) {		\
 		rv = IDL_unaryop_eval(op, a);	\
-		__IDL_tree_free(a, IDL_TRUE);	\
+		__IDL_tree_free(a);		\
 		if (!rv) YYABORT;		\
 	} else {				\
 		rv = IDL_unaryop_new(op, a);	\
@@ -65,7 +65,7 @@ static int			IDL_binop_chktypes(enum IDL_binop op,
 						   IDL_tree b);
 static int			IDL_unaryop_chktypes(enum IDL_unaryop op,
 						     IDL_tree a);
-static void			__IDL_tree_free(IDL_tree p, int idents);
+static void			__IDL_tree_free(IDL_tree p);
 static IDL_tree			IDL_binop_eval(enum IDL_binop op,
 					       IDL_tree a,
 					       IDL_tree b);
@@ -703,6 +703,7 @@ ns_new_ident:		ident				{
 		YYABORT;
 	}
 	assert(IDL_IDENT($1)._ns_ref == p);
+	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	$$ = p;
 }
 	;
@@ -734,8 +735,8 @@ ns_new_or_prev_ident:	ident				{
 		IDL_tree_free($1);
 		assert(IDL_GENTREE(p).data != NULL);
 		assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
-		++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	}
+	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	$$ = p;
 }
 	;
@@ -752,8 +753,8 @@ cur_ns_new_or_prev_ident:
 		IDL_tree_free($1);
 		assert(IDL_GENTREE(p).data != NULL);
 		assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
-		++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	}
+	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
 	$$ = p;
 }
 	;
@@ -1177,7 +1178,7 @@ void __IDL_tree_print(IDL_tree p)
 	}
 }
 
-static void __IDL_tree_free(IDL_tree p, int idents)
+static void __IDL_tree_free(IDL_tree p)
 {
 	IDL_tree q, r;
 
@@ -1187,7 +1188,7 @@ static void __IDL_tree_free(IDL_tree p, int idents)
 	switch (IDL_NODE_TYPE(p)) {
 	case IDLN_LIST:
 		while (p) {
-			__IDL_tree_free(IDL_LIST(p).data, idents);
+			__IDL_tree_free(IDL_LIST(p).data);
 			q = IDL_LIST(p).next;
 			free(p);
 			p = q;
@@ -1195,15 +1196,15 @@ static void __IDL_tree_free(IDL_tree p, int idents)
 		break;
 
 	case IDLN_GENTREE:
-		__IDL_tree_free(IDL_GENTREE(p).data, idents);
-		__IDL_tree_free(IDL_GENTREE(p).children, idents);
+		__IDL_tree_free(IDL_GENTREE(p).data);
+		__IDL_tree_free(IDL_GENTREE(p).children);
 
 		q = IDL_GENTREE(p).siblings;
 		free(p);
 		while (q != NULL) {
 			r = IDL_GENTREE(q).siblings;
-			__IDL_tree_free(IDL_GENTREE(q).data, idents);
-			__IDL_tree_free(IDL_GENTREE(q).children, idents);
+			__IDL_tree_free(IDL_GENTREE(q).data);
+			__IDL_tree_free(IDL_GENTREE(q).children);
 			free(q);
 			q = r;
 		}
@@ -1227,109 +1228,117 @@ static void __IDL_tree_free(IDL_tree p, int idents)
 		break;
 
 	case IDLN_IDENT:
-		if (idents == IDL_TRUE) {
-			if (--IDL_IDENT(p)._refs <= 0) {
-				free(IDL_IDENT(p).str);
-				free(p);
-			}
+#if 0
+		if (IDL_IDENT(p)._refs > 0)
+			printf("Ident %s %d\n",
+			       IDL_IDENT(p).str,
+			       IDL_IDENT(p)._refs);
+#endif
+		if (--IDL_IDENT(p)._refs <= 0) {
+#if 0
+			printf("  freeing %s\n",
+			       IDL_IDENT(p).str);
+#endif
+			free(IDL_IDENT(p).str);
+			free(p);
 		}
 		break;
 
 	case IDLN_MEMBER:
-		__IDL_tree_free(IDL_MEMBER(p).type_spec, idents);
-		__IDL_tree_free(IDL_MEMBER(p).dcls, idents);
+		__IDL_tree_free(IDL_MEMBER(p).type_spec);
+		__IDL_tree_free(IDL_MEMBER(p).dcls);
 		free(p);
 		break;
 
 	case IDLN_TYPE_ENUM:
-		__IDL_tree_free(IDL_TYPE_ENUM(p).ident, idents);
-		__IDL_tree_free(IDL_TYPE_ENUM(p).enumerator_list, idents);
+		__IDL_tree_free(IDL_TYPE_ENUM(p).ident);
+		__IDL_tree_free(IDL_TYPE_ENUM(p).enumerator_list);
 		free(p);
 		break;
 
 	case IDLN_TYPE_SEQUENCE:
-		__IDL_tree_free(IDL_TYPE_SEQUENCE(p).simple_type_spec, idents);
-		__IDL_tree_free(IDL_TYPE_SEQUENCE(p).positive_int_const, idents);
+		__IDL_tree_free(IDL_TYPE_SEQUENCE(p).simple_type_spec);
+		__IDL_tree_free(IDL_TYPE_SEQUENCE(p).positive_int_const);
 		free(p);
 		break;
 
 	case IDLN_TYPE_ARRAY:
-		__IDL_tree_free(IDL_TYPE_ARRAY(p).ident, idents);
-		__IDL_tree_free(IDL_TYPE_ARRAY(p).size_list, idents);
+		__IDL_tree_free(IDL_TYPE_ARRAY(p).ident);
+		__IDL_tree_free(IDL_TYPE_ARRAY(p).size_list);
 		free(p);
 		break;
 
 	case IDLN_TYPE_STRUCT:
-		__IDL_tree_free(IDL_TYPE_STRUCT(p).ident, idents);
-		__IDL_tree_free(IDL_TYPE_STRUCT(p).member_list, idents);
+		__IDL_tree_free(IDL_TYPE_STRUCT(p).ident);
+		__IDL_tree_free(IDL_TYPE_STRUCT(p).member_list);
 		free(p);
 		break;
 
 	case IDLN_TYPE_UNION:
-		__IDL_tree_free(IDL_TYPE_UNION(p).ident, idents);
-		__IDL_tree_free(IDL_TYPE_UNION(p).switch_type_spec, idents);
-		__IDL_tree_free(IDL_TYPE_UNION(p).switch_body, idents);
+		__IDL_tree_free(IDL_TYPE_UNION(p).ident);
+		__IDL_tree_free(IDL_TYPE_UNION(p).switch_type_spec);
+		__IDL_tree_free(IDL_TYPE_UNION(p).switch_body);
 		free(p);
 		break;
 				
 	case IDLN_TYPE_DCL:
-		__IDL_tree_free(IDL_TYPE_DCL(p).type_spec, idents);
-		__IDL_tree_free(IDL_TYPE_DCL(p).dcls, idents);
+		__IDL_tree_free(IDL_TYPE_DCL(p).type_spec);
+		__IDL_tree_free(IDL_TYPE_DCL(p).dcls);
 		free(p);
 		break;
 
 	case IDLN_CONST_DCL:
-		__IDL_tree_free(IDL_CONST_DCL(p).const_type, idents);
-		__IDL_tree_free(IDL_CONST_DCL(p).ident, idents);
-		__IDL_tree_free(IDL_CONST_DCL(p).const_exp, idents);
+		__IDL_tree_free(IDL_CONST_DCL(p).const_type);
+		__IDL_tree_free(IDL_CONST_DCL(p).ident);
+		__IDL_tree_free(IDL_CONST_DCL(p).const_exp);
 		free(p);
 		break;
 
 	case IDLN_EXCEPT_DCL:
-		__IDL_tree_free(IDL_EXCEPT_DCL(p).ident, idents);
-		__IDL_tree_free(IDL_EXCEPT_DCL(p).members, idents);
+		__IDL_tree_free(IDL_EXCEPT_DCL(p).ident);
+		__IDL_tree_free(IDL_EXCEPT_DCL(p).members);
 		free(p);
 		break;
 		
 	case IDLN_ATTR_DCL:
-		__IDL_tree_free(IDL_ATTR_DCL(p).param_type_spec, idents);
-		__IDL_tree_free(IDL_ATTR_DCL(p).simple_declarations, idents);
+		__IDL_tree_free(IDL_ATTR_DCL(p).param_type_spec);
+		__IDL_tree_free(IDL_ATTR_DCL(p).simple_declarations);
 		free(p);
 		break;
 		
 	case IDLN_OP_DCL:
-		__IDL_tree_free(IDL_OP_DCL(p).op_type_spec, idents);
-		__IDL_tree_free(IDL_OP_DCL(p).ident, idents);
-		__IDL_tree_free(IDL_OP_DCL(p).parameter_dcls, idents);
-		__IDL_tree_free(IDL_OP_DCL(p).raises_expr, idents);
-		__IDL_tree_free(IDL_OP_DCL(p).context_expr, idents);
+		__IDL_tree_free(IDL_OP_DCL(p).op_type_spec);
+		__IDL_tree_free(IDL_OP_DCL(p).ident);
+		__IDL_tree_free(IDL_OP_DCL(p).parameter_dcls);
+		__IDL_tree_free(IDL_OP_DCL(p).raises_expr);
+		__IDL_tree_free(IDL_OP_DCL(p).context_expr);
 		free(p);
 		break;
 
 	case IDLN_PARAM_DCL:
-		__IDL_tree_free(IDL_PARAM_DCL(p).param_type_spec, idents);
-		__IDL_tree_free(IDL_PARAM_DCL(p).simple_declarator, idents);
+		__IDL_tree_free(IDL_PARAM_DCL(p).param_type_spec);
+		__IDL_tree_free(IDL_PARAM_DCL(p).simple_declarator);
 		free(p);
 		break;
 		
 	case IDLN_FORWARD_DCL:
-		__IDL_tree_free(IDL_FORWARD_DCL(p).ident, idents);
+		__IDL_tree_free(IDL_FORWARD_DCL(p).ident);
 		free(p);
 		break;
 		
 	case IDLN_TYPE_STRING:
-		__IDL_tree_free(IDL_TYPE_STRING(p).positive_int_const, idents);
+		__IDL_tree_free(IDL_TYPE_STRING(p).positive_int_const);
 		free(p);
 		break;
 		
 	case IDLN_TYPE_WIDE_STRING:
-		__IDL_tree_free(IDL_TYPE_WIDE_STRING(p).positive_int_const, idents);
+		__IDL_tree_free(IDL_TYPE_WIDE_STRING(p).positive_int_const);
 		free(p);
 		break;
 		
 	case IDLN_TYPE_FIXED:
-		__IDL_tree_free(IDL_TYPE_FIXED(p).positive_int_const, idents);
-		__IDL_tree_free(IDL_TYPE_FIXED(p).integer_lit, idents);
+		__IDL_tree_free(IDL_TYPE_FIXED(p).positive_int_const);
+		__IDL_tree_free(IDL_TYPE_FIXED(p).integer_lit);
 		free(p);
 		break;
 
@@ -1345,31 +1354,31 @@ static void __IDL_tree_free(IDL_tree p, int idents)
 		break;
 
 	case IDLN_CASE_LABEL:
-		__IDL_tree_free(IDL_CASE_LABEL(p).const_exp, idents);
+		__IDL_tree_free(IDL_CASE_LABEL(p).const_exp);
 		free(p);
 		break;
 		
 	case IDLN_INTERFACE:
-		__IDL_tree_free(IDL_INTERFACE(p).ident, idents);
-		__IDL_tree_free(IDL_INTERFACE(p).inheritance_spec, idents);
-		__IDL_tree_free(IDL_INTERFACE(p).body, idents);
+		__IDL_tree_free(IDL_INTERFACE(p).ident);
+		__IDL_tree_free(IDL_INTERFACE(p).inheritance_spec);
+		__IDL_tree_free(IDL_INTERFACE(p).body);
 		free(p);
 		break;
 
 	case IDLN_MODULE:
-		__IDL_tree_free(IDL_MODULE(p).ident, idents);
-		__IDL_tree_free(IDL_MODULE(p).definition_list, idents);
+		__IDL_tree_free(IDL_MODULE(p).ident);
+		__IDL_tree_free(IDL_MODULE(p).definition_list);
 		free(p);
 		break;
 
 	case IDLN_BINOP:
-		__IDL_tree_free(IDL_BINOP(p).left, idents);
-		__IDL_tree_free(IDL_BINOP(p).right, idents);
+		__IDL_tree_free(IDL_BINOP(p).left);
+		__IDL_tree_free(IDL_BINOP(p).right);
 		free(p);
 		break;
 
 	case IDLN_UNARYOP:
-		__IDL_tree_free(IDL_UNARYOP(p).operand, idents);
+		__IDL_tree_free(IDL_UNARYOP(p).operand);
 		free(p);
 		break;		
 		
@@ -1382,7 +1391,7 @@ static void __IDL_tree_free(IDL_tree p, int idents)
 void IDL_tree_free(IDL_tree root)
 {
 	assert(root != NULL);
-	__IDL_tree_free(root, IDL_TRUE);
+	__IDL_tree_free(root);
 }
 
 IDL_ns IDL_ns_new(void)
@@ -1407,7 +1416,7 @@ void IDL_ns_free(IDL_ns ns)
 {
 	assert(ns != NULL);
 
-	__IDL_tree_free(IDL_NS(ns).global, IDL_FALSE);
+	__IDL_tree_free(IDL_NS(ns).global);
 	
 	free(ns);
 }
@@ -2170,6 +2179,8 @@ static int IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b)
 {
 	if (IDL_NODE_TYPE(a) != IDLN_BINOP &&
 	    IDL_NODE_TYPE(b) != IDLN_BINOP &&
+	    IDL_NODE_TYPE(a) != IDLN_UNARYOP &&
+	    IDL_NODE_TYPE(b) != IDLN_UNARYOP &&
 	    IDL_NODE_TYPE(a) != IDL_NODE_TYPE(b)) {
 		yyerror("invalid mix of types in constant expression");
 		return -1;
@@ -2188,7 +2199,12 @@ static int IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b)
 	case IDL_BINOP_AND:
 	case IDL_BINOP_OR:
 	case IDL_BINOP_XOR:
-		if (IDL_NODE_TYPE(a) != IDLN_INTEGER) {
+		if ((IDL_NODE_TYPE(a) != IDLN_INTEGER ||
+		     IDL_NODE_TYPE(b) != IDLN_INTEGER) &&
+		    !(IDL_NODE_TYPE(a) == IDLN_BINOP ||
+		      IDL_NODE_TYPE(b) == IDLN_BINOP ||
+		      IDL_NODE_TYPE(a) == IDLN_UNARYOP ||
+		      IDL_NODE_TYPE(b) == IDLN_UNARYOP)) {
 			yyerror("invalid operation on non-integer value");
 			return -1;
 		}
@@ -2206,10 +2222,13 @@ static int IDL_unaryop_chktypes(enum IDL_unaryop op, IDL_tree a)
 		break;
 
 	case IDL_UNARYOP_COMPLEMENT:
-		if (IDL_NODE_TYPE(a) == IDLN_INTEGER)
-			break;
-		yyerror("operand to complement must be integer");
-		return -1;
+		if (IDL_NODE_TYPE(a) != IDLN_INTEGER &&
+		    !(IDL_NODE_TYPE(a) == IDLN_BINOP ||
+		      IDL_NODE_TYPE(a) == IDLN_UNARYOP)) {
+			yyerror("operand to complement must be integer");
+			return -1;
+		}
+		break;
 	}
 
 	return 0;

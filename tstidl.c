@@ -52,10 +52,14 @@ int main(int argc, char *argv[])
 
 	if (rv == IDL_SUCCESS) {
 		void __IDL_tree_print(IDL_tree p);
-		
+
+#if 1
 		IDL_ns_dump_namespace(ns);
-		IDL_tree_free(tree);
+#endif
+		printf("Freeing Namespace\n");
 		IDL_ns_free(ns);
+		printf("Freeing Tree\n");
+		IDL_tree_free(tree);
 		
 	}
 	else if (rv == IDL_ERROR) {
