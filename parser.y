@@ -1626,34 +1626,50 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	char *cmd;
 	int rv;
 
-	if (!filename || !tree) return -EINVAL;
+	if (!filename ||
+	    !tree ||
+	    (tree == NULL && ns != NULL)) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	cmd = (char *)malloc(strlen(filename) + 
 			     (cpp_args ? strlen(cpp_args) : 0) +
 			     strlen(fmt) - 4 + 1);
-	if (!cmd)
-		return -ENOMEM;
+	if (!cmd) {
+		errno = ENOMEM;
+		return -1;
+	}
 
 	sprintf(cmd, fmt, cpp_args ? cpp_args : "", filename);
 	input = popen(cmd, "r");
 	free(cmd);
 
-	if (input == NULL)
-		return errno;
+	if (input == NULL || ferror(input))
+		return IDL_ERROR;
 
 	__IDL_in = input;
 	idl_msgcb = cb;
 	flags = parse_flags;
 	idl_ns = IDL_ns_new();
 	idl_is_parsing = IDL_TRUE;
+	__IDL_lex_init();
+	__IDL_cur_filename = strdup(filename);
 	rv = yyparse();
 	idl_is_parsing = IDL_FALSE;
 	__IDL_lex_cleanup();
 	idl_msgcb = NULL;
 	pclose(input);
 
-	if (rv != 0)
+	if (rv != 0) {
+		if (tree)
+			*tree = NULL;
+
+		if (ns)
+			*ns = NULL;
+
 		return IDL_ERROR;
+	}
 
 	if (flags & IDLF_PREFIX_FILENAME)
 		IDL_ns_prefix(idl_ns, filename);

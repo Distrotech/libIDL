@@ -1,4 +1,4 @@
-\input texinfo   @c -*-texinfo-*-
+\input texinfo @c -*- mode: texinfo -*-
 @setfilename libIDL.info
 @settitle libIDL
 @setchapternewpage odd
@@ -21,26 +21,212 @@ Copyright @copyright{} 1998 Andrew Veliath
 
 @node Top, , , (dir)
 @ifinfo
-This file documents the Interface Definition Language parsing library,
-libIDL.
+This file documents the Interface Definition Language (IDL) parsing
+library, libIDL.
 
 This document applies to version 0.1 of libIDL.
 @end ifinfo
 
 @menu
-* Overview::                  General overview
-* First Chapter::             Test
+* Overview::                  General overview.
+* Example::                   Simple example.
+* Reference::                 Data structure and function reference.
+
+* Function Index::            Index of available functions.
 @end menu
 
-@node    Overview, First Chapter, top,      top
+@node Overview, Example, top, top
 @chapter Overview
-This is is the libIDL parsing library.
+IDL is the object definition language from the CORBA specification from
+the Object Management Group (OMG).  libIDL contains a yacc and lex-based
+parser which generates a C abstract syntax tree (AST) which represents
+the information contained in an IDL file module.
 
-@node    First Chapter, , Overview,      top
-@chapter First Chapter
-@cindex Index entry for First Chapter
+@node Example, Reference, Overview, top
+@chapter Usage
+The following ANSI C program will parse an IDL file and print out all of
+the identifiers in the namespace of the file.
+
+@example
+#include <assert.h>
+#include <stdio.h>
+#include <libIDL/IDL.h>
+
+void IDL_ns_print_idents(FILE *o, IDL_tree l)
+@{
+	if (l == NULL)
+		return;
+
+	assert(IDL_NODE_TYPE(l) == IDLN_LIST);
+
+	while (l != NULL) @{
+		assert(IDL_LIST(l).data != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(l).data) == IDLN_IDENT);
+		fprintf(o, "::%s", IDL_IDENT(IDL_LIST(l).data).str);
+		l = IDL_LIST(l).next;
+	@}
+	fprintf(o, "\n");
+@}
+
+void IDL_ns_rcs_traverse(IDL_tree p)
+@{
+	if (p == NULL)
+		return;
+
+	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
+
+	if (IDL_GENTREE(p).children == NULL) @{
+		IDL_tree l = IDL_ns_qualified_ident_new(p);
+		if (l != NULL) @{
+			IDL_ns_print_idents(stdout, l);
+			IDL_tree_free(l);
+		@}
+	@}
+
+	IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
+	IDL_ns_rcs_traverse(IDL_GENTREE(p).siblings);
+@}
+
+int main(int argc, char *argv[])
+@{
+	IDL_tree tree;
+	IDL_ns ns;
+	int rv;
+	char *fn;
+
+	if (argc != 2) @{
+		fprintf(stderr, "usage: idlns <filename>\n");
+		exit(1);
+	@}
+
+	fn = argv[1];
+
+	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, 0);
+
+	if (rv == IDL_SUCCESS) @{
+		IDL_ns_rcs_traverse(IDL_NS(ns).global);
+		IDL_tree_free(tree);
+		IDL_ns_free(ns);
+	@}
+	else if (rv == IDL_ERROR) @{
+		fprintf(stderr, "idlns: IDL_parse_filename: IDL_ERROR\n");
+		exit(1);
+	@}
+	else if (rv < 0) @{
+		fprintf(stderr, "idlns: IDL_parse_filename: ");
+		perror(fn);
+		exit(1);
+	@}
+	
+	return 0;
+@}
+@end example
+
+@node Reference, Function Index, Example, top
+@chapter Reference
+
+@menu
+* Data Types::                Constructed data types used.
+* Functions::                 Functions provided.
+* Tree Structure::            The C IDL tree representation.
+@end menu
+
+@node Data Types, Functions, , Reference
+@chapter Data Types
 
 @itemize @bullet
 @item
-hi
+IDL_tree
+
+An opaque tree which encapsulates an IDL tree node.  Must be freed with
+IDL_tree_free (@xref{Functions}).
+
+@item
+IDL_callback
+
+Defined as typedef int (*IDL_callback)(int LEVEL, int NUM, int LINE,
+const char *NAME, const char *ERR).  A function of this type can be
+optionally passed to IDL_parse_filename to be called when a parse
+warning or error occurs.
+
+@item
+IDL_ns
+
+An opaque structure which encapsulates the IDL module namespace.  Must
+be freed with IDL_ns_free (@xref{Functions}).
 @end itemize
+
+@node Functions, Tree Structure, Data Types, Reference
+@chapter Functions
+
+@itemize @bullet
+@item
+Function: int IDL_parse_filename(const char *NAME, const char *ARGS,
+IDL_callback CALLBACK, IDL_tree *TREE, IDL_ns *NS, unsigned long FLAGS)
+@findex IDL_parse_filename
+
+Parse an file containing an IDL definition into an abstract syntax tree.
+Returns IDL_SUCCESS if successful, or IDL_ERROR if there was a parse
+error.  If -1 is returned, errno will be set accordingly.
+
+@itemize @minus
+@item
+NAME: required, specifies the filename to be parsed.
+
+@item
+ARGS: optional, if non-NULL, specifies extra arguments to pass to the C
+preprocessor.  The most common type of string would be in the form of
+-I<dir> to include additional directories for file inclusion search.
+
+@item
+CALLBACK: optional, if non-NULL, this function will be called when a
+warning or error is generated (@xref{Data Types}).  If not given,
+warnings and errors will be sent to stderr.
+
+@item
+TREE: optional, if non-NULL, points to an IDL_tree * to return the
+generated tree which must be freed with IDL_tree_free.  If NULL, the
+tree is freed and not returned.
+
+@item
+NS: optional, if non-NULL, points to an IDL_ns * to return the namespace
+tree which must be freed with IDL_ns_free.  If NULL, the tree is freed
+and not returned.  If TREE is NULL, then NS must also be NULL, since the
+namespace is created as the AST is generated.
+
+@item
+FLAGS: optional, specifies extra flags for parsing or 0.  Here are the
+possible flags:
+
+@itemize @minus
+@item
+IDLF_EVAL_CONST: instructs the parser to evaluate constant expressions.
+
+@item
+IDLF_PREFIX_FILENAME: instructs the parser to prefix the filename to the
+namespace.
+
+@end itemize
+
+@end itemize
+
+@item
+Function: void IDL_tree_free(IDL_tree TREE)
+@findex IDL_tree_free
+
+Frees the memory associated with TREE.
+
+@item
+Function: void IDL_ns_free(IDL_ns NS)
+@findex IDL_ns_free
+
+Frees the memory associated with NS.
+
+@end itemize
+
+@node Tree Structure, , Functions, Reference
+@chapter Tree Structure
+
+@node Function Index, , Reference, top
+@chapter Function Index
+@printindex fn
