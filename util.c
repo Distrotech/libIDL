@@ -1749,7 +1749,8 @@ void IDL_tree_resolve_forward_dcls(IDL_tree p)
 /* Inhibit Creation Removal */
 static int load_inhibits(IDL_tree p, GHashTable *table)
 {
-	if (IDL_NODE_TYPE(p) == IDLN_INTERFACE &&
+	if ((IDL_NODE_TYPE(p) == IDLN_INTERFACE ||
+	     IDL_NODE_TYPE(p) == IDLN_MODULE) &&
 	    IDL_NODE_UP(p) &&
 	    IDL_NODE_TYPE(IDL_NODE_UP(p)) == IDLN_LIST &&
 	    IDL_NODE_DECLSPEC(p) & IDLF_DECLSPEC_INHIBIT &&

@@ -228,7 +228,7 @@ static int			do_token_error(IDL_tree p, const char *message, int prev);
 %type <tree>		xor_expr
 %type <tree>		z_inheritance
 
-%type <declspec>	z_declspec interface_declspec
+%type <declspec>	z_declspec interface_declspec module_declspec
 %type <integer>		signed_int unsigned_int is_readonly is_oneway
 %type <paramattr>	param_attribute
 %type <str>		sqstring dqstring dqstring_cat
@@ -279,7 +279,10 @@ definition:		type_dcl check_semicolon
 |			useless_semicolon
 	;
 
-module:			TOK_MODULE new_or_prev_scope '{'
+module_declspec:	z_declspec TOK_MODULE
+	;
+
+module:			module_declspec new_or_prev_scope '{'
 				definition_list
 			'}' pop_scope			{
 	IDL_tree module;
@@ -307,8 +310,9 @@ module:			TOK_MODULE new_or_prev_scope '{'
 	}
 
 	$$ = module;
+	IDL_NODE_DECLSPEC($$) = $1;
 }
-|			TOK_MODULE new_or_prev_scope '{'
+|			module_declspec new_or_prev_scope '{'
 			'}' pop_scope			{
 	if (IDL_NODE_UP($2) != NULL &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
@@ -320,6 +324,8 @@ module:			TOK_MODULE new_or_prev_scope '{'
 		   IDL_IDENT($2).str);
 
 	$$ = IDL_NODE_UP ($2) ? NULL : IDL_module_new($2, NULL);
+	if ($$)
+		IDL_NODE_DECLSPEC($$) = $1;
 }
 	;
 
