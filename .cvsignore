@@ -21,3 +21,8 @@ libtool
 *.lo
 *.la
 libIDLConf.sh
+IDL.h
+stamp-parser
+IDL.h.new
+libIDL-config
+libIDL.m4
