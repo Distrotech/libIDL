@@ -13,8 +13,26 @@ void IDL_ns_rcs_traverse(IDL_tree p)
 
 	while (p != NULL) {
 		if (IDL_GENTREE(p).children == NULL) {
-			char *s = IDL_ns_ident_to_qstring(p, "_");
+			IDL_tree q;
+			char *s;
+			int levels;
+
+			q = IDL_GENTREE(p).data;
+
+			q = IDL_get_parent_node(q, IDLN_INTERFACE, &levels);
 			
+			if (q != NULL) {
+
+				printf("node type: %s levels %d\n", IDL_NODE_TYPE_NAME(q), levels);
+				
+				s = IDL_ns_ident_to_qstring(p, "_", levels);
+
+				
+			} else {
+				s = IDL_ns_ident_to_qstring(p, "_", 0);
+			}
+
+
 			if (s != NULL)
 				printf("%s\n", s);
 

@@ -38,7 +38,7 @@ extern "C" {
 #define IDL_ERROR			1
 #define IDL_WARNING			2
 
-/* parse flags for IDL_parse_filename */
+/* flags for IDL_parse_filename */
 #define IDLF_EVAL_CONST			(1UL << 0)
 #define IDLF_PREFIX_FILENAME		(1UL << 1)
 
@@ -54,14 +54,12 @@ struct _IDL_LIST {
 IDL_tree				IDL_list_new(IDL_tree data);
 
 struct _IDL_GENTREE {
-	IDL_tree parent;
 	IDL_tree data;
 	IDL_tree siblings, _siblings_tail;
 	IDL_tree children;
 };
 #define IDL_GENTREE(a)			((a)->u.idl_gentree)
-IDL_tree				IDL_gentree_new(IDL_tree parent,
-							IDL_tree data);
+IDL_tree				IDL_gentree_new(IDL_tree data);
 IDL_tree				IDL_gentree_chain_sibling(IDL_tree from,
 								  IDL_tree data);
 IDL_tree				IDL_gentree_chain_child(IDL_tree from,
@@ -131,8 +129,8 @@ IDL_tree				IDL_boolean_new(unsigned value);
 
 struct _IDL_IDENT {
 	char *str;
-	IDL_tree _ns_ref;
 	int _refs;
+	IDL_tree _ns_ref;		/* do not recurse, shouldn't be NULL */
 };
 #define IDL_IDENT(a)			((a)->u.idl_ident)
 #define IDL_IDENT_TO_NS(a)		((a)->u.idl_ident._ns_ref)
@@ -365,6 +363,7 @@ IDL_tree				IDL_unaryop_new(enum IDL_unaryop op,
 
 typedef enum {
 	IDLN_NONE,
+	IDLN_ANY,
 	IDLN_LIST,
 	IDLN_GENTREE,
 	IDLN_INTEGER,
@@ -406,11 +405,11 @@ typedef enum {
 	IDLN_BINOP,
 	IDLN_UNARYOP
 } IDL_tree_type;
-
 extern const char *			IDL_tree_type_names[];
 
 struct _IDL_tree_node {
 	IDL_tree_type _type;
+	IDL_tree up;			/* do not recurse */
 	union {
 		struct _IDL_LIST idl_list;
 		struct _IDL_GENTREE idl_gentree;
@@ -449,7 +448,18 @@ struct _IDL_tree_node {
 	} u;
 };
 #define IDL_NODE_TYPE(a)		((a)->_type)
-
+#define IDL_NODE_TYPE_NAME(a)		(IDL_tree_type_names[IDL_NODE_TYPE(a)])
+#define IDL_NODE_UP(a)			((a)->up)
+#define IDL_is_scoped_node(a)				\
+	(IDL_NODE_TYPE(p) == IDLN_IDENT ||		\
+	 IDL_NODE_TYPE(p) == IDLN_INTERFACE ||		\
+	 IDL_NODE_TYPE(p) == IDLN_MODULE ||		\
+	 IDL_NODE_TYPE(p) == IDLN_EXCEPT_DCL ||		\
+	 IDL_NODE_TYPE(p) == IDLN_OP_DCL ||		\
+	 IDL_NODE_TYPE(p) == IDLN_TYPE_ENUM ||		\
+	 IDL_NODE_TYPE(p) == IDLN_TYPE_STRUCT ||	\
+	 IDL_NODE_TYPE(p) == IDLN_TYPE_UNION)
+	
 typedef struct _IDL_ns *		IDL_ns;
 
 struct _IDL_ns {
@@ -465,11 +475,19 @@ typedef int				(*IDL_callback)(int level,
 							const char *filename,
 							const char *s);
 
+extern const char *			IDL_get_libver_string(void);
+
+extern const char *			IDL_get_IDLver_string(void);
+
 extern int				IDL_parse_filename(const char *filename,
 							   const char *cpp_args,
 							   IDL_callback cb,
 							   IDL_tree *tree, IDL_ns *ns,
 							   unsigned long parse_flags);
+
+extern IDL_tree				IDL_get_parent_node(IDL_tree p,
+							    IDL_tree_type type,
+							    int *scope_levels);
 
 extern void				IDL_tree_free(IDL_tree root);
 
@@ -502,7 +520,8 @@ extern void				IDL_ns_pop_scope(IDL_ns ns);
 extern IDL_tree				IDL_ns_qualified_ident_new(IDL_tree nsid);
 
 extern char *				IDL_ns_ident_to_qstring(IDL_tree ns_ident,
-								const char *join);
+								const char *join,
+								int scope_levels);
 
 #ifdef __cplusplus
 }
