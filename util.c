@@ -223,10 +223,9 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	extern FILE *__IDL_in;
 	FILE *input;
 	char *cmd;
-	size_t cmd_len;
 #ifdef HAVE_CPP_PIPE_STDIN
 	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " - %s%s %s < \"%s\" %s";
-	char *wd = "", *dirend;
+	char *wd;
 #else
 	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " -I- -I%s %s \"%s\" %s";
 	char *s, *tmpfilename;
@@ -263,28 +262,12 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #endif
 
 #ifdef HAVE_CPP_PIPE_STDIN
-	if ((dirend = strrchr (filename, '/'))) {
-		int len = dirend - filename + 1;
-		wd = g_malloc (len);
-		strncpy (wd, filename, len - 1);
-		wd[len - 1] = 0;
-	}
+	wd = g_path_get_dirname (filename);
 
-	cmd_len = (strlen (filename) + (*wd ? 2 : 0) + strlen (wd) +
-		  (cpp_args ? strlen (cpp_args) : 0) +
-		  strlen(cpperrs) +
-		  strlen (fmt) - 8 + 1);
-	cmd = g_malloc (cmd_len);
-	if (!cmd) {
-		errno = ENOMEM;
-		return -1;
-	}
+	cmd = g_strdup_printf (fmt, "-I", wd, cpp_args ? cpp_args : "",
+			       filename, cpperrs);
 
-	g_snprintf (cmd, cmd_len, fmt, *wd ? "-I" : "", wd,
-		    cpp_args ? cpp_args : "", filename, cpperrs);
-
-	if (dirend)
-		g_free (wd);
+	g_free (wd);
 #else
 	s = tmpnam (NULL);
 	if (s == NULL)
@@ -293,49 +276,26 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	if (!getcwd (cwd, sizeof (cwd)))
 		return -1;
 
-	if (*filename == '/') {
+	if (g_path_is_absolute (filename)) {
 		linkto = g_strdup (filename);
 	} else {
-		linkto = g_malloc (strlen (cwd) + strlen (filename) + 2);
-		if (!linkto) {
-			errno = ENOMEM;
-			return -1;
-		}
-		strcpy (linkto, cwd);
-		strcat (linkto, "/");
-		strcat (linkto, filename);
+		linkto = g_strconcat (cwd, "/", filename, NULL);
 	}
 
-	tmpfilename = g_malloc (strlen (s) + 3);
-	if (!tmpfilename) {
-		g_free (linkto);
-		errno = ENOMEM;
-		return -1;
-	}
-	strcpy (tmpfilename, s);
-	strcat (tmpfilename, ".c");
+	tmpfilename = g_strconcat (s, ".c", NULL);
 #ifdef HAVE_SYMLINK
 	if (symlink (linkto, tmpfilename) < 0) {
 		g_free (linkto);
 		g_free (tmpfilename);
 		return -1;
 	}
+#else
+#error Must have symlink
 #endif
 	g_free (linkto);
 
-	cmd_len = (strlen (tmpfilename) + strlen (cwd) +
-		   (cpp_args ? strlen (cpp_args) : 0) +
-		   strlen(cpperrs) +
-		   strlen (fmt) - 6 + 1);
-	cmd = g_malloc (cmd_len);
-	if (!cmd) {
-		g_free (tmpfilename);
-		errno = ENOMEM;
-		return -1;
-	}
-
-	g_snprintf (cmd, cmd_len, fmt,
-		    cwd, cpp_args ? cpp_args : "", tmpfilename, cpperrs);
+	cmd = g_strdup_printf (fmt, cwd, cpp_args ? cpp_args : "",
+			       tmpfilename, cpperrs);
 #endif
 
        /* Many versions of cpp do evil translating internal

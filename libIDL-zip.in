@@ -18,6 +18,7 @@ EOF
 rm $DEVZIP
 zip -r $DEVZIP -@ <<EOF
 include/libIDL-2.0
+info/libIDL2.info
 lib/libIDL-2.dll.a
 lib/pkgconfig/libIDL-2.0.pc
 EOF

@@ -1,3 +1,10 @@
+2005-02-23  Tor Lillqvist  <tml@novell.com>
+
+	* util.c (IDL_parse_filename): Use g_path_get_dirname(),
+	g_strconcat(), g_strdup_printf(). Don't bother checking g_malloc()
+	for failure in some places, g_malloc() doesn't return if you are
+	out of memory. And anyway, in other places the code didn't check.
+
 2005-02-22  Tor Lillqvist  <tml@novell.com>
 
 	* libIDL-zip.in: New file, for building libIDL zipfiles for Win32.
