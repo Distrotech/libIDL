@@ -1,3 +1,10 @@
+2004-10-07  James Henstridge  <james@jamesh.id.au>
+
+	* .cvsignore: ignore install-sh, missing and mkinstalldirs.
+
+	* install-sh, missing, mkinstalldirs: remove from CVS, since the
+	autotools install these for us.
+
 2004-10-06  James Henstridge  <james@jamesh.id.au>
 
 	Fix for bug #154641:

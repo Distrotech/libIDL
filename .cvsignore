@@ -35,3 +35,7 @@ autom4te.cache
 texinfo.tex
 IDL.h
 IDL.h.new
+install-sh
+missing
+mkinstalldirs
+
