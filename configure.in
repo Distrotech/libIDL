@@ -2,7 +2,7 @@ dnl -*- mode: shell-script -*-
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT(IDL.h)
-AM_INIT_AUTOMAKE(libIDL, 0.5.3)
+AM_INIT_AUTOMAKE(libIDL, 0.5.4)
 
 AC_ISC_POSIX
 
@@ -30,7 +30,6 @@ AM_PROG_LIBTOOL
 dnl Checks for libraries.
 AC_CHECK_PROG(HAVE_GLIB_CONFIG, glib-config, yes, no)
 
-# Make sure we have glib>=1.1.4
 AM_PATH_GLIB(1.1.4)
 
 AC_STDC_HEADERS
