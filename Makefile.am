@@ -21,6 +21,7 @@ lexer.c: lexer.l
 	sed -e 's/yy/__IDL_/g' $(LEX_OUTPUT_ROOT).c > $@
 	rm -f $(LEX_OUTPUT_ROOT).c
 
+EXTRA_DIST = BUGS
 #info_TEXINFOS = libIDL.texi
 pkginclude_HEADERS = IDL.h
 noinst_HEADERS = rename.h util.h parser.h
