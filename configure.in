@@ -31,6 +31,7 @@ AC_PROG_YACC
 AC_PROG_RANLIB
 AC_ISC_POSIX
 AC_STDC_HEADERS
+AC_CHECK_HEADERS(stddef.h wchar.h wcstr.h)
 AC_CHECK_FUNCS(strdup)
 AC_OUTPUT(Makefile)
 echo

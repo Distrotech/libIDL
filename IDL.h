@@ -2,6 +2,8 @@
 
     IDL.h (IDL parse tree and namespace components)
 
+    Include wide character support before this, if necessary.
+
     Copyright (C) 1998 Andrew Veliath
 
     This program is free software; you can redistribute it and/or modify
@@ -23,12 +25,6 @@
 ***************************************************************************/
 #ifndef __IDL_H
 #define __IDL_H
-
-#ifdef __FreeBSD__
-#  include <stddef.h>
-#else /* __FreeBSD__ */
-#  include <wchar.h>
-#endif /* __FreeBSD__ */
 
 #ifdef __cplusplus
 extern "C" {

@@ -24,6 +24,15 @@
 #ifndef __UTIL_H
 #define __UTIL_H
 
+#if defined(HAVE_STDDEF_H)
+#  include <stddef.h>
+#endif
+#if defined(HAVE_WCHAR_H)
+#  include <wchar.h>
+#elif defined(HAVE_WCSTR_H)
+#  include <wcstr.h>
+#endif
+
 #ifndef HAVE_STRDUP
 #define strdup		__strdup
 extern char *		strdup(const char *s);

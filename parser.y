@@ -28,9 +28,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "IDL.h"
 #include "rename.h"
 #include "util.h"
+#include "IDL.h"
 
 #define do_binop(rv,op,a,b)	do {		\
 	if (IDL_binop_chktypes(op, a, b))	\

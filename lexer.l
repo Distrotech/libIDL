@@ -27,9 +27,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "IDL.h"
 #include "rename.h"
 #include "util.h"
+#include "IDL.h"
 #include "parser.h"
 
 extern void		__IDL_do_pragma(const char *s);
