@@ -401,16 +401,12 @@ module:			module_declspec
    the OMG CORBA .idl files which define interfaces by these names */
 interface_catch_ident:	new_or_prev_scope
 |			TOK_OBJECT			{
-	if(!__IDL_pidl) {
-		yyerror ("Interfaces cannot be named `Object'");
-		YYABORT;
-	}
+	yyerror ("Interfaces cannot be named `Object'");
+	YYABORT;
 }
 |			TOK_TYPECODE			{
-	if(!__IDL_pidl) {
-		yyerror ("Interfaces cannot be named `TypeCode'");
-		YYABORT;
-	}
+	yyerror ("Interfaces cannot be named `TypeCode'");
+	YYABORT;
 }
 	;
 
