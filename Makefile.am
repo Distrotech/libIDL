@@ -12,7 +12,7 @@ BUILT_SOURCES=lexer.c parser.c parser.h
 # rule to rename lex' yy prefix
 lexer.c: $(srcdir)/lexer.l
 	rm -f $@
-	$(LEX) $(LFLAGS) $< -o$@
+	$(LEX) $(LFLAGS) -o$@ $<
 	sed -e 's/yy/__IDL_/g' $(LEX_OUTPUT_ROOT).c > $@
 	rm -f $(LEX_OUTPUT_ROOT).c
 
