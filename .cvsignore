@@ -26,3 +26,5 @@ stamp-parser
 IDL.h.new
 libIDL-config
 libIDL.m4
+Makefile.msc
+libIDL.spec
