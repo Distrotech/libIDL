@@ -1,3 +1,9 @@
+2004-02-02 Tomasz K³oczko <kloczek@pld.org.pl>
+
+	* libIDL.m4.in: added missing [] quotation first parameter of
+	AC_DEFUN(). This is neccessary for aclocal from automake 1.8.x
+	and is backward compatible fix with older auto tools.
+
 ==================== 0.8.3 ====================
 
 2004-01-21  Mark McLoughlin  <mark@skynet.ie>
