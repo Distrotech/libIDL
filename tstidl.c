@@ -14,7 +14,12 @@
 #  include <libIDL/IDL.h>
 #endif
 
-gboolean print_repo_id (IDL_tree p, gpointer user_data)
+struct walk_data {
+	IDL_tree tree;
+	IDL_ns ns;
+};
+
+gboolean print_repo_id (IDL_tree p, struct walk_data data)
 {
 	char *repo_id = NULL;
 
@@ -38,10 +43,27 @@ gboolean print_repo_id (IDL_tree p, gpointer user_data)
 
 
 	if (IDL_NODE_TYPE (p) == IDLN_PARAM_DCL) {
+		IDL_tree op = IDL_NODE_UP (IDL_NODE_UP (p));
+		IDL_tree ident;
+		IDL_tree q;		
 		const char *val;
 
+		assert (IDL_NODE_TYPE (op) == IDLN_OP_DCL);
+
 		val = IDL_property_get (p, "IID_IS");
-		if (val) printf ("\tXPIDL PARAM IID_IS: \"%s\"\n", val);
+		if (val) {
+			printf ("\tXPIDL PARAM IID_IS: \"%s\"\n", val);
+
+			ident = IDL_ident_new (g_strdup (val));
+
+			if ((q = IDL_ns_lookup_this_scope (
+				data.ns, IDL_IDENT_TO_NS (IDL_OP_DCL (op).ident),
+				ident, NULL)) == NULL) {
+				printf ("\tWARNING: IID_IS value not found in parameter list\n");
+			}
+
+			IDL_tree_free (ident);
+		}
 	}
 	
 	if (IDL_NODE_TYPE (p) == IDLN_NATIVE) {
@@ -59,7 +81,7 @@ gboolean print_repo_id (IDL_tree p, gpointer user_data)
 	return TRUE;
 }
 
-gboolean print_ident_comments (IDL_tree p, gpointer user_data)
+gboolean print_ident_comments (IDL_tree p, struct walk_data data)
 {
 	GSList *list;
 
@@ -75,7 +97,7 @@ gboolean print_ident_comments (IDL_tree p, gpointer user_data)
 	return TRUE;
 }
 
-gboolean print_const_dcls (IDL_tree p, gpointer user_data)
+gboolean print_const_dcls (IDL_tree p, struct walk_data data)
 {
 	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL &&
 	    IDL_NODE_TYPE (IDL_CONST_DCL (p).const_exp) == IDLN_INTEGER) {
@@ -147,6 +169,7 @@ int main (int argc, char *argv[])
 	IDL_tree tree;
 	IDL_ns ns;
 	char *fn;
+	struct walk_data data;
 	unsigned long parse_flags = 0;
 
 #ifndef _WIN32
@@ -189,13 +212,16 @@ int main (int argc, char *argv[])
 	}
 
 	/* rv == IDL_SUCCESS */
+
+	data.tree = tree;
+	data.ns = ns;
 	
 	printf ("Repository IDs\n");
-	IDL_tree_walk_in_order (tree, print_repo_id, NULL);
+	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_repo_id, &data);
 	printf ("\nConstant Declarations\n");
-	IDL_tree_walk_in_order (tree, print_const_dcls, NULL);
+	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_const_dcls, &data);
 	printf ("\nIdentifiers\n");
-	IDL_tree_walk_in_order (tree, print_ident_comments, NULL);
+	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_ident_comments, &data);
 	IDL_ns_free (ns);
 	IDL_tree_free (tree);
 	

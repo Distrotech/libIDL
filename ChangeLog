@@ -1,5 +1,9 @@
 1998-12-05  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* tstidl.c, ns.c: Provide example of local parameter declaration
+	namespace lookup from parameter attribute property, and modify NS
+	assertions to make it more useful outside of parsing.
+
 	* IDL.h, parser.y, lexer.l, util.c, tstidl.c: Turn interface
 	properties into extended node properties for XPIDL (for any node).
 	IDL_interface_get_property -=> IDL_property_get. Add

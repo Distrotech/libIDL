@@ -66,14 +66,16 @@ void IDL_ns_free (IDL_ns ns)
 	free (ns);
 }
 
-#define IDL_NS_ASSERTS		do {					\
-	assert (ns != NULL);						\
-	assert (IDL_NS (ns).global != NULL);				\
-	assert (IDL_NS (ns).file != NULL);				\
-	assert (IDL_NS (ns).current != NULL);				\
-	assert (IDL_NODE_TYPE (IDL_NS (ns).global) == IDLN_GENTREE);	\
-	assert (IDL_NODE_TYPE (IDL_NS (ns).file) == IDLN_GENTREE);	\
-	assert (IDL_NODE_TYPE (IDL_NS (ns).current) == IDLN_GENTREE);	\
+#define IDL_NS_ASSERTS		do {						\
+	assert (ns != NULL);							\
+	if (__IDL_is_parsing) {							\
+		assert (IDL_NS (ns).global != NULL);				\
+		assert (IDL_NS (ns).file != NULL);				\
+		assert (IDL_NS (ns).current != NULL);				\
+		assert (IDL_NODE_TYPE (IDL_NS (ns).global) == IDLN_GENTREE);	\
+		assert (IDL_NODE_TYPE (IDL_NS (ns).file) == IDLN_GENTREE);	\
+		assert (IDL_NODE_TYPE (IDL_NS (ns).current) == IDLN_GENTREE);	\
+	}									\
 } while (0)
 
 int IDL_ns_prefix (IDL_ns ns, const char *s)
