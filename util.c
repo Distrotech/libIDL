@@ -2703,13 +2703,16 @@ static gboolean IDL_emit_IDL_ident_real (IDL_tree_func_data *tfd, IDL_output_dat
 
 	assert (IDL_NODE_TYPE (tfd->tree) == IDLN_IDENT);
 
-	if (!up_real || data->flags & IDLF_OUTPUT_NO_QUALIFY_IDENTS)
+	if (!up_real || data->flags & IDLF_OUTPUT_NO_QUALIFY_IDENTS) {
 		dataf (data, "%s", IDL_IDENT (tfd->tree).str);
-	else {
-		/* Determine minimal required levels of scoping */
-		assert (up_path != NULL);
-		scope = up_path->tree ? up_path->tree : up_real;
-		levels = IDL_ns_scope_levels_from_here (data->ns, tfd->tree, scope);
+	} else {
+		if ( up_path == 0 ) {
+		    levels = 0;
+		} else {
+		    /* Determine minimal required levels of scoping */
+		    scope = up_path->tree ? up_path->tree : up_real;
+		    levels = IDL_ns_scope_levels_from_here (data->ns, tfd->tree, scope);
+		}
 		s = IDL_ns_ident_to_qstring (IDL_IDENT_TO_NS (tfd->tree), "::", levels);
 		dataf (data, "%s", s);
 		g_free (s);
