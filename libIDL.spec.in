@@ -64,11 +64,12 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc ChangeLog AUTHORS README* NEWS BUGS
+%prefix/bin/*
 %prefix/lib/lib*.so.*.*
 
 %files devel
 %defattr(-,root,root)
-%prefix/bin/*
+%prefix/lib/*.sh
 %prefix/lib/lib*.a
 %prefix/lib/lib*.so
 %prefix/info/libIDL.info.gz
