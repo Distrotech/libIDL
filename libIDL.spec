@@ -1,5 +1,5 @@
-%define version 0.5.6
-%define release 1
+%define version 0.5.7
+%define release SNAP
 
 Summary:   IDL parsing library
 Name:      libIDL
