@@ -129,7 +129,7 @@ dqstring		\"[^\"\n]*[\"\n]
 <INITIAL,XP,CFRG>^%\{.*					{
 	char *s = yytext + 2;
 
-	while (isspace (*s)) ++s;
+	while (isspace ((int)*s)) ++s;
 	codefrag_desc = g_strdup (s);
 	codefrag_list = codefrag_list_tail = NULL;
 
@@ -163,13 +163,13 @@ dqstring		\"[^\"\n]*[\"\n]
 	char *p = yytext;
 	char *s, *t;
 
-	while (isspace (*p) || *p == '#') ++p;
+	while (isspace ((int)*p) || *p == '#') ++p;
 	s = p;
 	sscanf (p, "%*6s%n", &n); s += n;
-	while (isspace (*s)) ++s;
+	while (isspace ((int)*s)) ++s;
 
 	t = s + strlen(s) - 1;
-	while(isspace(*t) && t > s) *(t--) = '\0'; /* Chomp trailing spaces */
+	while(isspace((int)*t) && t > s) *(t--) = '\0'; /* Chomp trailing spaces */
 
 	__IDL_do_pragma (s);
 }
@@ -180,7 +180,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	int line;
 
 	starttext = yytext;
-	while (isspace (*starttext)) ++starttext;
+	while (isspace ((int)*starttext)) ++starttext;
 	filename = g_malloc (strlen (starttext) + 1);
 
 	sscanf (starttext, "# %d %s", &line, filename);

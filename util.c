@@ -116,7 +116,7 @@ guint IDL_strcase_hash (gconstpointer v)
 	guint h = 0, g;
 
 	for (p = (char *) v; *p != '\0'; ++p) {
-		h = (h << 4) + isupper (*p) ? tolower (*p) : *p;
+		h = (h << 4) + isupper ((int)*p) ? tolower (*p) : *p;
 		if ((g = h & 0xf0000000)) {
 			h = h ^ (g >> 24);
 			h = h ^ g;

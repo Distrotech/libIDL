@@ -1497,13 +1497,13 @@ static const char *get_name_token (const char *s, char **tok)
 	if (!s)
 		return NULL;
 
-	while (isspace (*s)) ++s;
+	while (isspace ((int)*s)) ++s;
 	
 	while (1) switch (state) {
 	case 0:		/* Unknown */
 		if (*s == ':')
 			state = 1;
-		else if (isalnum (*s) || *s == '_') {
+		else if (isalnum ((int)*s) || *s == '_') {
 			begin = s;
 			state = 2;
 		} else
@@ -1519,7 +1519,7 @@ static const char *get_name_token (const char *s, char **tok)
 			return NULL;
 		break;
 	case 2:
-		if (isalnum (*s) || *s == '_')
+		if (isalnum ((int)*s) || *s == '_')
 			++s;
 		else {
 			char *r = g_malloc (s - begin + 1);
@@ -1701,7 +1701,7 @@ void __IDL_do_pragma (const char *s)
 	if (sscanf (s, "%255s%n", directive, &n) < 1)
 		return;
 	s += n;
-	while (isspace (*s)) ++s;
+	while (isspace ((int)*s)) ++s;
 
 	if (strcmp (directive, "prefix") == 0)
 		IDL_ns_prefix (__IDL_root_ns, s);
