@@ -167,11 +167,11 @@ const char *IDL_get_IDLver_string(void)
 	return "2.2";
 }
 
-static void IDL_tree_optimize(IDL_tree *p)
+static void IDL_tree_optimize(IDL_tree *p, IDL_ns ns)
 {
-	IDL_tree_process_forward_dcls(p);
-	IDL_tree_remove_inhibits(p);
-	IDL_tree_remove_empty_modules(p);
+	IDL_tree_process_forward_dcls(p, ns);
+	IDL_tree_remove_inhibits(p, ns);
+	IDL_tree_remove_empty_modules(p, ns);
 }
 
 int IDL_parse_filename(const char *filename, const char *cpp_args,
@@ -301,7 +301,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	free(tmpfilename);
 #endif
 
-	IDL_tree_optimize(&__IDL_root);
+	IDL_tree_optimize(&__IDL_root, __IDL_root_ns);
 
 	if (__IDL_root == NULL)
 		yyerror("File does not generate any useful information");
@@ -629,6 +629,7 @@ IDL_tree IDL_list_new(IDL_tree data)
 	
 	assign_up_node(p, data);
 	IDL_LIST(p).data = data;
+	IDL_LIST(p)._tail = p;
 
 	return p;
 }
@@ -641,8 +642,18 @@ IDL_tree IDL_list_concat(IDL_tree orig, IDL_tree append)
 	if (append == NULL)
 		return orig;
 
-	IDL_LIST(orig)._tail = IDL_LIST(orig)._tail;
-	IDL_LIST(orig).next = append;
+	IDL_LIST(IDL_LIST(orig)._tail).next = append;
+	IDL_LIST(append).prev = IDL_LIST(orig)._tail;
+	IDL_LIST(orig)._tail = IDL_LIST(append)._tail;
+
+	/* If we ever need correct tails (speedier otherwise) */
+#if 0
+	{ IDL_tree p;
+	for (p = IDL_LIST(orig).next;
+	     p && p != append;
+	     p = IDL_LIST(p).next)
+		IDL_LIST(p)._tail = IDL_LIST(orig)._tail; }
+#endif
 
 	return orig;
 }
@@ -668,6 +679,8 @@ IDL_tree IDL_list_remove(IDL_tree list, IDL_tree p)
 	IDL_LIST(p).prev = NULL;
 	IDL_LIST(p).next = NULL;
 	IDL_LIST(p)._tail = p;
+
+	/* Note all tails not updated... */
 
 	return new_list;
 }
@@ -1408,6 +1421,19 @@ static void gentree_free(IDL_tree data, IDL_tree p, gpointer user_data)
 	}
 }
 
+void __IDL_tree_free(IDL_tree p)
+{
+	if (p == NULL)
+		return;
+
+	if (IDL_NODE_TYPE(p) == IDLN_IDENT) {
+		free(IDL_IDENT(p).str);
+		free(IDL_IDENT_REPO_ID(p));
+	}
+
+	free(p);
+}
+
 void IDL_tree_free(IDL_tree p)
 {
 	GHashTable *hash;
@@ -1689,18 +1715,30 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 	return curitem;
 }
 
-static int remove_list_node(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
+static int load_any_to_table(IDL_tree p, GHashTable *table)
+{
+	if (!g_hash_table_lookup_extended(table, p, NULL, NULL))
+		g_hash_table_insert(table, p, p);
+	
+	return TRUE;
+}
+
+struct remove_list_node_data {
+	IDL_tree *root;
+	GHashTable *removed_nodes;
+};
+
+static int remove_list_node(IDL_tree p, IDL_tree *list_head, struct remove_list_node_data *data)
 {
 	assert(p != NULL);
-
 	assert(IDL_NODE_TYPE (p) == IDLN_LIST);
 
 	if (list_head)
 		*list_head = IDL_list_remove(*list_head, p);
 	else
-		*root = IDL_list_remove(*root, p);
-	
-	IDL_tree_free(p);
+		*data->root = IDL_list_remove(*data->root, p);
+
+	IDL_tree_walk_pre_order(p, (IDL_tree_func)load_any_to_table, data->removed_nodes);
 	
 	return TRUE;
 }
@@ -1737,7 +1775,7 @@ static int resolve_forward_dcls(IDL_tree p, GHashTable *table)
 
 static int print_unresolved_forward_dcls(char *s, IDL_tree p)
 {
-	yywarningnv(p, IDL_WARNING1, "Unresolved forward declaration `%s'", s);
+	yyerrornv(p, "Unresolved forward declaration `%s'", s);
 	free(s);
 
 	return TRUE;
@@ -1751,8 +1789,9 @@ static int load_forward_dcls_to_node_hash(char *s, IDL_tree p, GHashTable *node_
 	return TRUE;
 }
 
-void IDL_tree_process_forward_dcls(IDL_tree *p)
+void IDL_tree_process_forward_dcls(IDL_tree *p, IDL_ns ns)
 {
+	struct remove_list_node_data data;
 	GHashTable *table = g_hash_table_new(IDL_strcase_hash, IDL_strcase_equal);
 	GHashTable *node_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 	int total, unresolved;
@@ -1763,7 +1802,9 @@ void IDL_tree_process_forward_dcls(IDL_tree *p)
 	unresolved = g_hash_table_size(table);
 	g_hash_table_foreach(table, (GHFunc)print_unresolved_forward_dcls, NULL);
 	g_hash_table_foreach(table, (GHFunc)load_forward_dcls_to_node_hash, node_hash);
-	g_hash_table_foreach(node_hash, (GHFunc)remove_list_node, p);
+	data.root = p;
+	data.removed_nodes = IDL_NS(ns).inhibits;
+	g_hash_table_foreach(node_hash, (GHFunc)remove_list_node, &data);
 	g_message("IDL_tree_process_forward_dcls: %d of %d forward declarations resolved",
 		  total - unresolved, total);
 	g_message("IDL_tree_process_forward_dcls: %d unresolved forward declarations removed",
@@ -1795,12 +1836,15 @@ static int load_inhibits(IDL_tree p, GHashTable *table)
 	return IDL_TRUE;
 }
 
-void IDL_tree_remove_inhibits(struct _IDL_tree_node **p)
+void IDL_tree_remove_inhibits(IDL_tree *p, IDL_ns ns)
 {
+	struct remove_list_node_data data;
 	GHashTable *table = g_hash_table_new(g_direct_hash, g_direct_equal);
 
 	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_inhibits, table);
-	g_hash_table_foreach(table, (GHFunc)remove_list_node, p);
+	data.root = p;
+	data.removed_nodes = IDL_NS(ns).inhibits;
+	g_hash_table_foreach(table, (GHFunc)remove_list_node, &data);
 	g_message("IDL_tree_remove_inhibits: %d subtree(s) removed", g_hash_table_size(table));
 	g_hash_table_destroy(table);
 }
@@ -1827,17 +1871,21 @@ static int load_empty_modules(IDL_tree p, GHashTable *table)
 	return IDL_TRUE;
 }
 
-void IDL_tree_remove_empty_modules(struct _IDL_tree_node **p)
+void IDL_tree_remove_empty_modules(IDL_tree *p, IDL_ns ns)
 {
+	struct remove_list_node_data data;
 	gboolean done = FALSE;
 	int count = 0;
+
+	data.root = p;
+	data.removed_nodes = IDL_NS(ns).inhibits;
 
 	while (!done) {
 		GHashTable *table = g_hash_table_new(g_direct_hash, g_direct_equal);
 		g_message("IDL_tree_remove_empty_modules: removing empty modules, pass #%d", ++count);
 		IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_empty_modules, table);
 		done = g_hash_table_size(table) == 0;
-		g_hash_table_foreach(table, (GHFunc)remove_list_node, p);
+		g_hash_table_foreach(table, (GHFunc)remove_list_node, &data);
 		g_message("IDL_tree_remove_empty_modules: %d empty module(s) removed", g_hash_table_size(table));
 		g_hash_table_destroy(table);
 	}

@@ -52,6 +52,8 @@ IDL_ns IDL_ns_new(void)
 	IDL_NS(ns).file = 
 		IDL_NS(ns).current = IDL_NS(ns).global;
 
+	IDL_NS(ns).inhibits = g_hash_table_new(g_direct_hash, g_direct_equal);
+
 	return ns;
 }
 
@@ -59,6 +61,8 @@ void IDL_ns_free(IDL_ns ns)
 {
 	assert(ns != NULL);
 
+	g_hash_table_foreach(IDL_NS(ns).inhibits, (GHFunc)__IDL_tree_free, NULL);
+	g_hash_table_destroy(IDL_NS(ns).inhibits);
 	IDL_tree_free(IDL_NS(ns).global);
 
 	free(ns);
@@ -252,7 +256,7 @@ IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
 		assert(IDL_GENTREE(nsid).data != NULL);
 		assert(IDL_NODE_TYPE(IDL_GENTREE(nsid).data) == IDLN_IDENT);
 		item = IDL_list_new(IDL_ident_new(g_strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
-		l = IDL_list_concat(l, item);
+		l = IDL_list_concat(item, l);
 		nsid = IDL_NODE_UP(nsid);
 	}
 

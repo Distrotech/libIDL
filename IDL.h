@@ -531,6 +531,7 @@ struct _IDL_ns {
 	IDL_tree global;
 	IDL_tree file;
 	IDL_tree current;
+	GHashTable *inhibits;
 };
 #define IDL_NS(a)			(*(a))
 

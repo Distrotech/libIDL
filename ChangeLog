@@ -1,3 +1,10 @@
+1998-08-24  Andrew Veliath  <andrewtv@usa.net>
+
+	* Save inhibited nodes and free upon IDL_ns_free so that the full
+	trees are available to traverse from the namespace.
+	 
+	* 'nostubs' changed to 'inhibit'
+
 1998-08-17  Andrew Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.3

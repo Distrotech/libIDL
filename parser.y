@@ -1290,7 +1290,6 @@ static IDL_tree list_start(IDL_tree a, int filter_null)
 		return NULL;
 
 	p = IDL_list_new(a);
-	IDL_LIST(p)._tail = p;
 
 	return p;
 }
@@ -1308,9 +1307,7 @@ static IDL_tree list_chain(IDL_tree a, IDL_tree b, int filter_null)
 	}
 
 	p = IDL_list_new(b);
-	IDL_LIST(p).prev = IDL_LIST(a)._tail;
-	IDL_LIST(IDL_LIST(a)._tail).next = p;
-	IDL_LIST(a)._tail = p;
+	a = IDL_list_concat(a, p);
 
 	return a;
 }
