@@ -3101,6 +3101,24 @@ IDL_tree IDL_forward_dcl_new(IDL_tree ident)
 	return p;
 }
 
+IDL_tree IDL_check_type_cast(IDL_tree tree, IDL_tree_type type,
+			     const char *file, int line, const char *function)
+{
+	if (tree == NULL) {
+		g_warning ("file %s: line %d: (%s) invalid type cast attempt, NULL tree to %s\n",
+			   file, line, function,
+			   IDL_tree_type_names[type]);
+	}
+	else if (IDL_NODE_TYPE(tree) != type) {
+		g_warning ("file %s: line %d: (%s) expected IDL tree type %s, but got %s\n",
+			   file, line, function,
+			   IDL_tree_type_names[type], IDL_NODE_TYPE_NAME(tree));
+		
+	}
+
+	return tree;
+}
+
 static int IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b)
 {
 	if (IDL_NODE_TYPE(a) != IDLN_BINOP &&

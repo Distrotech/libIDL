@@ -1,3 +1,16 @@
+1998-08-05  Andrew Veliath  <andrewtv@usa.net>
+
+	* IDL.h: Generate a CPP error if glib.h isn't included beforehand.
+	
+	* IDL.h, parser.y: Integrate Sebastian Wilhelm's patch to add type
+	  cast checking, with a number of style modifications of my own
+	  (anything I broke is my fault ;-) for libIDL and add a warning
+	  on casting a NULL pointer.
+
+	* lexer.l: Implement Dick's suggestion to warn or error on
+	  underscores in identifiers with underscores or ones which begin
+	  with an underscore.
+	
 1998-08-04  Andrew Veliath  <andrewtv@usa.net>
 
 	* Preliminary inheritance checks

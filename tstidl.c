@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glib.h>
 #ifdef IDL_LIBRARY
 #include "IDL.h"
 #else
