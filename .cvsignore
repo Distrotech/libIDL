@@ -16,3 +16,7 @@ ltmain.sh
 configure
 config.log
 config.status
+libtool
+.libs
+*.lo
+*.la
