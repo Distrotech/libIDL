@@ -1471,8 +1471,7 @@ void IDL_file_set (const char *filename, int line)
 	char *orig;
 
 	if (filename) {
-		__IDL_cur_filename = g_strdup (filename + 1);
-		__IDL_cur_filename[strlen (filename) - 2] = 0;
+		__IDL_cur_filename = g_strdup (filename);
 		
 		if (
 #ifdef HAVE_CPP_PIPE_STDIN

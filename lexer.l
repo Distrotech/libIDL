@@ -111,13 +111,21 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 <*>{cpp_status}						{
 	char *filename = (char *) malloc (strlen (yytext) + 1);
+	char *filename2;
 	int line;
 
 	sscanf (yytext, "# %d %s", &line, filename);
 
-	IDL_file_set (filename, line);
-	
-	free (filename);
+	if (*filename == '"') {
+		filename2 = g_strdup (filename + 1);
+		filename2[strlen (filename) - 2] = 0;
+		free (filename);
+	} else
+		filename2 = filename;
+
+	IDL_file_set (filename2, line);
+
+	free (filename2);
 }
 <*>{whitespace}
 {b8_int}						{
