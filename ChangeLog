@@ -1,5 +1,10 @@
 2001-09-21  Mark McLoughlin <mark@skynet.ie>
 
+	* lexer.l (cpp_other): implement catch-all rule to get
+	any cpp directives not caught by new cpp_status.
+
+2001-09-21  Mark McLoughlin <mark@skynet.ie>
+
 	* lexer.l (cpp_status): reimplement to take into account
 	differences with variouts compilers.
 

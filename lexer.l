@@ -97,6 +97,7 @@ whitespacenl		[ \t\v\f\r\n]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^{whitespace}#{whitespace}[0-9][0-9]*.*
+cpp_other		^{whitespace}#.*
 b8_int			0[0-9]*
 b10_uint		[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
@@ -220,6 +221,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	if (yylval.tree)
 	 	tokreturn (TOK_SRCFILE);
 }
+<*>{cpp_other}						;
 <*>{whitespace}						;
 {b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
