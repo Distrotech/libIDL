@@ -464,7 +464,7 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 		if (g_hash_table_lookup_extended (table, IDL_LIST (p).data, NULL, NULL)) {
 			char *s = IDL_ns_ident_to_qstring (IDL_LIST (p).data, "::", 0);
 			yyerrorv ("Cannot inherit from interface `%s' more than once", s);
-			free (s);
+			g_free (s);
 			die = TRUE;
 			break;
 		} else
@@ -475,7 +475,7 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 			yyerrorv ("Incomplete definition of interface `%s'", s);
 			IDL_tree_error (IDL_LIST (p).data,
 					"Previous forward declaration of `%s'", s);
-			free (s);
+			g_free (s);
 			die = TRUE;
 		}
 		else if (IDL_NODE_TYPE (IDL_NODE_UP (IDL_LIST (p).data)) != IDLN_INTERFACE) {
@@ -483,7 +483,7 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 			yyerrorv ("`%s' is not an interface", s);
 			IDL_tree_error (IDL_LIST (p).data,
 					"Previous declaration of `%s'", s);
-			free (s);
+			g_free (s);
 			die = TRUE;
 		}
 	}
@@ -896,7 +896,7 @@ member:			type_spec declarator_list
 		char *s = IDL_ns_ident_to_qstring (IDL_LIST ($2).data, "::", 0);
 		char *s2 = IDL_ns_ident_to_qstring ($1, "::", 0);
 		yyerrorv ("Member `%s' recurses structure `%s'", s, s2);
-		free (s); free (s2);
+		g_free (s); g_free (s2);
 	}
 }
 	;
@@ -1246,7 +1246,7 @@ positive_int_const:	const_exp			{
 z_declspec:		/* empty */			{ $$ = 0; }
 |			TOK_DECLSPEC			{
 	$$ = IDL_parse_declspec ($1);
-	free ($1);
+	g_free ($1);
 }
 	;
 
@@ -1292,23 +1292,23 @@ codefrag:		TOK_CODEFRAG
 
 dqstring_cat:		dqstring
 |			dqstring_cat dqstring		{
-	char *catstr = (char *) malloc (strlen ($1) + strlen ($2) + 1);
-	strcpy (catstr, $1); free ($1);
-	strcat (catstr, $2); free ($2);
+	char *catstr = g_malloc (strlen ($1) + strlen ($2) + 1);
+	strcpy (catstr, $1); g_free ($1);
+	strcat (catstr, $2); g_free ($2);
 	$$ = catstr;
 }
 	;
 
 dqstring:		TOK_DQSTRING			{
 	char *s = IDL_do_escapes ($1);
-	free ($1);
+	g_free ($1);
 	$$ = s;
 }
 	;
 
 sqstring:		TOK_SQSTRING			{
 	char *s = IDL_do_escapes ($1);
-	free ($1);
+	g_free ($1);
 	$$ = s;
 }
 	;
@@ -1352,7 +1352,7 @@ char *IDL_ns_ident_make_repo_id (IDL_ns ns, IDL_tree p,
 			  q,
 			  major ? *major : 1,
 			  minor ? *minor : 0);
-	free (q);
+	g_free (q);
 
 	q = s->str;
 	g_string_free (s, FALSE);
@@ -1382,7 +1382,7 @@ static const char *get_name_token (const char *s, char **tok)
 		break;
 	case 1:		/* Scope */
 		if (strncmp (s, "::", 2) == 0) {
-			char *r = (char *) malloc (3);
+			char *r = g_malloc (3);
 			strcpy (r, "::");
 			*tok = r;
 			return s + 2;
@@ -1393,7 +1393,7 @@ static const char *get_name_token (const char *s, char **tok)
 		if (isalnum (*s) || *s == '_')
 			++s;
 		else {
-			char *r = (char *) malloc (s - begin + 1);
+			char *r = g_malloc (s - begin + 1);
 			strncpy (r, begin, s - begin + 1);
 			r[s - begin] = 0;
 			*tok = r;
@@ -1417,7 +1417,7 @@ static IDL_tree IDL_ns_pragma_parse_name (IDL_ns ns, const char *s)
 				/* Globally scoped */
 				p = IDL_NS (ns).file;
 			}
-			free (tok);
+			g_free (tok);
 		} else {
 			IDL_tree ident = IDL_ident_new (tok);
 			p = IDL_ns_lookup_this_scope (__IDL_root_ns, p, ident, NULL);
@@ -1456,7 +1456,7 @@ void IDL_ns_ID (IDL_ns ns, const char *s)
 	ident = IDL_GENTREE (p).data;
 
 	if (IDL_IDENT_REPO_ID (ident) != NULL)
-		free (IDL_IDENT_REPO_ID (ident));
+		g_free (IDL_IDENT_REPO_ID (ident));
 
 	IDL_IDENT_REPO_ID (ident) = g_strdup (id);
 }
@@ -1494,7 +1494,7 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 			s = g_string_new (NULL);
 			g_string_sprintf (s, "%s:%d.%d",
 					  IDL_IDENT_REPO_ID (ident), major, minor);
-			free (IDL_IDENT_REPO_ID (ident));
+			g_free (IDL_IDENT_REPO_ID (ident));
 			IDL_IDENT_REPO_ID (ident) = s->str;
 			g_string_free (s, FALSE);
 		} else if (__IDL_is_parsing)
@@ -1592,13 +1592,13 @@ void IDL_file_set (const char *filename, int line)
 			!strcmp (__IDL_cur_filename, __IDL_tmp_filename)
 #endif
 			) {
-			free (__IDL_cur_filename);
+			g_free (__IDL_cur_filename);
 			__IDL_cur_filename = g_strdup (__IDL_real_filename);
 		}
 
 		if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
 						  (gpointer) &orig, (gpointer) &fi)) {
-			free (__IDL_cur_filename);
+			g_free (__IDL_cur_filename);
 			__IDL_cur_filename = orig;
 			__IDL_cur_fileinfo = fi;
 		} else {

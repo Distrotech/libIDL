@@ -37,12 +37,11 @@ IDL_ns IDL_ns_new (void)
 {
 	IDL_ns ns;
 
-	ns = (IDL_ns) malloc (sizeof (struct _IDL_ns));
+	ns = g_new0 (struct _IDL_ns, 1);
 	if (ns == NULL) {
 		yyerror ("IDL_ns_new: memory exhausted");
 		return NULL;
 	}
-	memset (ns, 0, sizeof (struct _IDL_ns));
 
 	IDL_NS (ns).global = IDL_gentree_new (IDL_ident_hash,
 					      IDL_ident_equal,
@@ -70,7 +69,7 @@ void IDL_ns_free (IDL_ns ns)
 	g_hash_table_destroy (IDL_NS (ns).filename_hash);
 	IDL_tree_free (IDL_NS (ns).global);
 
-	free (ns);
+	g_free (ns);
 }
 
 #define IDL_NS_ASSERTS		do {						\
@@ -101,11 +100,11 @@ int IDL_ns_prefix (IDL_ns ns, const char *s)
 		r = g_strdup (s);
 
 	l = strlen (r);
-	if (r[l - 1] == '"')
+	if (l && r[l - 1] == '"')
 		r[l - 1] = 0;
 
 	if (IDL_GENTREE (IDL_NS (ns).current)._cur_prefix)
-		free (IDL_GENTREE (IDL_NS (ns).current)._cur_prefix);
+		g_free (IDL_GENTREE (IDL_NS (ns).current)._cur_prefix);
 
 	IDL_GENTREE (IDL_NS (ns).current)._cur_prefix = r;
 
@@ -318,15 +317,12 @@ char *IDL_ns_ident_to_qstring (IDL_tree ns_ident, const char *join, int levels)
 
 	assert (start_level >= 0 && start_level < count);
 
-	s = (char *)malloc (len + 1);
-	
+	s = g_malloc (len + 1);
 	if (s == NULL) {
 		IDL_tree_free (l);
 		return NULL;
 	}
-
 	s[0] = '\0';
-
 	for (q = l; q != NULL; q = IDL_LIST (q).next) {
 		IDL_tree i = IDL_LIST (q).data;
 		if (start_level > 0) {
@@ -412,7 +408,7 @@ static gboolean heap_insert_ident (IDL_tree interface_ident, GTree *heap, IDL_tr
 		IDL_tree_error (p, "%s `%s' conflicts with", what1, i1);
 		IDL_tree_error (any, "%s `%s'", what2, i2);
 
-		free (newi); free (i1); free (i2);
+		g_free (newi); g_free (i1); g_free (i2);
 
 		return FALSE;
 	}

@@ -225,7 +225,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #ifdef HAVE_CPP_PIPE_STDIN
 	if ((dirend = strrchr (filename, '/'))) {
 		int len = dirend - filename + 1;
-		wd = (char *) malloc (len);
+		wd = g_malloc (len);
 		strncpy (wd, filename, len - 1);
 		wd[len - 1] = 0;
 	}
@@ -233,7 +233,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	cmd_len = (strlen (filename) + (*wd ? 2 : 0) + strlen (wd) +
 		  (cpp_args ? strlen (cpp_args) : 0) +
 		  strlen (fmt) - 8 + 1);
-	cmd = (char *) malloc (cmd_len);
+	cmd = g_malloc (cmd_len);
 	if (!cmd) {
 		errno = ENOMEM;
 		return -1;
@@ -243,7 +243,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		    cpp_args ? cpp_args : "", filename);
 
 	if (dirend)
-		free (wd);
+		g_free (wd);
 #else
 	s = tmpnam (NULL);
 	if (s == NULL)
@@ -255,7 +255,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	if (*filename == '/') {
 		linkto = g_strdup (filename);
 	} else {
-		linkto = (char *) malloc (strlen (cwd) + strlen (filename) + 2);
+		linkto = g_malloc (strlen (cwd) + strlen (filename) + 2);
 		if (!linkto) {
 			errno = ENOMEM;
 			return -1;
@@ -265,27 +265,27 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		strcat (linkto, filename);
 	}
 
-	tmpfilename = (char *) malloc (strlen (s) + 3);
+	tmpfilename = g_malloc (strlen (s) + 3);
 	if (!tmpfilename) {
-		free (linkto);
+		g_free (linkto);
 		errno = ENOMEM;
 		return -1;
 	}
 	strcpy (tmpfilename, s);
 	strcat (tmpfilename, ".c");
 	if (symlink (linkto, tmpfilename) < 0) {
-		free (linkto);
-		free (tmpfilename);
+		g_free (linkto);
+		g_free (tmpfilename);
 		return -1;
 	}
-	free (linkto);
+	g_free (linkto);
 
 	cmd_len = (strlen (tmpfilename) + strlen (cwd) +
 		   (cpp_args ? strlen (cpp_args) : 0) +
 		   strlen (fmt) - 6 + 1);
-	cmd = (char *) malloc (cmd_len);
+	cmd = g_malloc (cmd_len);
 	if (!cmd) {
-		free (tmpfilename);
+		g_free (tmpfilename);
 		errno = ENOMEM;
 		return -1;
 	}
@@ -295,11 +295,11 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #endif
 
 	input = popen (cmd, "r");
-	free (cmd);
+	g_free (cmd);
 
 	if (input == NULL || ferror (input)) {
 #ifndef HAVE_CPP_PIPE_STDIN
-		free (tmpfilename);
+		g_free (tmpfilename);
 #endif
 		return IDL_ERROR;
 	}
@@ -333,10 +333,10 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	pclose (input);
 #ifndef HAVE_CPP_PIPE_STDIN
 	unlink (tmpfilename);
-	free (tmpfilename);
+	g_free (tmpfilename);
 #endif
 	for (slist = __IDL_new_ident_comments; slist; slist = slist->next)
-		free (slist->data);
+		g_free (slist->data);
 	g_slist_free (__IDL_new_ident_comments);
 
 	if (__IDL_root != NULL) {
@@ -428,7 +428,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	__IDL_lex_cleanup ();
 	__IDL_real_filename = NULL;
 	for (slist = __IDL_new_ident_comments; slist; slist = slist->next)
-		free (slist->data);
+		g_free (slist->data);
 	g_slist_free (__IDL_new_ident_comments);
 
 	if (__IDL_root != NULL) {
@@ -777,12 +777,11 @@ static IDL_tree IDL_node_new (IDL_tree_type type)
 {
 	IDL_tree p;
 
-	p = (IDL_tree) malloc (sizeof (IDL_tree_node));
+	p = g_new0 (IDL_tree_node, 1);
 	if (p == NULL) {
 		yyerror ("IDL_node_new: memory exhausted");
 		return NULL;
 	}
-	memset (p, 0, sizeof (IDL_tree_node));
 
 	IDL_NODE_TYPE (p) = type;
 	IDL_NODE_REFS (p) = 1;
@@ -1720,36 +1719,36 @@ static void IDL_tree_free_real (IDL_tree p)
 		break;
 
 	case IDLN_FIXED:
-		free (IDL_FIXED (p).value);
+		g_free (IDL_FIXED (p).value);
 		break;
 
 	case IDLN_STRING:
-		free (IDL_STRING (p).value);
+		g_free (IDL_STRING (p).value);
 		break;
 
 	case IDLN_CHAR:
-		free (IDL_CHAR (p).value);
+		g_free (IDL_CHAR (p).value);
 		break;
 
 	case IDLN_IDENT:
-		free (IDL_IDENT (p).str);
-		free (IDL_IDENT_REPO_ID (p));
+		g_free (IDL_IDENT (p).str);
+		g_free (IDL_IDENT_REPO_ID (p));
 		for (slist = IDL_IDENT (p).comments; slist; slist = slist->next)
-			free (slist->data);
+			g_free (slist->data);
 		g_slist_free (IDL_IDENT (p).comments);
 		break;
 
 	case IDLN_NATIVE:
-		free (IDL_NATIVE (p).user_type);
+		g_free (IDL_NATIVE (p).user_type);
 		break;
 
 	case IDLN_INTERFACE:
 		break;
 
 	case IDLN_CODEFRAG:
-		free (IDL_CODEFRAG (p).desc);
+		g_free (IDL_CODEFRAG (p).desc);
 		for (slist = IDL_CODEFRAG (p).lines; slist; slist = slist->next)
-			free (slist->data);
+			g_free (slist->data);
 		g_slist_free (IDL_CODEFRAG (p).lines);
 		break;
 		
@@ -1759,7 +1758,7 @@ static void IDL_tree_free_real (IDL_tree p)
 
 	__IDL_free_properties (IDL_NODE_PROPERTIES (p));
 	
-	free (p);
+	g_free (p);
 }
 
 /* Free node taking into account refcounts */
@@ -1964,7 +1963,7 @@ char *IDL_do_escapes (const char *s)
 	if (!s)
 		return NULL;
 
-	p = q = (char *) malloc (strlen (s) + 1);
+	p = q = g_malloc (strlen (s) + 1);
 	
 	while (*s) {
 		if (*s != '\\') {
@@ -2134,7 +2133,7 @@ static int load_forward_dcls (IDL_tree p, IDL_tree parent, GHashTable *table)
 		if (!g_hash_table_lookup_extended (table, s, NULL, NULL))
 			g_hash_table_insert (table, s, p);
 		else
-			free (s);
+			g_free (s);
 	}
 
 	return TRUE;
@@ -2147,9 +2146,9 @@ static int resolve_forward_dcls (IDL_tree p, IDL_tree parent, GHashTable *table)
 
 		if (g_hash_table_lookup_extended (table, s, (gpointer)&orig, NULL)) {
 			g_hash_table_remove (table, orig);
-			free (orig);
+			g_free (orig);
 		}
-		free (s);
+		g_free (s);
 	}
 
 	return TRUE;
@@ -2158,7 +2157,7 @@ static int resolve_forward_dcls (IDL_tree p, IDL_tree parent, GHashTable *table)
 static int print_unresolved_forward_dcls (char *s, IDL_tree p)
 {
 	IDL_tree_error (p, "Unresolved forward declaration `%s'", s);
-	free (s);
+	g_free (s);
 
 	return TRUE;
 }
@@ -2505,7 +2504,7 @@ static gboolean IDL_emit_IDL_ident (IDL_tree p, IDL_tree parent, IDL_output_data
 		levels = IDL_ns_scope_levels_from_here (data->ns, p, parent);
 		s = IDL_ns_ident_to_qstring (IDL_IDENT_TO_NS (p), "::", levels);
 		dataf (data, "%s", s);
-		free (s);
+		g_free (s);
 	}
 
 	return TRUE;

@@ -2,6 +2,8 @@
 
 	* Update version to 0.6.0.
 
+	* Fully convert to glib memory routines.
+
 1999-02-19  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* parser.y: Properties for parameters moved before direction

@@ -141,7 +141,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	__IDL_do_pragma (s);
 }
 <*>{cpp_status}						{
-	char *filename = (char *) malloc (strlen (yytext) + 1);
+	char *filename = g_malloc (strlen (yytext) + 1);
 	char *filename2;
 	int line;
 
@@ -150,13 +150,13 @@ dqstring		\"[^\"\n]*[\"\n]
 	if (*filename == '"') {
 		filename2 = g_strdup (filename + 1);
 		filename2[strlen (filename) - 2] = 0;
-		free (filename);
+		g_free (filename);
 	} else
 		filename2 = filename;
 
 	IDL_file_set (filename2, line);
 
-	free (filename2);
+	g_free (filename2);
 }
 <*>{whitespace}
 {b8_int}						{
