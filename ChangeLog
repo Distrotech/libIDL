@@ -1,5 +1,14 @@
 1998-12-05  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* tstidl.c: Add example of IDL_tree_error usage.
+	
+	* IDL.h, ns.c, util.c: Move __IDL_filename_hash to IDL_ns
+	structure.  Rename IDL_property... to IDL_tree_property... Make
+	IDL_tree_get_node_info public.
+
+	* Change private yyerrornv, yywarningnv to public IDL_tree_error
+	and IDL_tree_warning.
+
 	* tstidl.c, ns.c: Provide example of local parameter declaration
 	namespace lookup from parameter attribute property, and modify NS
 	assertions to make it more useful outside of parsing.

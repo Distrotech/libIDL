@@ -606,6 +606,7 @@ struct _IDL_ns {
 	IDL_tree file;
 	IDL_tree current;
 	GHashTable *inhibits;
+	GHashTable *filename_hash;
 };
 #define IDL_NS(a)			(*(a))
 
@@ -689,6 +690,29 @@ extern IDL_tree		IDL_get_parent_node		(IDL_tree p,
 							 IDL_tree_type type,
 							 int *scope_levels);
 
+extern int		IDL_tree_get_node_info		(IDL_tree tree,
+							 char **who,
+							 char **what);
+
+extern void		IDL_tree_error			(IDL_tree p,
+							 const char *fmt,
+							 ...);
+
+extern void		IDL_tree_warning		(IDL_tree p,
+							 int level,
+							 const char *fmt,
+							 ...);
+
+extern const char *	IDL_tree_property_get		(IDL_tree tree,
+							 const char *key);
+
+extern void		IDL_tree_property_set		(IDL_tree tree,
+							 const char *key,
+							 const char *value);
+
+extern gboolean		IDL_tree_property_remove	(IDL_tree tree,
+							 const char *key);
+
 extern void		IDL_tree_walk_in_order		(IDL_tree p,
 							 IDL_tree_func tree_func,
 							 gpointer user_data);
@@ -739,13 +763,6 @@ extern char *		IDL_ns_ident_make_repo_id	(IDL_ns ns,
 							 const char *p_prefix,
 							 int *major,
 							 int *minor);
-extern const char *	IDL_property_get		(IDL_tree tree,
-							 const char *key);
-extern void		IDL_property_set		(IDL_tree tree,
-							 const char *key,
-							 const char *value);
-extern gboolean		IDL_property_remove		(IDL_tree tree,
-							 const char *key);
 
 #ifdef __cplusplus
 }

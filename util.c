@@ -187,12 +187,6 @@ static void IDL_tree_optimize (IDL_tree *p, IDL_ns ns)
 	IDL_tree_remove_empty_modules (p, ns);
 }
 
-static void filename_hash_free (char *filename, IDL_fileinfo *fi)
-{
-	g_free (filename);
-	g_free (fi);
-}
-
 int IDL_parse_filename (const char *filename, const char *cpp_args,
 			IDL_msg_callback msg_cb, IDL_tree *tree, IDL_ns *ns,
 			unsigned long parse_flags, int max_msg_level)
@@ -326,7 +320,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = tmpfilename;
 #endif
-	__IDL_filename_hash = g_hash_table_new (g_str_hash, g_str_equal);
+	__IDL_filename_hash = IDL_NS (__IDL_root_ns).filename_hash;
 	rv = yyparse ();
 	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup ();
@@ -351,9 +345,6 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 
 	__IDL_msgcb = NULL;
-
-	g_hash_table_foreach (__IDL_filename_hash, (GHFunc) filename_hash_free, NULL);
-	g_hash_table_destroy (__IDL_filename_hash);
 
 	if (rv != 0 || !__IDL_is_okay) {
 		if (tree)
@@ -426,7 +417,7 @@ int IDL_parse_filename_with_input (const char *filename,
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = tmpfilename;
 #endif
-	__IDL_filename_hash = g_hash_table_new (g_str_hash, g_str_equal);
+	__IDL_filename_hash = IDL_NS (__IDL_root_ns).filename_hash;
 	rv = yyparse ();
 	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup ();
@@ -446,9 +437,6 @@ int IDL_parse_filename_with_input (const char *filename,
 	}
 
 	__IDL_msgcb = NULL;
-
-	g_hash_table_foreach (__IDL_filename_hash, (GHFunc) filename_hash_free, NULL);
-	g_hash_table_destroy (__IDL_filename_hash);
 
 	if (rv != 0 || !__IDL_is_okay) {
 		if (tree)
@@ -592,15 +580,15 @@ void yywarningv (int level, const char *fmt, ...)
 	free (msg);
 }
 
-void yyerrornv (IDL_tree p, const char *fmt, ...)
+void IDL_tree_error (IDL_tree p, const char *fmt, ...)
 {
 	char *file_save = __IDL_cur_filename;
 	int line_save = __IDL_cur_line;
 	char *msg = (char *) malloc (strlen (fmt) + 2048);
 	va_list args;
 
-	assert (p != NULL);
-	
+	g_return_if_fail (p != NULL);
+
 	__IDL_cur_filename = p->_file;
 	__IDL_cur_line = p->_line;
 	va_start (args, fmt);
@@ -612,15 +600,15 @@ void yyerrornv (IDL_tree p, const char *fmt, ...)
 	__IDL_cur_line = line_save;
 }
 
-void yywarningnv (IDL_tree p, int level, const char *fmt, ...)
+void IDL_tree_warning (IDL_tree p, int level, const char *fmt, ...)
 {
 	char *file_save = __IDL_cur_filename;
 	int line_save = __IDL_cur_line;
 	char *msg = (char *) malloc (strlen (fmt) + 2048);
 	va_list args;
 
-	assert (p != NULL);
-	
+	g_return_if_fail (p != NULL);
+
 	__IDL_cur_filename = p->_file;
 	__IDL_cur_line = p->_line;
 	va_start (args, fmt);
@@ -1904,7 +1892,7 @@ IDL_tree IDL_list_nth (IDL_tree list, int n)
 	return curitem;
 }
 
-const char *IDL_property_get (IDL_tree tree, const char *key)
+const char *IDL_tree_property_get (IDL_tree tree, const char *key)
 {
 	g_return_val_if_fail (tree != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
@@ -1915,7 +1903,7 @@ const char *IDL_property_get (IDL_tree tree, const char *key)
 	return g_hash_table_lookup (IDL_NODE_PROPERTIES (tree), key);
 }
 
-void IDL_property_set (IDL_tree tree, const char *key, const char *value)
+void IDL_tree_property_set (IDL_tree tree, const char *key, const char *value)
 {
 	g_return_if_fail (tree != NULL);
 	g_return_if_fail (key != NULL);
@@ -1923,13 +1911,13 @@ void IDL_property_set (IDL_tree tree, const char *key, const char *value)
 	if (!IDL_NODE_PROPERTIES (tree))
 		IDL_NODE_PROPERTIES (tree) = g_hash_table_new (
 			IDL_strcase_hash, IDL_strcase_equal);
-	else if (IDL_property_get (tree, key))
-		IDL_property_remove (tree, key);
+	else if (IDL_tree_property_get (tree, key))
+		IDL_tree_property_remove (tree, key);
 
 	g_hash_table_insert (IDL_NODE_PROPERTIES (tree), g_strdup (key), g_strdup (value));
 }
 
-gboolean IDL_property_remove (IDL_tree tree, const char *key)
+gboolean IDL_tree_property_remove (IDL_tree tree, const char *key)
 {
 	gboolean removed = FALSE;
 	
@@ -2009,7 +1997,7 @@ static int resolve_forward_dcls (IDL_tree p, GHashTable *table)
 
 static int print_unresolved_forward_dcls (char *s, IDL_tree p)
 {
-	yyerrornv (p, "Unresolved forward declaration `%s'", s);
+	IDL_tree_error (p, "Unresolved forward declaration `%s'", s);
 	free (s);
 
 	return TRUE;

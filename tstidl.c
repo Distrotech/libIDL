@@ -37,7 +37,7 @@ gboolean print_repo_id (IDL_tree p, struct walk_data data)
 	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE) {
 		const char *val;
 
-		val = IDL_property_get (p, "IID");
+		val = IDL_tree_property_get (p, "IID");
 		if (val) printf ("\tXPIDL IID:\"%s\"\n", val);
 	}
 
@@ -50,7 +50,7 @@ gboolean print_repo_id (IDL_tree p, struct walk_data data)
 
 		assert (IDL_NODE_TYPE (op) == IDLN_OP_DCL);
 
-		val = IDL_property_get (p, "IID_IS");
+		val = IDL_tree_property_get (p, "IID_IS");
 		if (val) {
 			printf ("\tXPIDL PARAM IID_IS: \"%s\"\n", val);
 
@@ -59,7 +59,9 @@ gboolean print_repo_id (IDL_tree p, struct walk_data data)
 			if ((q = IDL_ns_lookup_this_scope (
 				data.ns, IDL_IDENT_TO_NS (IDL_OP_DCL (op).ident),
 				ident, NULL)) == NULL) {
-				printf ("\tWARNING: IID_IS value not found in parameter list\n");
+				IDL_tree_error (op,
+						"`%s' not found in parameter list",
+						val);
 			}
 
 			IDL_tree_free (ident);

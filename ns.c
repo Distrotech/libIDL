@@ -47,12 +47,17 @@ IDL_ns IDL_ns_new (void)
 	IDL_NS (ns).global = IDL_gentree_new (IDL_ident_hash,
 					      IDL_ident_equal,
 					      IDL_ident_new (""));
-	IDL_NS (ns).file = 
-		IDL_NS (ns).current = IDL_NS (ns).global;
-
+	IDL_NS (ns).file =  IDL_NS (ns).current = IDL_NS (ns).global;
 	IDL_NS (ns).inhibits = g_hash_table_new (g_direct_hash, g_direct_equal);
+	IDL_NS (ns).filename_hash = g_hash_table_new (g_str_hash, g_str_equal);
 
 	return ns;
+}
+
+static void filename_hash_free (char *filename, IDL_fileinfo *fi)
+{
+	g_free (filename);
+	g_free (fi);
 }
 
 void IDL_ns_free (IDL_ns ns)
@@ -61,6 +66,8 @@ void IDL_ns_free (IDL_ns ns)
 
 	g_hash_table_foreach (IDL_NS (ns).inhibits, (GHFunc)IDL_tree_free, NULL);
 	g_hash_table_destroy (IDL_NS (ns).inhibits);
+	g_hash_table_foreach (IDL_NS (ns).filename_hash, (GHFunc) filename_hash_free, NULL);
+	g_hash_table_destroy (IDL_NS (ns).filename_hash);
 	IDL_tree_free (IDL_NS (ns).global);
 
 	free (ns);
@@ -371,8 +378,8 @@ static gboolean heap_insert_ident (IDL_tree interface_ident, GTree *heap, IDL_tr
 
 		yyerrorv ("Ambiguous inheritance in interface `%s' from %s `%s' and %s `%s'",
 			  newi, what1, i1, what2, i2);
-		yyerrornv (p, "%s `%s' conflicts with", what1, i1);
-		yyerrornv (any, "%s `%s'", what2, i2);
+		IDL_tree_error (p, "%s `%s' conflicts with", what1, i1);
+		IDL_tree_error (any, "%s `%s'", what2, i2);
 
 		free (newi); free (i1); free (i2);
 

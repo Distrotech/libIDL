@@ -64,8 +64,6 @@ extern gint		IDL_strcase_cmp			(gconstpointer a, gconstpointer b);
 extern guint		IDL_ident_hash			(gconstpointer v);
 extern gint		IDL_ident_equal			(gconstpointer a, gconstpointer b);
 extern gint		IDL_ident_cmp			(gconstpointer a, gconstpointer b);
-extern int		IDL_tree_get_node_info		(IDL_tree tree,
-							 char **who, char **what);
 extern int		IDL_ns_check_for_ambiguous_inheritance
 							(IDL_tree interface_ident,
 							 IDL_tree p);

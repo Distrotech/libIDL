@@ -325,7 +325,7 @@ module:			module_declspec new_or_prev_scope '{'
 	if (IDL_NODE_UP ($2) != NULL &&
 	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
 		do_token_error (IDL_NODE_UP ($2), "Module definition conflicts with", FALSE);
-		yyerrornv ($2, "Previous declaration");
+		IDL_tree_error ($2, "Previous declaration");
 		YYABORT;
 	}
 
@@ -353,7 +353,7 @@ module:			module_declspec new_or_prev_scope '{'
 	if (IDL_NODE_UP ($2) != NULL &&
 	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
 		do_token_error (IDL_NODE_UP ($2), "Module definition conflicts with", FALSE);
-		yyerrornv ($2, "Previous declaration");
+		IDL_tree_error ($2, "Previous declaration");
 		YYABORT;
 	}
 	yywarningv (IDL_WARNING1,
@@ -394,12 +394,12 @@ interface:		z_declspec
 	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_INTERFACE &&
 	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
 		do_token_error (IDL_NODE_UP ($4), "Interface definition conflicts with", FALSE);
-		yyerrornv ($4, "Previous declaration");
+		IDL_tree_error ($4, "Previous declaration");
 		YYABORT;
 	} else if (IDL_NODE_UP ($4) != NULL &&
 		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
 		yyerrorv ("Cannot redeclare interface `%s'", IDL_IDENT ($4).str);
-		yyerrornv ($4, "Previous declaration of interface `%s'", IDL_IDENT ($4).str);
+		IDL_tree_error ($4, "Previous declaration of interface `%s'", IDL_IDENT ($4).str);
 		YYABORT;
 	} else if (IDL_NODE_UP ($4) != NULL &&
 		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL) {
@@ -458,16 +458,16 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 		if (IDL_NODE_TYPE (IDL_NODE_UP (IDL_LIST (p).data)) == IDLN_FORWARD_DCL) {
 			char *s = IDL_ns_ident_to_qstring (IDL_LIST (p).data, "::", 0);
 			yyerrorv ("Incomplete definition of interface `%s'", s);
-			yyerrornv (IDL_LIST (p).data,
-				 "Previous forward declaration of `%s'", s);
+			IDL_tree_error (IDL_LIST (p).data,
+					"Previous forward declaration of `%s'", s);
 			free (s);
 			die = TRUE;
 		}
 		else if (IDL_NODE_TYPE (IDL_NODE_UP (IDL_LIST (p).data)) != IDLN_INTERFACE) {
 			char *s = IDL_ns_ident_to_qstring (IDL_LIST (p).data, "::", 0);
 			yyerrorv ("`%s' is not an interface", s);
-			yyerrornv (IDL_LIST (p).data,
-				  "Previous declaration of `%s'", s);
+			IDL_tree_error (IDL_LIST (p).data,
+					"Previous declaration of `%s'", s);
 			free (s);
 			die = TRUE;
 		}
@@ -1059,7 +1059,7 @@ ns_new_ident:		ident				{
 		
 		if (q) {
 			do_token_error (q, "Duplicate identifier conflicts with", FALSE);
-			yyerrornv (q, "Previous declaration");
+			IDL_tree_error (q, "Previous declaration");
 		} else
 			yyerrorv ("`%s' duplicate identifier", IDL_IDENT ($1).str);
 
@@ -1158,15 +1158,15 @@ positive_int_const:	const_exp			{
 	} else if (value == 0) {
 		yyerror ("Zero array size is illegal");
 		if (ident)
-			yyerrornv (ident, "From constant declared here");
+			IDL_tree_error (ident, "From constant declared here");
 		$$ = NULL;
 	} else if (value < 0) {
 		yywarningv (IDL_WARNING1, "Cannot use negative value %"
 			    IDL_LL "d, using %" IDL_LL "d",
 			   value, -value);
 		if (ident)
-			yywarningnv (ident,
-				    IDL_WARNING1, "From constant declared here");
+			IDL_tree_warning (ident,
+					  IDL_WARNING1, "From constant declared here");
 		$$ = IDL_integer_new (-value);
 	}
 	else
@@ -1890,7 +1890,7 @@ IDL_tree IDL_resolve_const_exp (IDL_tree p, IDL_tree_type type)
 	
 	if (wrong_type) {
 		yyerror ("Invalid type for constant");
-		yyerrornv (p, "Previous resolved type declaration");
+		IDL_tree_error (p, "Previous resolved type declaration");
 		return NULL;
 	}
 
