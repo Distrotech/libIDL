@@ -7,6 +7,17 @@
 #
 AC_INIT(IDL.h)
 AM_INIT_AUTOMAKE(libIDL, 0.1)
+CPP="/lib/cpp"
+AC_ARG_WITH(cpp,
+[  --with-cpp=PROGRAM      full path to C preprocessor [/lib/cpp]],
+CPP="$withval")
+AC_MSG_CHECKING(the C preprocessor)
+if [[ ! -x "$CPP" ]]; then
+    AC_MSG_RESULT(WARNING: cannot execute "$CPP")
+else
+    AC_MSG_RESULT(found and executable)
+fi
+AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 AC_PROG_CC
 AM_PROG_LEX
 if [[ "$LEX" = "flex" ]]; then
@@ -15,17 +26,6 @@ else
     LFLAGS=""
 fi
 AC_SUBST(LFLAGS)
-AC_ARG_WITH(cpp,
-[  --with-cpp=PROGRAM      full path to C preprocessor [/lib/cpp]],
-CPP="$withval",
-CPP="/lib/cpp")
-AC_MSG_CHECKING(the C preprocessor)
-if [[ ! -x "$CPP" ]]; then
-    AC_MSG_RESULT(warning: cannot execute $CPP)
-else
-    AC_MSG_RESULT(found and executable)
-fi
-AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 AC_PROG_YACC
 AC_PROG_RANLIB
 AC_ISC_POSIX
