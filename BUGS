@@ -1,3 +1,6 @@
+- there are still some namespace issues. These should hopefully be
+  resolved by libIDL 0.3-4 or so.
+
 - if an parse error occurs, memory will be leaked--implement an
   allocator and do a non-recursive free if parse fails
 

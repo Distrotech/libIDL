@@ -21,6 +21,6 @@ lib_LIBRARIES		= libIDL.a
 noinst_HEADERS		= rename.h util.h parser.h
 noinst_PROGRAMS		= tstidl
 
-libIDL_a_SOURCES	= parser.y lexer.l util.c
+libIDL_a_SOURCES	= parser.y lexer.l util.c ns.c
 tstidl_SOURCES		= tstidl.c
 tstidl_LDADD		= libIDL.a

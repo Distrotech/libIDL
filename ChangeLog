@@ -1,3 +1,8 @@
+1998-08-06  Andrew Veliath  <andrewtv@usa.net>
+
+	* Begin major cutting for libIDL 0.3, which will have new
+	  namespace code.  Move lots of stuff around.
+
 1998-08-05  Andrew Veliath  <andrewtv@usa.net>
 
 	* lexer.l: Change C-language warning level to warning level 2,

@@ -35,27 +35,41 @@
 
 #include <glib.h>
 
+struct _IDL_tree_node;
+struct _IDL_ns;
+
 #ifndef HAVE_STRDUP
-#define strdup		__strdup
-extern char *		strdup(const char *s);
+#define strdup			__strdup
+extern char *			strdup(const char *s);
 #endif
 
-extern void		yyerror(const char *s);
-extern void		yyerrorl(const char *s, int ofs);
-extern void		yywarning(int level, const char *s);
-extern void		yywarningl(int level, const char *s, int ofs);
-extern void		yyerrorv(const char *fmt, ...);
-extern void		yyerrorlv(const char *fmt, int ofs, ...);
-extern void		yywarningv(int level, const char *fmt, ...);
-extern void		yywarninglv(int level, const char *fmt, int ofs, ...);
+extern void			yyerror(const char *s);
+extern void			yyerrorl(const char *s, int ofs);
+extern void			yywarning(int level, const char *s);
+extern void			yywarningl(int level, const char *s, int ofs);
+extern void			yyerrorv(const char *fmt, ...);
+extern void			yyerrorlv(const char *fmt, int ofs, ...);
+extern void			yywarningv(int level, const char *fmt, ...);
+extern void			yywarninglv(int level, const char *fmt, int ofs, ...);
+
+/* Functions not yet deemed public */
+int				IDL_tree_get_node_info(struct _IDL_tree_node *tree,
+						       char **who, char **what);
+int				IDL_ns_check_for_ambiguous_inheritance(struct _IDL_tree_node * interface_ident,
+								       struct _IDL_tree_node *p);
 
 #ifndef HAVE_CPP_PIPE_STDIN
-extern char *		__IDL_tmp_filename;
+extern char *			__IDL_tmp_filename;
 #endif
-extern const char *	__IDL_real_filename;
-extern char *		__IDL_cur_filename;
-extern int		__IDL_cur_line;
-extern int		__IDL_prev_token_line;
-extern int		__IDL_cur_token_line;
+extern const char *		__IDL_real_filename;
+extern char *			__IDL_cur_filename;
+extern int			__IDL_cur_line;
+extern int			__IDL_prev_token_line;
+extern int			__IDL_cur_token_line;
+extern struct _IDL_tree_node *	__IDL_root;
+extern struct _IDL_ns *		__IDL_root_ns;
+extern int			__IDL_is_okay;
+extern int			__IDL_is_parsing;
+extern unsigned long		__IDL_flags;
 
 #endif /* __UTIL_H */
