@@ -6,3 +6,11 @@ y.output
 parser.h
 lexer.c
 parser.c
+ltconfig
+tstidl
+config.guess
+config.sub
+ltmain.sh
+configure
+config.log
+config.status
