@@ -9,7 +9,7 @@ BIN = C:\Bin
 # GLib location
 GLIB_INCLUDES = -I/Devel/Port/glib
 GLIB_LIBPATH = c:\Devel\Port\glib
-GLIB_LIB = glib-1.1.lib
+GLIB_LIB = glib-1.2.lib
 
 # libIDL dll version
 LIBIDL_REALVER = @LIBIDL_LIBRARY_VERSION@
