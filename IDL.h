@@ -165,6 +165,7 @@ extern IDL_tree		IDL_boolean_new			(unsigned value);
 struct _IDL_IDENT {
 	char *str;
 	char *repo_id;
+	GSList *comments;
 	IDL_tree _ns_ref;		/* Internal use, do not recurse */
 	unsigned _flags;		/* Internal use */
 #define IDLF_IDENT_CASE_MISMATCH_HIT	(1UL << 0)
@@ -173,6 +174,7 @@ struct _IDL_IDENT {
 #define IDL_IDENT_TO_NS(a)		IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident._ns_ref)
 #define IDL_IDENT_REPO_ID(a)		IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident.repo_id)
 extern IDL_tree		IDL_ident_new			(char *str);
+extern void		IDL_queue_new_ident_comment	(const char *str);
 	
 enum IDL_float_type {
 	IDL_FLOAT_TYPE_FLOAT,

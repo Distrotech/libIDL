@@ -956,6 +956,11 @@ ns_new_ident:		ident				{
 	}
 	assert (IDL_IDENT ($1)._ns_ref == p);
 	++IDL_NODE_REFS (IDL_GENTREE (p).data);
+	if (__IDL_new_ident_comments != NULL) {
+		assert (IDL_IDENT ($1).comments == NULL);
+		IDL_IDENT ($1).comments = __IDL_new_ident_comments;
+		__IDL_new_ident_comments = NULL;
+	}
 	$$ = p;
 }
 	;
@@ -984,6 +989,11 @@ cur_ns_new_or_prev_ident:
 		p = IDL_ns_place_new (__IDL_root_ns, $1);
 		assert (p != NULL);
 		assert (IDL_IDENT ($1)._ns_ref == p);
+		if (__IDL_new_ident_comments != NULL) {
+			assert (IDL_IDENT ($1).comments == NULL);
+			IDL_IDENT ($1).comments = __IDL_new_ident_comments;
+			__IDL_new_ident_comments = NULL;
+		}
 	} else {
 		IDL_tree_free ($1);
 		assert (IDL_GENTREE (p).data != NULL);
@@ -1672,6 +1682,12 @@ IDL_tree IDL_resolve_const_exp (IDL_tree p, IDL_tree_type type)
 	}
 
 	return resolved_value ? p : NULL;
+}
+
+void IDL_queue_new_ident_comment (const char *str)
+{
+	g_return_if_fail (str != NULL);
+	__IDL_new_ident_comments = g_slist_append (__IDL_new_ident_comments, g_strdup (str));
 }
 
 /*

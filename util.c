@@ -93,6 +93,7 @@ int					__IDL_is_parsing;
 unsigned long				__IDL_flags;
 gpointer				__IDL_inputcb_user_data;
 IDL_input_callback			__IDL_inputcb;
+GSList *				__IDL_new_ident_comments;
 static int				__IDL_max_msg_level;
 static int				__IDL_nerrors, __IDL_nwarnings;
 static IDL_msg_callback			__IDL_msgcb;
@@ -197,6 +198,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	char cwd[2048];
 	gchar *linkto;
 #endif
+	GSList *slist;
 	int rv;
 
 	if (!filename ||
@@ -300,6 +302,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	__IDL_is_parsing = TRUE;
 	__IDL_is_okay = TRUE;
 	__IDL_lex_init ();
+	__IDL_new_ident_comments = NULL;
 
 	__IDL_real_filename = filename;
 #ifndef HAVE_CPP_PIPE_STDIN
@@ -318,6 +321,9 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	unlink (tmpfilename);
 	free (tmpfilename);
 #endif
+	for (slist = __IDL_new_ident_comments; slist; slist = slist->next)
+		free (slist->data);
+	g_slist_free (__IDL_new_ident_comments);
 
 	if (__IDL_root != NULL) {
 		IDL_tree_optimize (&__IDL_root, __IDL_root_ns);
@@ -369,6 +375,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	extern void __IDL_lex_cleanup (void);
 	extern int yyparse (void);
 	union IDL_input_data data;
+	GSList *slist;
 	int rv;
 
 	if (!filename || !input_cb || !tree ||
@@ -388,6 +395,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	__IDL_lex_init ();
 	__IDL_inputcb = input_cb;
 	__IDL_inputcb_user_data = input_cb_user_data;
+	__IDL_new_ident_comments = NULL;
 
 	data.init.filename = filename;
 	if ((*__IDL_inputcb) (
@@ -406,6 +414,9 @@ int IDL_parse_filename_with_input (const char *filename,
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = NULL;
 #endif
+	for (slist = __IDL_new_ident_comments; slist; slist = slist->next)
+		free (slist->data);
+	g_slist_free (__IDL_new_ident_comments);
 
 	if (__IDL_root != NULL) {
 		IDL_tree_optimize (&__IDL_root, __IDL_root_ns);
@@ -1515,6 +1526,8 @@ static int tree_free_but_this (IDL_tree data, IDL_tree p, IDL_tree this_one)
 /* Free associated node data, regardless of refcounts */
 static void IDL_tree_free_real (IDL_tree p)
 {
+	GSList *slist;
+	
 	assert (p != NULL);
 
 	switch (IDL_NODE_TYPE (p)) {
@@ -1539,6 +1552,9 @@ static void IDL_tree_free_real (IDL_tree p)
 	case IDLN_IDENT:
 		free (IDL_IDENT (p).str);
 		free (IDL_IDENT_REPO_ID (p));
+		for (slist = IDL_IDENT (p).comments; slist; slist = slist->next)
+			free (slist->data);
+		g_slist_free (IDL_IDENT (p).comments);
 		break;
 
 	default:

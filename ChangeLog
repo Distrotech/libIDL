@@ -1,3 +1,22 @@
+1998-11-20  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* tstidl.c (print_ident_comments): Print out identifiers and any
+	comments.
+
+	* util.c (IDL_parse_filename): Init __IDL_new_ident_comments, then
+	free any remaining on return from parsing.  Same for
+	IDL_parse_filename_with_input.
+	(IDL_tree_free_real): Free comments of identifier.
+
+	* parser.y (IDL_queue_new_ident_comment): New function.
+	ns_new_ident, cur_ns_new_or_prev_ident: Assign comments to the
+	newly created identifier if they exist.  This function, called
+	from the input callback will queue comments to be assigned to the
+	next newly created identifier (queue order is maintained, and
+	stored in the comments list in the identifier node).
+	
+	* IDL.h: Add comments list to IDL_IDENT.
+
 1998-11-19  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* tstidl.c (my_input_cb): Provide example of alternate input method.

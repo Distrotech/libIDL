@@ -77,5 +77,6 @@ extern int				__IDL_is_parsing;
 extern unsigned long			__IDL_flags;
 extern gpointer				__IDL_inputcb_user_data;
 extern IDL_input_callback		__IDL_inputcb;
+extern GSList *				__IDL_new_ident_comments;
 
 #endif /* __UTIL_H */

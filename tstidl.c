@@ -24,6 +24,22 @@ gboolean print_repo_id (IDL_tree p, gpointer user_data)
 	return TRUE;
 }
 
+gboolean print_ident_comments (IDL_tree p, gpointer user_data)
+{
+	GSList *list;
+
+	if (IDL_NODE_TYPE (p) == IDLN_IDENT) {
+		printf ("Identifier: %s\n", IDL_IDENT (p).str);
+		for (list = IDL_IDENT (p).comments; list;
+		     list = g_slist_next (list)) {
+			char *comment = list->data;
+			printf ("%s\n", comment);
+		}
+	}
+
+	return TRUE;
+}
+
 gboolean print_const_dcls (IDL_tree p, gpointer user_data)
 {
 	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL &&
@@ -66,6 +82,7 @@ int my_input_cb (IDL_input_reason reason, union IDL_input_data *cb_data, gpointe
 		/* Fill the buffer here... return number of bytes read (maximum of
 		   cb_data->fill.max_size), 0 for EOF, negative value upon error. */
 		rv = fread (cb_data->fill.buffer, 1, cb_data->fill.max_size, my_data->in);
+		IDL_queue_new_ident_comment ("Queue some comment...");
 		g_message ("my_input_cb: fill, max size %d, got %d",
 			   cb_data->fill.max_size, rv);
 		if (rv == 0 && ferror (my_data->in))
@@ -119,6 +136,8 @@ int main (int argc, char *argv[])
 		IDL_tree_walk_in_order (tree, print_repo_id, NULL);
 		printf ("\nConstant Declarations\n");
 		IDL_tree_walk_in_order (tree, print_const_dcls, NULL);
+		printf ("\nIdentifiers\n");
+		IDL_tree_walk_in_order (tree, print_ident_comments, NULL);
 		IDL_ns_free (ns);
 		IDL_tree_free (tree);
 	}
