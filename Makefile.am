@@ -52,7 +52,6 @@ m4datadir		= $(datadir)/aclocal
 m4data_DATA		= libIDL.m4
 
 tstidl_SOURCES		= tstidl.c
-tstidl_LDFLAGS		= -static
 tstidl_LDADD		= libIDL.la
 
 confexecdir		= $(libdir)
