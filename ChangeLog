@@ -1,3 +1,7 @@
+2002-01-03  Mark McLoughlin  <mark@skynet.ie>
+
+	* lexer.l: lame workaround for FreeBSD bug.
+
 2001-10-16  Ross Golder  <rossg@durban.golder.org>
 
 	* libIDL.spec.in: Updated filenames/paths for libIDL2.

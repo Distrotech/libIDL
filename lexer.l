@@ -224,14 +224,17 @@ dqstring		\"[^\"\n]*[\"\n]
 <*>{cpp_other}						;
 <*>{whitespace}						;
 {b8_int}						{
+	yylval.integer = 0;
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
 {b10_uint}						{
+	yylval.integer = 0;
 	sscanf (yytext, "%" IDL_LL "u", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
 {b16_int}						{
+	yylval.integer = 0;
 	sscanf (yytext + 2, "%" IDL_LL "x", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
