@@ -108,7 +108,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	codefrag_list = codefrag_list_tail = NULL;
 	BEGIN (XPIDLCODEFRAGX);
 }
-<XPIDLCODEFRAGX>^%\}{whitespace}			{
+<XPIDLCODEFRAGX>^%\}.*					{
 	yylval.tree = IDL_codefrag_new (codefrag_desc, codefrag_list);
 	tokreturn (TOK_CODEFRAG);
 }
