@@ -211,12 +211,14 @@ check_semicolon:	';'
 check_comma:		','
 |			/* empty */			{
 	IDL_tree p = $<tree>0;
-	char *what, *who = NULL;
+	char *what = NULL, *who = NULL;
 	int dienow = 0;
 
 	assert(p != NULL);
 
 	dienow = get_error_strings(p, &what, &who);
+
+	assert(what != NULL);
 
 	if (who && *who)
 		yyerrorlv("Missing comma after %s `%s'",
@@ -1198,6 +1200,7 @@ static int get_error_strings(IDL_tree p, char **what, char **who)
 		*who = IDL_IDENT(IDL_LIST(IDL_LIST(IDL_ATTR_DCL(p).simple_declarations)._tail).data).str;
 		break;
 	case IDLN_PARAM_DCL:
+		*what = "operation parameter";
 		assert(IDL_PARAM_DCL(p).simple_declarator != NULL);
 		assert(IDL_NODE_TYPE(IDL_PARAM_DCL(p).simple_declarator) = IDLN_IDENT);
 		*who = IDL_IDENT(IDL_PARAM_DCL(p).simple_declarator).str;
