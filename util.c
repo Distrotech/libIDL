@@ -1750,6 +1750,7 @@ static void IDL_tree_walk_real (IDL_tree_func_data *tfd, IDLTreeWalkRealData *da
 	case IDLN_CASE_STMT:
 		down_tfd.tree = IDL_CASE_STMT (p).labels;
 		IDL_tree_walk_real (&down_tfd, data);
+		/* FIXME */
 		down_tfd.tree = IDL_CASE_STMT (p).element_spec;
 		IDL_tree_walk_real (&down_tfd, data);
 		break;
