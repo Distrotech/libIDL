@@ -55,7 +55,9 @@ b10_int			\-?[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
 float_lit		\-?[0-9]*\.[0-9]+([eE]\-?[0-9]+)?|\-?[0-9]+\.?([eE]\-?[0-9]+)?
 fixed_lit		(\-?[0-9]*\.[0-9]+|\-?[0-9]+\.?[0-9]*)[dD]
-ident			[A-Za-z][A-Za-z0-9_]*
+happy_ident		[A-Za-z][A-Za-z0-9]*
+err1_ident		_[A-Za-z0-9_]+
+warn1_ident		[A-Za-z][A-Za-z0-9_]*
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
@@ -157,11 +159,19 @@ wstring			tokreturn(TOK_WSTRING);
 ::			tokreturn(TOK_OP_SCOPE);
 \>\>			tokreturn(TOK_OP_SHR);
 \<\<			tokreturn(TOK_OP_SHL);
-{ident}			{
-#ifdef YYDEBUG
-	if (yydebug)
-		printf("lexer.l: ident '%s'\n", yytext);
-#endif
+{happy_ident}		{
+	yylval.str = strdup(yytext);
+	tokreturn(TOK_IDENT);
+}
+{err1_ident}		{
+	yyerrorv("`%s' is not a valid identifier in IDL", yytext);
+	yyerror("(Identifiers cannot start with an underscore)");
+	yylval.str = strdup(yytext);
+	tokreturn(TOK_IDENT);
+}
+{warn1_ident}		{
+	yywarningv("`%s' underscores within identifiers are discouraged for use "
+		   "with C-language IDL mappings", yytext);
 	yylval.str = strdup(yytext);
 	tokreturn(TOK_IDENT);
 }
