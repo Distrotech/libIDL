@@ -17,11 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef IDL_LIBRARY
-#  include "IDL.h"
-#else
-#  include <libIDL/IDL.h>
-#endif
+#include <libIDL/IDL.h>
 
 #define IDLFP_IDENT_VISITED	(1UL << 0)
 

@@ -33,7 +33,7 @@
 #  include <wcstr.h>
 #endif
 #include <glib.h>
-#include "IDL.h"
+#include <libIDL/IDL.h>
 
 /* Internal parse flags */
 #define IDLFP_PROPERTIES	(1UL << 0)

@@ -2,11 +2,12 @@
 #
 # libIDL Makefile.am
 #
+SUBDIRS = include
 INCLUDES =                             \
 	-DYYDEBUG=1                    \
 	-DYYERROR_VERBOSE=1            \
-	-DIDL_LIBRARY                  \
 	$(LIBIDL_CFLAGS)               \
+	-I$(top_builddir)/include      \
 	-DG_LOG_DOMAIN=\"libIDL\"      \
 	$(WARN_CFLAGS)
 
@@ -26,11 +27,7 @@ parser.c: stamp-parser
 parser.h: stamp-parser
 	test -f y.tab.h && mv -f y.tab.h parser.h || touch $@
 
-IDL.h: IDL.h.new
-	@:
-
 MOSTLYCLEANFILES	= parser.output y.output
-DISTCLEANFILES		= IDL.h
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
@@ -38,14 +35,12 @@ EXTRA_DIST		= BUGS parser.y lexer.l \
 			  HACKING MAINTAINERS
 
 info_TEXINFOS		= libIDL2.texi
-libIDLincludedir        = $(includedir)/libIDL-2.0/libIDL
-libIDLinclude_HEADERS   = IDL.h
 lib_LTLIBRARIES		= libIDL-2.la
 noinst_PROGRAMS		= tstidl
 
 bin_SCRIPTS		= libIDL-config-2
 
-BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h stamp-parser
+BUILT_SOURCES		= lexer.c parser.c parser.h stamp-parser
 
 libIDL_2_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h

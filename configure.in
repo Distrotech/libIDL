@@ -1,11 +1,11 @@
 dnl -*- mode: shell-script -*-
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT(IDL.h.new.in)
+AC_INIT(include/libIDL/IDL.h.in)
 
 LIBIDL_MAJOR_VERSION=0
 LIBIDL_MINOR_VERSION=8
-LIBIDL_MICRO_VERSION=2
+LIBIDL_MICRO_VERSION=3
 LIBIDL_VERSION=$LIBIDL_MAJOR_VERSION.$LIBIDL_MINOR_VERSION.$LIBIDL_MICRO_VERSION
 AC_SUBST(LIBIDL_MAJOR_VERSION)
 AC_SUBST(LIBIDL_MINOR_VERSION)
@@ -136,13 +136,14 @@ AC_SUBST(WARN_CFLAGS)
 AC_OUTPUT([
 Makefile
 Makefile.msc
+include/Makefile
+include/libIDL/Makefile
+include/libIDL/IDL.h
 libIDL-config-2
 libIDL.m4
 libIDL.spec
 libIDL-2.0.pc
-IDL.h.new
-],[
-AC_UPDATE_IF_CHANGED(IDL.h, IDL.h.new)
+libIDL-2.0-uninstalled.pc
 ])
 
 echo

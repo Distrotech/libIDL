@@ -21,14 +21,17 @@ libtool
 *.lo
 *.la
 libIDLConf.sh
-IDL.h
 stamp-parser
-IDL.h.new
 libIDL-config-2
 libIDL-config
 libIDL.m4
 Makefile.msc
 libIDL.spec
 libIDL-2.0.pc
+libIDL-2.0-uninstalled.pc
 libIDL-*.tar.gz
+INSTALL
+autom4te.cache
+texinfo.tex
+
 

@@ -1,3 +1,22 @@
+2004-01-21  Mark McLoughlin  <mark@skynet.ie>
+
+	* configiure.in: Version 0.8.3.
+	
+2004-01-21  Mark McLoughlin  <mark@skynet.ie>
+
+	Patch from Laszlo Peter <laca@sun.com>
+
+	* libIDL-2.0-uninstalled.pc.in: add -uninstalled pkg-config
+	file to allow building against an uninstalled libIDL.
+
+	* include/libIDL/IDL.h.in: move the header here.
+
+	* IDL.h.new.in: kill this.
+
+	* Makefile.am: don't install the header from here.
+	
+	* tstidl.c, util.h: update for new header location.
+	
 2003-06-12  Fernando Herrera de las Heras  <fherrera@onirica.com>
 
        * util.c (IDL_parse_filename): clobber LC_ALL

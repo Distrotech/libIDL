@@ -34,7 +34,7 @@ if test "$DIE" -eq 1; then
 	exit 1
 fi
 
-(test -f $srcdir/IDL.h.new.in) || {
+(test -f $srcdir/include/libIDL/IDL.h.in) || {
 	echo "You must run this script in the top-level libIDL directory"
 	exit 1
 }
