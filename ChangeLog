@@ -1,5 +1,7 @@
 2004-10-07  James Henstridge  <james@jamesh.id.au>
 
+	* acinclude.m4: quote macro names in AC_DEFUN() calls.
+
 	* .cvsignore: ignore install-sh, missing and mkinstalldirs.
 
 	* install-sh, missing, mkinstalldirs: remove from CVS, since the
