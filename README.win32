@@ -1,18 +1,18 @@
 Using libIDL for Win32
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Win32 libIDL support is here, but currently requires the use of
-IDL_parse_filename_with_input.  To compile this, you will also need to
-obtain glib 1.1.4 or later compiled for Win32, which you should be
-able to obtain from http://user.sgic.fi/~tml/gimp/win32.
+Win32 libIDL support is mostly here, but currently requires the use of
+IDL_parse_filename_with_input, since there is no C preprocessor
+generally available under Windows.  To compile this, you will also
+need to obtain glib for Win32, which you should be able to obtain from
+http://www.gimp.org/~tml/gimp/win32/.
 
 Building
 ~~~~~~~~
 
-Edit Makefile.msc and edit the locations of the glib includes, and be
-sure that glib-1.1.lib is in a location which will be found by the
-compiler.  Only Microsoft C is supported at the moment, but it
-shouldn't be difficult to port to other compilers.
+Edit Makefile.msc and edit the locations of the glib includes, library
+name, and library path.  Only Microsoft C is supported at the moment,
+but it shouldn't be difficult to port to other compilers.
 
 Using the Library
 ~~~~~~~~~~~~~~~~~

@@ -2,21 +2,21 @@
 
     util.h
 
-    Copyright (C) 1998 Andrew T. Veliath
+    Copyright (C) 1998, 1999 Andrew T. Veliath
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
     $Id$
 
@@ -83,6 +83,7 @@ extern GHashTable *			__IDL_filename_hash;
 extern IDL_fileinfo *			__IDL_cur_fileinfo;
 extern int				__IDL_prev_token_line;
 extern int				__IDL_cur_token_line;
+extern GHashTable *			__IDL_structunion_ht;
 extern int				__IDL_inhibits;
 extern IDL_tree				__IDL_root;
 extern IDL_ns				__IDL_root_ns;

@@ -2,21 +2,21 @@
 
     parser.y (IDL yacc parser and tree generation)
 
-    Copyright (C) 1998 Andrew T. Veliath
+    Copyright (C) 1998, 1999 Andrew T. Veliath
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
     $Id$
 
@@ -87,8 +87,6 @@ static IDL_tree		zlist_chain			(IDL_tree a,
 static int		do_token_error			(IDL_tree p,
 							 const char *message,
 							 gboolean prev);
-
-static GHashTable *				struct_rdht;
 %}
 
 %union {
@@ -276,17 +274,7 @@ static GHashTable *				struct_rdht;
 %%
 
 specification:		/* empty */			{ yyerror ("Empty file"); YYABORT; }
-|			init definition_list fini	{ __IDL_root = $2; }
-	;
-
-init:							{
-	struct_rdht = g_hash_table_new (g_direct_hash, g_direct_equal);
-}
-	;
-
-fini:							{
-	g_hash_table_destroy (struct_rdht);
-}
+|			definition_list			{ __IDL_root = $1; }
 	;
 
 definition_list:	definition			{ $$ = list_start ($1, TRUE); }
@@ -433,20 +421,20 @@ interface:		z_declspec
 	IDL_NODE_DECLSPEC ($$) = $1;
 	if (__IDL_inhibits > 0)
 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
-	assign_props ($$, $2);
+	assign_props (IDL_INTERFACE ($$).ident, $2);
 }
 |			z_declspec
 			z_props
 			TOK_INTERFACE
 			interface_catch_ident
 			pop_scope			{
-	if ($1) yywarningv (IDL_WARNING1,
-			    "Ignoring declspec for forward declaration `%s'",
-			    IDL_IDENT ($4));
 	if ($2) yywarningv (IDL_WARNING1,
 			    "Ignoring properties for forward declaration `%s'",
 			    IDL_IDENT ($4));
 	$$ = IDL_forward_dcl_new ($4);
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 }
 	;
 
@@ -464,7 +452,7 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 		if (g_hash_table_lookup_extended (table, IDL_LIST (p).data, NULL, NULL)) {
 			char *s = IDL_ns_ident_to_qstring (IDL_LIST (p).data, "::", 0);
 			yyerrorv ("Cannot inherit from interface `%s' more than once", s);
-			free (s);
+			g_free (s);
 			die = TRUE;
 			break;
 		} else
@@ -475,7 +463,7 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 			yyerrorv ("Incomplete definition of interface `%s'", s);
 			IDL_tree_error (IDL_LIST (p).data,
 					"Previous forward declaration of `%s'", s);
-			free (s);
+			g_free (s);
 			die = TRUE;
 		}
 		else if (IDL_NODE_TYPE (IDL_NODE_UP (IDL_LIST (p).data)) != IDLN_INTERFACE) {
@@ -483,7 +471,7 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 			yyerrorv ("`%s' is not an interface", s);
 			IDL_tree_error (IDL_LIST (p).data,
 					"Previous declaration of `%s'", s);
-			free (s);
+			g_free (s);
 			die = TRUE;
 		}
 	}
@@ -514,6 +502,7 @@ export:			type_dcl check_semicolon
 |			op_dcl check_semicolon
 |			attr_dcl check_semicolon
 |			const_dcl check_semicolon
+|			codefrag
 |			useless_semicolon
 	;
 
@@ -566,19 +555,29 @@ constr_type_spec:	struct_type
 	;
 
 struct_type:		TOK_STRUCT new_scope '{'	{
-	g_hash_table_insert (struct_rdht, $2, $2);
+	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
+	$$ = IDL_type_struct_new ($2, NULL);
 }				member_list
 			'}' pop_scope			{
-	$$ = IDL_type_struct_new ($2, $5);
-	g_hash_table_remove (struct_rdht, $2);
+	g_hash_table_remove (__IDL_structunion_ht, $2);
+	$$ = $<tree>4;
+	IDL_TYPE_STRUCT ($$).member_list = $5;
+	IDL_NODE_UP (IDL_TYPE_STRUCT ($$).member_list) = $$;
 }
 	;
 
 union_type:		TOK_UNION new_scope TOK_SWITCH '('
 				switch_type_spec
-			')' '{'
-				switch_body
-			'}' pop_scope			{ $$ = IDL_type_union_new ($2, $5, $8); }
+			')' '{'				{
+	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
+	$$ = IDL_type_union_new ($2, $5, NULL);
+}				switch_body
+			'}' pop_scope			{
+	g_hash_table_remove (__IDL_structunion_ht, $2);
+	$$ = $<tree>8;
+	IDL_TYPE_UNION ($$).switch_body = $9;
+	IDL_NODE_UP (IDL_TYPE_UNION ($$).switch_body) = $$;
+}
 	;
 
 switch_type_spec:	integer_type
@@ -599,7 +598,18 @@ case_stmt:		case_label_list
 			element_spec check_semicolon	{ $$ = IDL_case_stmt_new ($1, $2); }
 	;
 
-element_spec:		type_spec declarator		{ $$ = IDL_member_new ($1, list_start ($2, TRUE)); }
+element_spec:		type_spec declarator		{
+	char *s;
+
+	$$ = IDL_member_new ($1, list_start ($2, TRUE));
+	if (IDL_NODE_TYPE ($1) == IDLN_IDENT &&
+	    g_hash_table_lookup (__IDL_structunion_ht, $1)) {
+		s = IDL_ns_ident_to_qstring ($2, "::", 0);
+		yyerrorv ("Member `%s'", s);
+		do_token_error (IDL_NODE_UP ($1), "recurses", TRUE);
+		g_free (s);
+	}
+}
 	;
 
 case_label_list:	case_label			{ $$ = list_start ($1, FALSE); }
@@ -646,9 +656,22 @@ is_readonly:		/* empty */			{ $$ = FALSE; }
 |			TOK_READONLY			{ $$ = TRUE; }
 	;
 
-attr_dcl:		is_readonly TOK_ATTRIBUTE
+attr_dcl:		z_props
+			is_readonly
+			TOK_ATTRIBUTE
 			param_type_spec
-			simple_declarator_list		{ $$ = IDL_attr_dcl_new ($1, $3, $4); }
+			simple_declarator_list		{
+	IDL_tree_node node;
+	IDL_tree p, dcl;
+
+	$$ = IDL_attr_dcl_new ($2, $4, $5);
+	node.properties = $1;
+	for (p = $5; p; p = IDL_LIST (p).next) {
+		dcl = IDL_LIST (p).data;
+		IDL_tree_properties_copy (&node, dcl);
+	}
+	__IDL_free_properties (node.properties);
+}
 	;
 
 param_type_spec:	base_type_spec
@@ -666,15 +689,17 @@ is_oneway:		/* empty */			{ $$ = FALSE; }
 |			TOK_ONEWAY			{ $$ = TRUE; }
 	;
 
-op_dcl:			is_noscript
+op_dcl:			z_props
+			is_noscript
 			is_oneway
 			op_type_spec
 			new_scope parameter_dcls pop_scope
 			is_raises_expr
 			is_context_expr			{
-	$$ = IDL_op_dcl_new ($2, $3, $4, $5.tree, $7, $8);
-	IDL_OP_DCL ($$).f_noscript = $1;
-	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($5.data);
+	$$ = IDL_op_dcl_new ($3, $4, $5, $6.tree, $8, $9);
+	IDL_OP_DCL ($$).f_noscript = $2;
+	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($6.data);
+	assign_props (IDL_OP_DCL ($$).ident, $1);
 }
 	;
 
@@ -708,12 +733,12 @@ param_dcl_list:		param_dcl			{ $$ = list_start ($1, TRUE); }
 			check_comma param_dcl		{ $$ = list_chain ($1, $3, TRUE); }
 	;
 
-param_dcl:		param_attribute
-			z_props
+param_dcl:		z_props
+			param_attribute
 			param_type_spec
 			simple_declarator		{
-	$$ = IDL_param_dcl_new ($1, $3, $4);
-	assign_props ($$, $2);
+	$$ = IDL_param_dcl_new ($2, $3, $4);
+	assign_props (IDL_PARAM_DCL ($$).simple_declarator, $1);
 }
 	;
 
@@ -874,13 +899,15 @@ member_list:		member				{ $$ = list_start ($1, TRUE); }
 
 member:			type_spec declarator_list
 			check_semicolon			{
+	char *s;
+
 	$$ = IDL_member_new ($1, $2);
 	if (IDL_NODE_TYPE ($1) == IDLN_IDENT &&
-	    g_hash_table_lookup (struct_rdht, $1)) {
-		char *s = IDL_ns_ident_to_qstring (IDL_LIST ($2).data, "::", 0);
-		char *s2 = IDL_ns_ident_to_qstring ($1, "::", 0);
-		yyerrorv ("Member `%s' recurses structure `%s'", s, s2);
-		free (s); free (s2);
+	    g_hash_table_lookup (__IDL_structunion_ht, $1)) {
+		s = IDL_ns_ident_to_qstring (IDL_LIST ($2).data, "::", 0);
+		yyerrorv ("Member `%s'", s);
+		do_token_error (IDL_NODE_UP ($1), "recurses", TRUE);
+		g_free (s);
 	}
 }
 	;
@@ -1009,17 +1036,27 @@ simple_declarator_list:	simple_declarator		{ $$ = list_start ($1, TRUE); }
 	;
 
 array_declarator:	new_ident
-			fixed_array_size_list		{ $$ = IDL_type_array_new ($1, $2); }
+			fixed_array_size_list		{
+	IDL_tree p;
+	int i;
+
+	$$ = IDL_type_array_new ($1, $2);
+	for (i = 1, p = $2; p; ++i, p = IDL_LIST (p).next)
+		if (!IDL_LIST (p).data) {
+			char *s = IDL_ns_ident_to_qstring ($1, "::", 0);
+			yyerrorv ("Missing value in dimension %d of array `%s'", i, s);
+			g_free (s);
+		}
+}
 	;
 
-fixed_array_size_list:	fixed_array_size		{ $$ = list_start ($1, TRUE); }
+fixed_array_size_list:	fixed_array_size		{ $$ = list_start ($1, FALSE); }
 |			fixed_array_size_list
-			fixed_array_size		{ $$ = list_chain ($1, $2, TRUE); }
+			fixed_array_size		{ $$ = list_chain ($1, $2, FALSE); }
 	;
 
-fixed_array_size:	'[' 
-			positive_int_const 
-			']'				{ $$ = $2; }
+fixed_array_size:	'[' positive_int_const ']'	{ $$ = $2; }
+|			'[' ']'				{ $$ = NULL; }
 	;
 
 prop_hash:		TOK_PROP_KEY
@@ -1230,7 +1267,7 @@ positive_int_const:	const_exp			{
 z_declspec:		/* empty */			{ $$ = 0; }
 |			TOK_DECLSPEC			{
 	$$ = IDL_parse_declspec ($1);
-	free ($1);
+	g_free ($1);
 }
 	;
 
@@ -1276,23 +1313,23 @@ codefrag:		TOK_CODEFRAG
 
 dqstring_cat:		dqstring
 |			dqstring_cat dqstring		{
-	char *catstr = (char *) malloc (strlen ($1) + strlen ($2) + 1);
-	strcpy (catstr, $1); free ($1);
-	strcat (catstr, $2); free ($2);
+	char *catstr = g_malloc (strlen ($1) + strlen ($2) + 1);
+	strcpy (catstr, $1); g_free ($1);
+	strcat (catstr, $2); g_free ($2);
 	$$ = catstr;
 }
 	;
 
 dqstring:		TOK_DQSTRING			{
 	char *s = IDL_do_escapes ($1);
-	free ($1);
+	g_free ($1);
 	$$ = s;
 }
 	;
 
 sqstring:		TOK_SQSTRING			{
 	char *s = IDL_do_escapes ($1);
-	free ($1);
+	g_free ($1);
 	$$ = s;
 }
 	;
@@ -1336,7 +1373,7 @@ char *IDL_ns_ident_make_repo_id (IDL_ns ns, IDL_tree p,
 			  q,
 			  major ? *major : 1,
 			  minor ? *minor : 0);
-	free (q);
+	g_free (q);
 
 	q = s->str;
 	g_string_free (s, FALSE);
@@ -1366,7 +1403,7 @@ static const char *get_name_token (const char *s, char **tok)
 		break;
 	case 1:		/* Scope */
 		if (strncmp (s, "::", 2) == 0) {
-			char *r = (char *) malloc (3);
+			char *r = g_malloc (3);
 			strcpy (r, "::");
 			*tok = r;
 			return s + 2;
@@ -1377,7 +1414,7 @@ static const char *get_name_token (const char *s, char **tok)
 		if (isalnum (*s) || *s == '_')
 			++s;
 		else {
-			char *r = (char *) malloc (s - begin + 1);
+			char *r = g_malloc (s - begin + 1);
 			strncpy (r, begin, s - begin + 1);
 			r[s - begin] = 0;
 			*tok = r;
@@ -1401,7 +1438,7 @@ static IDL_tree IDL_ns_pragma_parse_name (IDL_ns ns, const char *s)
 				/* Globally scoped */
 				p = IDL_NS (ns).file;
 			}
-			free (tok);
+			g_free (tok);
 		} else {
 			IDL_tree ident = IDL_ident_new (tok);
 			p = IDL_ns_lookup_this_scope (__IDL_root_ns, p, ident, NULL);
@@ -1440,7 +1477,7 @@ void IDL_ns_ID (IDL_ns ns, const char *s)
 	ident = IDL_GENTREE (p).data;
 
 	if (IDL_IDENT_REPO_ID (ident) != NULL)
-		free (IDL_IDENT_REPO_ID (ident));
+		g_free (IDL_IDENT_REPO_ID (ident));
 
 	IDL_IDENT_REPO_ID (ident) = g_strdup (id);
 }
@@ -1478,7 +1515,7 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 			s = g_string_new (NULL);
 			g_string_sprintf (s, "%s:%d.%d",
 					  IDL_IDENT_REPO_ID (ident), major, minor);
-			free (IDL_IDENT_REPO_ID (ident));
+			g_free (IDL_IDENT_REPO_ID (ident));
 			IDL_IDENT_REPO_ID (ident) = s->str;
 			g_string_free (s, FALSE);
 		} else if (__IDL_is_parsing)
@@ -1572,16 +1609,17 @@ void IDL_file_set (const char *filename, int line)
 #ifdef HAVE_CPP_PIPE_STDIN
 			!strlen (__IDL_cur_filename)
 #else
+			__IDL_tmp_filename &&
 			!strcmp (__IDL_cur_filename, __IDL_tmp_filename)
 #endif
 			) {
-			free (__IDL_cur_filename);
+			g_free (__IDL_cur_filename);
 			__IDL_cur_filename = g_strdup (__IDL_real_filename);
 		}
 
 		if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
 						  (gpointer) &orig, (gpointer) &fi)) {
-			free (__IDL_cur_filename);
+			g_free (__IDL_cur_filename);
 			__IDL_cur_filename = orig;
 			__IDL_cur_fileinfo = fi;
 		} else {

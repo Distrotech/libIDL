@@ -1,3 +1,40 @@
+* Status as of 2/21/99
+
+Version 0.6.0 Released
+
+*** Important Changes in 0.6.0 from 0.5.0 which may affect code ***
+
+- All memory allocated which is received from libIDL must be freed
+with glib free routines, i.e. g_free.  For instance the value from
+IDL_ns_ident_to_qstring should be freed with g_free.
+
+- IDL_tree_func now includes a parent node between the root tree and
+the data pointer, since it can be different in the case of a
+predefined identifier referenced in a different place.  Be sure to
+update your callbacks for 0.6.
+
+- Do not rely on IDLN_* enumeration ordering.  An alternative method
+for using jumptables is mentioned in the IDL header file.
+
+
+** New Features for libIDL 0.6.0
+
+- Overhauled versioning system, with support for libIDL-config, an
+AM_PATH_LIBIDL Automake macro, and C version defines.
+
+- New functions, including node properties and namespace functions.
+IDL_parse_filename_with_input was added to facilitate porting to
+platforms which don't have a readily available CPP (e.g. Win32).
+
+- XPIDL support is now in place (optionally activated with a parse
+flag).
+
+- Additional support for node suppression with #pragma inhibit.
+
+- Support for Win32.
+
+- Many bug fixes.
+
 * Status as of 8/17/98
 
 ** Just about everything is working now, except for a few small

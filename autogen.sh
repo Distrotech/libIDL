@@ -34,7 +34,7 @@ if test "$DIE" -eq 1; then
 	exit 1
 fi
 
-(test -f $srcdir/IDL.h) || {
+(test -f $srcdir/IDL.h.new.in) || {
 	echo "You must run this script in the top-level libIDL directory"
 	exit 1
 }
@@ -57,5 +57,4 @@ done
 echo "Running ./configure --enable-maintainer-mode" "$@"
 $srcdir/configure --enable-maintainer-mode "$@"
 
-echo 
 echo "Now type 'make' to compile libIDL."

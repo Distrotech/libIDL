@@ -4,21 +4,21 @@
 
     Include wide character support before this, if necessary.
 
-    Copyright (C) 1998 Andrew T. Veliath
+    Copyright (C) 1998, 1999 Andrew T. Veliath
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
     $Id$
 
@@ -26,13 +26,16 @@
 #ifndef __IDL_H
 #define __IDL_H
 
-#ifndef __G_LIB_H__
-#  error must include glib.h before this file
-#endif /* __G_LIB_H__ */
+#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* version */
+#define LIBIDL_MAJOR_VERSION		0
+#define LIBIDL_MINOR_VERSION		6
+#define LIBIDL_MICRO_VERSION		0
 
 /* miscellaneous constants */
 #define IDL_SUCCESS			0
@@ -511,7 +514,7 @@ typedef enum {
 	
 	IDLN_LAST
 } IDL_tree_type;
-extern const char *			IDL_tree_type_names[];
+IDL_IMPORT const char *			IDL_tree_type_names[];
 
 struct _IDL_tree_node {
 	IDL_tree_type _type;
@@ -722,8 +725,11 @@ extern void		IDL_tree_property_set		(IDL_tree tree,
 extern gboolean		IDL_tree_property_remove	(IDL_tree tree,
 							 const char *key);
 
+extern void		IDL_tree_properties_copy	(IDL_tree from_tree,
+							 IDL_tree to_tree);
+
 extern void		IDL_tree_walk			(IDL_tree p,
-							 IDL_tree parent,
+							 IDL_tree scope,
 							 IDL_tree_func pre_tree_func,
 							 IDL_tree_func post_tree_func,
 							 gpointer user_data);

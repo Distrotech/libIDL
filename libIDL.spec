@@ -1,4 +1,4 @@
-%define version 0.5.9
+%define version 0.6.0
 %define release SNAP
 
 Summary:   IDL parsing library
@@ -8,10 +8,9 @@ Release:   %{release}
 Source:    libIDL-%PACKAGE_VERSION.tar.gz
 Vendor:    Andrew T. Veliath <andrewtv@usa.net>
 URL:       http://www.rpi.edu/~veliaa/libIDL
-Copyright: GPL
+Copyright: LGPL
 Group:     Libraries
 Prereq:    /sbin/install-info
-Requires:  gcc, glib >= 1.1.4
 Prefix:    /usr
 Docdir:    %prefix/doc
 BuildRoot: /var/tmp/libIDL-%{version}-root
@@ -63,12 +62,16 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc ChangeLog AUTHORS README* NEWS BUGS
+%doc COPYING ChangeLog AUTHORS
+%doc README* NEWS BUGS tstidl.c
 %prefix/lib/lib*.so.*.*
 
 %files devel
 %defattr(-,root,root)
+%prefix/bin/*
+%prefix/lib/*.sh
 %prefix/lib/lib*.a
 %prefix/lib/lib*.so
 %prefix/info/libIDL.info.gz
 %prefix/include/*
+%prefix/share/aclocal/*

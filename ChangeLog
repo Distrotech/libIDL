@@ -1,3 +1,38 @@
+1999-02-21  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.0.
+
+	* Improvements to structure and union handling, IDL_tree_to_IDL,
+	and IDL_tree_walk.
+
+	* Fully convert to glib memory routines.
+
+1999-02-19  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* parser.y: Properties for parameters moved before direction
+	keyword.
+
+	* Configuration and versioning system overhauled.
+
+1999-02-18  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.5.10.
+
+	* util.c (IDL_tree_properties_copy): New function.
+	(IDL_parse_filename_with_input): Mostly ignore
+	HAVE_CPP_PIPE_STDIN.
+
+	* parser.y: Make codefrags work inside interfaces (only at outer
+	level). Allow properties for operations and attributes, and change
+	all XPIDL node properties to reside on the ident node.
+
+1999-02-12  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* parser.y: Allow forward decls to be suppressed as well.
+
+	* util.c (yyerrorl, yywarningl): Only call g_basename if we aren't
+	piping input from CPP.
+
 1999-02-11  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.5.9.

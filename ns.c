@@ -2,21 +2,21 @@
 
     ns.c (libIDL namespace functions)
 
-    Copyright (C) 1998 Andrew T. Veliath
+    Copyright (C) 1998, 1999 Andrew T. Veliath
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
     $Id$
 
@@ -37,12 +37,11 @@ IDL_ns IDL_ns_new (void)
 {
 	IDL_ns ns;
 
-	ns = (IDL_ns) malloc (sizeof (struct _IDL_ns));
+	ns = g_new0 (struct _IDL_ns, 1);
 	if (ns == NULL) {
 		yyerror ("IDL_ns_new: memory exhausted");
 		return NULL;
 	}
-	memset (ns, 0, sizeof (struct _IDL_ns));
 
 	IDL_NS (ns).global = IDL_gentree_new (IDL_ident_hash,
 					      IDL_ident_equal,
@@ -70,7 +69,7 @@ void IDL_ns_free (IDL_ns ns)
 	g_hash_table_destroy (IDL_NS (ns).filename_hash);
 	IDL_tree_free (IDL_NS (ns).global);
 
-	free (ns);
+	g_free (ns);
 }
 
 #define IDL_NS_ASSERTS		do {						\
@@ -101,11 +100,11 @@ int IDL_ns_prefix (IDL_ns ns, const char *s)
 		r = g_strdup (s);
 
 	l = strlen (r);
-	if (r[l - 1] == '"')
+	if (l && r[l - 1] == '"')
 		r[l - 1] = 0;
 
 	if (IDL_GENTREE (IDL_NS (ns).current)._cur_prefix)
-		free (IDL_GENTREE (IDL_NS (ns).current)._cur_prefix);
+		g_free (IDL_GENTREE (IDL_NS (ns).current)._cur_prefix);
 
 	IDL_GENTREE (IDL_NS (ns).current)._cur_prefix = r;
 
@@ -121,12 +120,9 @@ IDL_tree IDL_ns_resolve_this_scope_ident (IDL_ns ns, IDL_tree scope, IDL_tree id
 	p = scope;
 
 	while (p != NULL) {
-
 		q = IDL_ns_lookup_this_scope (ns, p, ident, NULL);
-		
 		if (q != NULL)
 			return q;
-
 		p = IDL_NODE_UP (p);
 	}
 
@@ -168,7 +164,7 @@ IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gb
 	assert (IDL_NODE_TYPE (q) == IDLN_LIST);
 	for (; q != NULL; q = IDL_LIST (q).next) {
 		IDL_tree r;
-		
+
 		assert (IDL_LIST (q).data != NULL);
 		assert (IDL_NODE_TYPE (IDL_LIST (q).data) == IDLN_IDENT);
 		assert (IDL_IDENT_TO_NS (IDL_LIST (q).data) != NULL);
@@ -180,11 +176,11 @@ IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gb
 			ident, NULL, (gpointer)&p)) {
 			assert (IDL_GENTREE (p).data != NULL);
 			assert (IDL_NODE_TYPE (IDL_GENTREE (p).data) == IDLN_IDENT);
-			
+
 			/* This needs more work, it won't do full ambiguity detection */
 			if (conflict && !is_inheritance_conflict (p))
 				*conflict = FALSE;
-			
+
 			return p;
 		}
 
@@ -318,15 +314,12 @@ char *IDL_ns_ident_to_qstring (IDL_tree ns_ident, const char *join, int levels)
 
 	assert (start_level >= 0 && start_level < count);
 
-	s = (char *)malloc (len + 1);
-	
+	s = g_malloc (len + 1);
 	if (s == NULL) {
 		IDL_tree_free (l);
 		return NULL;
 	}
-
 	s[0] = '\0';
-
 	for (q = l; q != NULL; q = IDL_LIST (q).next) {
 		IDL_tree i = IDL_LIST (q).data;
 		if (start_level > 0) {
@@ -351,25 +344,70 @@ int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 	g_return_val_if_fail (ns != NULL, 1);
 	g_return_val_if_fail (ident != NULL, 1);
 
-	while (parent && IDL_NODE_TYPE (parent) == IDLN_LIST)
-		parent = IDL_NODE_UP (parent);
-
-	if (parent == NULL ||
-	    (scope_here = IDL_tree_get_scope (parent)) == NULL ||
-	    (scope_ident = IDL_tree_get_scope (ident)) == NULL)
+#ifdef DEBUGNS
+	if (parent == NULL)
 		return 1;
+
+	debugf ("Start type: %s", IDL_NODE_TYPE_NAME (parent));
+#endif
+	while (parent && !IDL_NODE_IS_SCOPED (parent)) {
+		parent = IDL_NODE_UP (parent);
+#ifdef DEBUGNS
+		if (parent)
+			debugf ("Type up: %s", IDL_NODE_TYPE_NAME (parent));
+#endif
+	}
+	if (parent == NULL) {
+#ifdef DEBUGNS
+		debugf ("No end type");
+#endif
+		return 1;
+	}
+#ifdef DEBUGNS
+	debugf ("End type: %s", IDL_NODE_TYPE_NAME (parent));
+#endif
+
+	if ((scope_here = IDL_tree_get_scope (parent)) == NULL ||
+	    (scope_ident = IDL_tree_get_scope (ident)) == NULL) {
+#ifdef DEBUGNS
+		g_warning ("Failed");
+#endif
+		return 1;
+	}
 
 	assert (IDL_NODE_TYPE (scope_here) == IDLN_GENTREE);
 	assert (IDL_NODE_TYPE (scope_ident) == IDLN_GENTREE);
 
 	for (levels = 1; scope_ident;
 	     ++levels, scope_ident = IDL_NODE_UP (scope_ident)) {
+#ifdef DEBUGNS
+		IDL_tree scope;
+		char *s, *s3;
 
+		if (scope_ident == IDL_NS (ns).global)
+			break;
+		s = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_ident).data, "::", 0);
+		s3 = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_here).data, "::", 0);
+		debugf ("Searching for ident %s from scope %s", s, s3);
+		g_free (s); g_free (s3);
+#endif
 		p = IDL_ns_resolve_this_scope_ident (
 			ns, scope_here, IDL_GENTREE (scope_ident).data);
-		if (p)
+		if (p == scope_ident)
 			return levels;
+#ifdef DEBUGNS
+		if (p) {
+			char *s2 = IDL_ns_ident_to_qstring (IDL_GENTREE (p).data, "::",
+							    0);
+			debugf ("Rejected scope %s", s2);
+			g_free (s2);
+		}
+#endif
 	}
+
+#ifdef DEBUGNS
+	debugf ("Fall through");
+#endif
 
 	return 1;
 }
@@ -412,7 +450,7 @@ static gboolean heap_insert_ident (IDL_tree interface_ident, GTree *heap, IDL_tr
 		IDL_tree_error (p, "%s `%s' conflicts with", what1, i1);
 		IDL_tree_error (any, "%s `%s'", what2, i2);
 
-		free (newi); free (i1); free (i2);
+		g_free (newi); g_free (i1); g_free (i2);
 
 		return FALSE;
 	}
