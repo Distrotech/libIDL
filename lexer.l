@@ -32,10 +32,19 @@
 #include "IDL.h"
 #include "parser.h"
 
+#define tokreturn(token)					\
+	do {							\
+		__IDL_prev_token_line = __IDL_cur_token_line;	\
+		__IDL_cur_token_line = __IDL_cur_line;		\
+		return token;					\
+	} while (0)
+
 extern void		__IDL_do_pragma(const char *s);
 #ifdef YYDEBUG
 extern int		yydebug;
 #endif
+int			__IDL_prev_token_line;
+int			__IDL_cur_token_line;
 %}
 
 whitespace		[ \t]*
@@ -88,81 +97,81 @@ dqstring		\"[^\"\n]*[\"\n]
 {whitespace}
 {b8_int}		{
 	sscanf(yytext, IDL_B8_FMT, &yylval.integer);
-	return TOK_INTEGER;
+	tokreturn(TOK_INTEGER);
 }
 {b10_int}		{
 	sscanf(yytext, IDL_UB10_FMT, &yylval.integer);
-	return TOK_INTEGER;
+	tokreturn(TOK_INTEGER);
 }
 {b16_int}		{
 	sscanf(yytext + 2, IDL_B16_FMT, &yylval.integer);
-	return TOK_INTEGER;
+	tokreturn(TOK_INTEGER);
 }
 {fixed_lit}		{
 	yylval.str = strdup(yytext);
-	return TOK_FIXEDP;
+	tokreturn(TOK_FIXEDP);
 }
 {float_lit}		{
 	yylval.floatp = atof(yytext);
-	return TOK_FLOATP;
+	tokreturn(TOK_FLOATP);
 }
-any			return TOK_ANY;
-attribute		return TOK_ATTRIBUTE;
-boolean			return TOK_BOOLEAN;
-case			return TOK_CASE;
-char			return TOK_CHAR;
-const			return TOK_CONST;
-context			return TOK_CONTEXT;
-default			return TOK_DEFAULT;
-double			return TOK_DOUBLE;
-enum			return TOK_ENUM;
-exception		return TOK_EXCEPTION;
-FALSE			return TOK_FALSE;
-fixed			return TOK_FIXED;
-float			return TOK_FLOAT;
-in			return TOK_IN;
-inout			return TOK_INOUT;
-interface		return TOK_INTERFACE;
-long			return TOK_LONG;
-module			return TOK_MODULE;
-native			return TOK_NATIVE;
-octet			return TOK_OCTET;
-oneway			return TOK_ONEWAY;
-out			return TOK_OUT;
-raises			return TOK_RAISES;
-readonly		return TOK_READONLY;
-sequence		return TOK_SEQUENCE;
-short			return TOK_SHORT;
-string			return TOK_STRING;
-struct			return TOK_STRUCT;
-switch			return TOK_SWITCH;
-TRUE			return TOK_TRUE;
-typedef			return TOK_TYPEDEF;
-unsigned		return TOK_UNSIGNED;
-union			return TOK_UNION;
-void			return TOK_VOID;
-wchar			return TOK_WCHAR;
-wstring			return TOK_WSTRING;
-::			return TOK_OP_SCOPE;
-\>\>			return TOK_OP_SHR;
-\<\<			return TOK_OP_SHL;
+any			tokreturn(TOK_ANY);
+attribute		tokreturn(TOK_ATTRIBUTE);
+boolean			tokreturn(TOK_BOOLEAN);
+case			tokreturn(TOK_CASE);
+char			tokreturn(TOK_CHAR);
+const			tokreturn(TOK_CONST);
+context			tokreturn(TOK_CONTEXT);
+default			tokreturn(TOK_DEFAULT);
+double			tokreturn(TOK_DOUBLE);
+enum			tokreturn(TOK_ENUM);
+exception		tokreturn(TOK_EXCEPTION);
+FALSE			tokreturn(TOK_FALSE);
+fixed			tokreturn(TOK_FIXED);
+float			tokreturn(TOK_FLOAT);
+in			tokreturn(TOK_IN);
+inout			tokreturn(TOK_INOUT);
+interface		tokreturn(TOK_INTERFACE);
+long			tokreturn(TOK_LONG);
+module			tokreturn(TOK_MODULE);
+native			tokreturn(TOK_NATIVE);
+octet			tokreturn(TOK_OCTET);
+oneway			tokreturn(TOK_ONEWAY);
+out			tokreturn(TOK_OUT);
+raises			tokreturn(TOK_RAISES);
+readonly		tokreturn(TOK_READONLY);
+sequence		tokreturn(TOK_SEQUENCE);
+short			tokreturn(TOK_SHORT);
+string			tokreturn(TOK_STRING);
+struct			tokreturn(TOK_STRUCT);
+switch			tokreturn(TOK_SWITCH);
+TRUE			tokreturn(TOK_TRUE);
+typedef			tokreturn(TOK_TYPEDEF);
+unsigned		tokreturn(TOK_UNSIGNED);
+union			tokreturn(TOK_UNION);
+void			tokreturn(TOK_VOID);
+wchar			tokreturn(TOK_WCHAR);
+wstring			tokreturn(TOK_WSTRING);
+::			tokreturn(TOK_OP_SCOPE);
+\>\>			tokreturn(TOK_OP_SHR);
+\<\<			tokreturn(TOK_OP_SHL);
 {ident}			{
 #ifdef YYDEBUG
 	if (yydebug)
 		printf("lexer.l: ident '%s'\n", yytext);
 #endif
 	yylval.str = strdup(yytext);
-	return TOK_IDENT;
+	tokreturn(TOK_IDENT);
 }
 {sqstring}		{
 	yylval.str = strdup(yytext + 1);
 	yylval.str[strlen(yytext) - 2] = 0;
-	return TOK_SQSTRING;
+	tokreturn(TOK_SQSTRING);
 }
 {dqstring}		{
 	yylval.str = strdup(yytext + 1);
 	yylval.str[strlen(yytext) - 2] = 0;
-	return TOK_DQSTRING;
+	tokreturn(TOK_DQSTRING);
 }
 {newline}		{
 	++__IDL_cur_line;
@@ -172,13 +181,15 @@ wstring			return TOK_WSTRING;
 		       __IDL_cur_filename, __IDL_cur_line);
 #endif
 }
-.			return yytext[0];
+.			tokreturn(yytext[0]);
 
 %%
 
 void __IDL_lex_init(void)
 {
 	__IDL_cur_line = 0;
+	__IDL_cur_token_line = 0;
+	__IDL_prev_token_line = 0;
 	__IDL_cur_filename = NULL;
 }
 

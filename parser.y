@@ -193,9 +193,13 @@ check_semicolon:	';'
 	dienow = get_error_strings(p, &what, &who);
 	
 	if (who && *who)
-		yyerrorv("Missing semicolon after %s `%s'", what, who);
+		yyerrorlv("Missing semicolon after %s `%s'",
+			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  what, who);
 	else
-		yyerrorv("Missing semicolon after %s", what);
+		yyerrorlv("Missing semicolon after %s",
+			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  what);
 		
 	idl_is_okay = IDL_FALSE;
 
@@ -215,9 +219,13 @@ check_comma:		','
 	dienow = get_error_strings(p, &what, &who);
 
 	if (who && *who)
-		yyerrorv("Missing comma after %s `%s'", what, who);
+		yyerrorlv("Missing comma after %s `%s'",
+			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  what, who);
 	else
-		yyerrorv("Missing comma after %s", what);
+		yyerrorlv("Missing comma after %s",
+			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  what);
 
 	idl_is_okay = IDL_FALSE;
 
@@ -1135,7 +1143,7 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 
 static int get_error_strings(IDL_tree p, char **what, char **who)
 {
-	int rv = 0;
+	int dienow = 0;
 
 	assert(what != NULL);
 	assert(who != NULL);
@@ -1179,7 +1187,7 @@ static int get_error_strings(IDL_tree p, char **what, char **who)
 		assert(IDL_LIST(p)._tail != NULL);
 		if (!IDL_LIST(IDL_LIST(p)._tail).data)
 			break;
-		rv = get_error_strings(IDL_LIST(IDL_LIST(p)._tail).data, what, who);
+		dienow = get_error_strings(IDL_LIST(IDL_LIST(p)._tail).data, what, who);
 		break;
 	case IDLN_ATTR_DCL:
 		*what = "interface attribute";
@@ -1193,7 +1201,6 @@ static int get_error_strings(IDL_tree p, char **what, char **who)
 		assert(IDL_PARAM_DCL(p).simple_declarator != NULL);
 		assert(IDL_NODE_TYPE(IDL_PARAM_DCL(p).simple_declarator) = IDLN_IDENT);
 		*who = IDL_IDENT(IDL_PARAM_DCL(p).simple_declarator).str;
-		rv = 1;
 		break;
 	case IDLN_CONST_DCL:
 		*what = "constant declaration for";
@@ -1224,7 +1231,7 @@ static int get_error_strings(IDL_tree p, char **what, char **who)
 		break;
 	}
 
-	return rv;
+	return dienow;
 }
 
 void __IDL_tree_print(IDL_tree p)

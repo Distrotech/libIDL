@@ -55,5 +55,7 @@ extern char *		__IDL_tmp_filename;
 extern const char *	__IDL_real_filename;
 extern char *		__IDL_cur_filename;
 extern int		__IDL_cur_line;
+extern int		__IDL_prev_token_line;
+extern int		__IDL_cur_token_line;
 
 #endif /* __UTIL_H */
