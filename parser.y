@@ -184,26 +184,48 @@ definition_list:	definition			{ $$ = list_start($1); }
 check_semicolon:	';'
 |			/* empty */			{
 	IDL_tree p = $<tree>0;
-	char *what;
+	char *what, *who = NULL;
 
 	assert(p != NULL);
 
 	switch (IDL_NODE_TYPE(p)) {
-	case IDLN_TYPE_DCL: what = "type"; break;
-	case IDLN_CONST_DCL: what = "constant"; break;
-	case IDLN_EXCEPT_DCL: what = "exception"; break;
-	case IDLN_FORWARD_DCL: what = "forward declaration"; break;
-	case IDLN_INTERFACE: what = "interface"; break;
-	case IDLN_MODULE: what = "module"; break;
-	case IDLN_ATTR_DCL: what = "attribute"; break;
-	case IDLN_OP_DCL: what = "operation"; break;
-	case IDLN_MEMBER: what = "member"; break;
+	case IDLN_TYPE_DCL: what = "type definition"; break;
+	case IDLN_ATTR_DCL: what = "interface attribute"; break;
+	case IDLN_MEMBER: what = "member declaration"; break;
+	case IDLN_CONST_DCL:
+		what = "constant declaration for";
+		who = IDL_IDENT(IDL_CONST_DCL(p).ident).str;
+		break;
+	case IDLN_EXCEPT_DCL:
+		what = "exception";
+		who = IDL_IDENT(IDL_EXCEPT_DCL(p).ident).str;
+		break;
+	case IDLN_OP_DCL:
+		what = "interface operation";
+		who = IDL_IDENT(IDL_OP_DCL(p).ident).str;
+		break;
+	case IDLN_MODULE:
+		what = "module";
+		who = IDL_IDENT(IDL_MODULE(p).ident).str;
+		break;
+	case IDLN_FORWARD_DCL:
+		what = "forward declaration";
+		who = IDL_IDENT(IDL_FORWARD_DCL(p).ident).str;
+		break;
+	case IDLN_INTERFACE:
+		what = "interface";
+		who = IDL_IDENT(IDL_INTERFACE(p).ident).str;
+		break;
 	default:
 		what = "unknown (internal error)";
 		break;
 	}
 	
-	yyerrorv("Missing semicolon after %s", what);
+	if (who && *who)
+		yyerrorv("Missing semicolon after %s `%s'", what, who);
+	else
+		yyerrorv("Missing semicolon after %s", what);
+		
 	idl_is_okay = IDL_FALSE;
 }
 	;
