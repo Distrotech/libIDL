@@ -282,7 +282,6 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 
 	sprintf (cmd, fmt, cwd, cpp_args ? cpp_args : "", tmpfilename);
 #endif
-
 	input = popen (cmd, "r");
 	free (cmd);
 
