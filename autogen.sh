@@ -22,7 +22,7 @@ DIE=0
 	DIE=1
 }
 
-(automake --version) < /dev/null > /dev/null 2>&1 || {
+(automake-1.4 --version) < /dev/null > /dev/null 2>&1 || {
 	echo
 	echo "You must have automake installed to compile libIDL."
 	echo "Get ftp://ftp.cygnus.com/pub/home/tromey/automake-1.2d.tar.gz"
@@ -49,8 +49,8 @@ do
   echo processing $i
   (cd $i; \
     libtoolize --copy --force; \
-    aclocal $ACLOCAL_FLAGS; \
-    automake --add-missing --copy; \
+    aclocal-1.4 $ACLOCAL_FLAGS; \
+    automake-1.4 --add-missing --copy; \
     autoconf)
 done
 
