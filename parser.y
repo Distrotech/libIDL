@@ -2408,10 +2408,9 @@ IDL_tree IDL_interface_new(IDL_tree ident, IDL_tree inheritance_spec, IDL_tree b
 {
 	IDL_tree p = IDL_node_new(IDLN_INTERFACE);
 
-	/* If there was a forward declaration, then reset the up node
-	   so that we can assign the actual interface */
+	/* Make sure the up node points the the interface */
 	if (ident && IDL_NODE_UP(ident) &&
-	    IDL_NODE_TYPE(IDL_NODE_UP(ident)) == IDLN_FORWARD_DCL)
+	    IDL_NODE_TYPE(IDL_NODE_UP(ident)) != IDLN_INTERFACE)
 		IDL_NODE_UP(ident) = NULL;
 	assign_up_node(p, ident);
 	assign_up_node(p, inheritance_spec);
