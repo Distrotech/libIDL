@@ -377,14 +377,18 @@ extern IDL_tree		IDL_case_stmt_new		(IDL_tree labels,
 
 struct _IDL_INTERFACE {
 	IDL_tree ident;
-	IDL_tree infotag;		/* XPIDL extension */
 	IDL_tree inheritance_spec;
 	IDL_tree body;
+	/* properties is an XPIDL extension.  It is a hash table of
+	 * case-insensitive string keys to string values. */
+	GHashTable *properties;
 };
 #define IDL_INTERFACE(a)		IDL_CHECK_CAST(a, IDLN_INTERFACE, idl_interface)
 extern IDL_tree		IDL_interface_new		(IDL_tree ident,
 							 IDL_tree inheritance_spec,
 							 IDL_tree body);
+extern const char *	IDL_interface_get_property	(IDL_tree interface,
+							 const char *key);
 
 struct _IDL_FORWARD_DCL {
 	IDL_tree ident;

@@ -29,6 +29,13 @@ gboolean print_repo_id (IDL_tree p, gpointer user_data)
 	if (repo_id)
 		printf ("%s\n", repo_id);
 
+	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE) {
+		const char *val;
+
+		val = IDL_interface_get_property (p, "IID");
+		if (val) printf("IID: %s\n", val);
+	}
+	
 	return TRUE;
 }
 

@@ -1,5 +1,12 @@
 1998-11-30  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* Interface infotag list turned into a case-insensitive property
+	hash table with improved parsing.  If an IID is provided in the
+	property list, IDL_interface_get_property (interface, "IID")
+	should provide the IID, for instance (without the parens).
+	Properties can be any identifier (value) item, separated by commas
+	inside square brackets.
+
 	* Add per-filename state information.
 
 	* #pragma inhibit push/pop added.  The push operation will

@@ -1187,6 +1187,18 @@ IDL_tree IDL_interface_new (IDL_tree ident, IDL_tree inheritance_spec, IDL_tree 
 	return p;
 }
 
+const char *IDL_interface_get_property (IDL_tree interface, const char *key)
+{
+	g_return_val_if_fail (interface != NULL, NULL);
+	g_return_val_if_fail (key != NULL, NULL);
+	g_return_val_if_fail (IDL_NODE_TYPE (interface) == IDLN_INTERFACE, NULL);
+
+	if (!IDL_INTERFACE (interface).properties)
+		return NULL;
+
+	return g_hash_table_lookup (IDL_INTERFACE (interface).properties, key);
+}
+
 IDL_tree IDL_module_new (IDL_tree ident, IDL_tree definition_list)
 {
 	IDL_tree p = IDL_node_new (IDLN_MODULE);
@@ -1519,7 +1531,6 @@ void IDL_tree_walk_in_order (IDL_tree p, IDL_tree_func tree_func, gpointer user_
 
 	case IDLN_INTERFACE:
 		IDL_tree_walk_in_order (IDL_INTERFACE (p).ident, tree_func, user_data);
-		IDL_tree_walk_in_order (IDL_INTERFACE (p).infotag, tree_func, user_data);
 		IDL_tree_walk_in_order (IDL_INTERFACE (p).inheritance_spec, tree_func, user_data);
 		IDL_tree_walk_in_order (IDL_INTERFACE (p).body, tree_func, user_data);
 		break;
@@ -1556,6 +1567,18 @@ static int tree_free_but_this (IDL_tree data, IDL_tree p, IDL_tree this_one)
 	return TRUE;
 }
 
+static void property_free (char *key, char *value)
+{
+	g_free (key);
+	g_free (value);
+}
+
+void __IDL_free_properties (GHashTable *table)
+{
+	g_hash_table_foreach (table, (GHFunc) property_free, NULL);
+	g_hash_table_destroy (table);
+}
+
 /* Free associated node data, regardless of refcounts */
 static void IDL_tree_free_real (IDL_tree p)
 {
@@ -1588,6 +1611,11 @@ static void IDL_tree_free_real (IDL_tree p)
 		for (slist = IDL_IDENT (p).comments; slist; slist = slist->next)
 			free (slist->data);
 		g_slist_free (IDL_IDENT (p).comments);
+		break;
+
+	case IDLN_INTERFACE:
+		if (IDL_INTERFACE (p).properties)
+			__IDL_free_properties (IDL_INTERFACE (p).properties);
 		break;
 
 	default:
@@ -1763,7 +1791,6 @@ void IDL_tree_free (IDL_tree p)
 		
 	case IDLN_INTERFACE:
 		IDL_tree_free (IDL_INTERFACE (p).ident);
-		IDL_tree_free (IDL_INTERFACE (p).infotag);
 		IDL_tree_free (IDL_INTERFACE (p).inheritance_spec);
 		IDL_tree_free (IDL_INTERFACE (p).body);
 		__IDL_tree_free (p);

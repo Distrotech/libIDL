@@ -84,6 +84,7 @@ static int		do_token_error			(IDL_tree p,
 
 %union {
 	IDL_tree tree;
+	GHashTable *hash_table;
 	char *str;
 	IDL_declspec_t declspec;
 	IDL_longlong_t integer;
@@ -138,7 +139,7 @@ static int		do_token_error			(IDL_tree p,
 %token			TOK_WSTRING
 %token <floatp>		TOK_FLOATP
 %token <integer>	TOK_INTEGER
-%token <str>		TOK_DECLSPEC TOK_INFOTAG
+%token <str>		TOK_DECLSPEC TOK_PROP_KEY TOK_PROP_VALUE
 %token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
 
 /* Non-Terminals */
@@ -182,8 +183,6 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		floating_pt_type
 %type <tree>		ident
 %type <tree>		illegal_ident
-%type <tree>		infotag
-%type <tree>		infotag_list
 %type <tree>		integer_lit
 %type <tree>		integer_type
 %type <tree>		interface
@@ -242,10 +241,10 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		wide_string_type
 %type <tree>		xor_expr
 %type <tree>		z_inheritance
-%type <tree>		z_infotags
 %type <tree>		typecode_type
 
 %type <declspec>	z_declspec module_declspec
+%type <hash_table>	z_props prop_hash
 %type <integer>		signed_int unsigned_int is_readonly is_oneway
 %type <paramattr>	param_attribute
 %type <str>		sqstring dqstring dqstring_cat
@@ -363,7 +362,7 @@ interface_catch_ident:	new_or_prev_scope
 	;
 
 interface:		z_declspec
-			z_infotags
+			z_props
 			TOK_INTERFACE
 			interface_catch_ident
 			pop_scope
@@ -404,13 +403,13 @@ interface:		z_declspec
 	/* Check for XPIDL interface properties */
 	if ($2 != NULL) {
 		if (__IDL_flags & IDLF_XPIDL)
-			IDL_INTERFACE ($$).infotag = $2;
+			IDL_INTERFACE ($$).properties = $2;
 		else
-			IDL_tree_free ($2);
+			__IDL_free_properties ($2);
 	}
 }
 |			z_declspec
-			z_infotags
+			z_props
 			TOK_INTERFACE
 			interface_catch_ident
 			pop_scope			{
@@ -912,15 +911,17 @@ fixed_array_size:	'['
 			']'				{ $$ = $2; }
 	;
 
-infotag:		TOK_INFOTAG			{ $$ = IDL_ident_new ($1); }
-|			TOK_IDENT			{
-	yyerror ("XPIDL syntax is not enabled");
-	YYABORT;
+prop_hash:		TOK_PROP_KEY
+			TOK_PROP_VALUE			{
+	$$ = g_hash_table_new (IDL_strcase_hash, IDL_strcase_equal);
+	g_hash_table_insert ($$, $1, $2);
 }
-	;
-
-infotag_list:		infotag				{ $$ = list_start ($1, TRUE); }
-|			infotag_list ',' infotag	{ $$ = list_chain ($1, $3, TRUE); }
+|			prop_hash ','
+			TOK_PROP_KEY
+			TOK_PROP_VALUE			{
+	g_hash_table_insert ($1, $3, $4);
+	$$ = $1;
+}
 	;
 
 ident:			TOK_IDENT			{ $$ = IDL_ident_new ($1); }
@@ -1112,12 +1113,16 @@ z_declspec:		/* empty */			{ $$ = 0; }
 }
 	;
 
-z_infotags:		/* empty */			{ $$ = NULL; }
+z_props:		/* empty */			{ $$ = NULL; }
 |			'['				{
 	/* Enable property scanning */
 	if (__IDL_flags & IDLF_XPIDL)
 		__IDL_flagsi |= IDLFP_XPIDL_PROPERTY;
-}			infotag_list
+	else {
+		yyerror ("XPIDL syntax not enabled");
+		YYABORT;
+	}
+}			prop_hash
 			']'				{
 	/* Disable property scanning */
 	if (__IDL_flags & IDLF_XPIDL)
