@@ -50,39 +50,10 @@ the identifiers in the namespace of the file.
 @example
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <libIDL/IDL.h>
      
-void IDL_ns_print_idents(FILE *o, IDL_tree l)
-@{
-     	if (l == NULL)
-     		return;
-     
-     	assert(IDL_NODE_TYPE(l) == IDLN_LIST);
-     
-     	while (l != NULL) @{
-     		assert(IDL_LIST(l).data != NULL);
-     		assert(IDL_NODE_TYPE(IDL_LIST(l).data) == IDLN_IDENT);
-     		fprintf(o, "::%s", IDL_IDENT(IDL_LIST(l).data).str);
-     		l = IDL_LIST(l).next;
-     	@}
-     	fprintf(o, "\n");
-@}
-     
-void IDL_ns_print_qualified(IDL_tree p)
-@{
-	IDL_tree l;
-
-	if (p == NULL)
-		return;
-
-	l = IDL_ns_qualified_ident_new(p);
-	if (l != NULL) @{
-		IDL_ns_print_idents(stdout, l);
-		IDL_tree_free(l);
-	@}
-@}
-
-void IDL_ns_rcs_traverse(IDL_tree p)
+void walk_ns(IDL_tree p)
 @{
 	if (p == NULL)
 		return;
@@ -91,10 +62,14 @@ void IDL_ns_rcs_traverse(IDL_tree p)
 
 	while (p != NULL) @{
 		if (IDL_GENTREE(p).children == NULL) @{
-			/* node is a leaf */
-			IDL_ns_print_qualified(p);
+			char *s = IDL_ns_ident_to_qstring(p, "::");
+			
+			if (s != NULL)
+				puts(s);
+
+			free(s);
 		@} else
-			IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
+			walk_ns(IDL_GENTREE(p).children);
 		p = IDL_GENTREE(p).siblings;
 	@}
 @}
@@ -116,7 +91,7 @@ int main(int argc, char *argv[])
      	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, 0);
      
      	if (rv == IDL_SUCCESS) @{
-     		IDL_ns_rcs_traverse(IDL_NS(ns).global);
+     		walk_ns(IDL_NS(ns).global);
      		IDL_tree_free(tree);
      		IDL_ns_free(ns);
      	@}
