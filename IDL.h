@@ -493,6 +493,8 @@ extern IDL_tree				IDL_get_parent_node(IDL_tree p,
 							    IDL_tree_type type,
 							    int *scope_levels);
 
+extern int                              IDL_list_length(IDL_tree list);
+
 extern void				IDL_tree_free(IDL_tree root);
 
 extern char *				IDL_do_escapes(const char *s);

@@ -968,6 +968,18 @@ char *IDL_do_escapes(const char *s)
 	return q;
 }
 
+int
+IDL_list_length(IDL_tree list)
+{
+	int retval;
+	IDL_tree curitem;
+	for(curitem = list, retval = 0; curitem;
+	    curitem = IDL_LIST(curitem).next)
+		retval++;
+
+	return retval;
+}
+
 void __IDL_tree_print(IDL_tree p)
 {
 	IDL_tree q, r;
