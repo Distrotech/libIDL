@@ -336,8 +336,6 @@ char *IDL_ns_ident_to_qstring (IDL_tree ns_ident, const char *join, int levels)
 	return s;
 }
 
-/* #define DEBUGNS */
-
 int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 {
 	IDL_tree p, scope_here, scope_ident;
@@ -346,68 +344,26 @@ int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 	g_return_val_if_fail (ns != NULL, 1);
 	g_return_val_if_fail (ident != NULL, 1);
 
-#ifdef DEBUGNS
+	while (parent && !IDL_NODE_IS_SCOPED (parent))
+		parent = IDL_NODE_UP (parent);
+
 	if (parent == NULL)
 		return 1;
 
-	printf ("Start type: %s\n", IDL_NODE_TYPE_NAME (parent));
-#endif
-	while (parent && !IDL_NODE_IS_SCOPED (parent)) {
-		parent = IDL_NODE_UP (parent);
-#ifdef DEBUGNS
-		if (parent)
-			printf ("Type up: %s\n", IDL_NODE_TYPE_NAME (parent));
-#endif
-	}
-	if (parent == NULL) {
-#ifdef DEBUGNS
-		printf ("No end type\n");
-#endif
-		return 1;
-	}
-#ifdef DEBUGNS
-	printf ("End type: %s\n", IDL_NODE_TYPE_NAME (parent));
-#endif
-
 	if ((scope_here = IDL_tree_get_scope (parent)) == NULL ||
-	    (scope_ident = IDL_tree_get_scope (ident)) == NULL) {
-#ifdef DEBUGNS
-		g_warning ("Failed");
-#endif
+	    (scope_ident = IDL_tree_get_scope (ident)) == NULL)
 		return 1;
-	}
 
 	assert (IDL_NODE_TYPE (scope_here) == IDLN_GENTREE);
 	assert (IDL_NODE_TYPE (scope_ident) == IDLN_GENTREE);
 
 	for (levels = 1; scope_ident;
 	     ++levels, scope_ident = IDL_NODE_UP (scope_ident)) {
-#ifdef DEBUGNS
-		char *s, *s3;
-
-		if (scope_ident == IDL_NS (ns).global)
-			break;
-		s = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_ident).data, "::", 0);
-		s3 = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_here).data, "::", 0);
-		printf ("Searching for ident %s from scope %s\n", s, s3);
-		g_free (s); g_free (s3);
-#endif
 		p = IDL_ns_resolve_this_scope_ident (
 			ns, scope_here, IDL_GENTREE (scope_ident).data);
 		if (p == scope_ident)
 			return levels;
-#ifdef DEBUGNS
-		if (p) {
-			char *s2 = IDL_ns_ident_to_qstring (IDL_GENTREE (p).data, "::", 0);
-			printf ("Rejected scope %s\n", s2);
-			g_free (s2);
-		}
-#endif
 	}
-
-#ifdef DEBUGNS
-	printf ("Fall through\n");
-#endif
 
 	return 1;
 }
@@ -493,13 +449,13 @@ static int is_inheritance_conflict (IDL_tree p)
 	return TRUE;
 }
 
-struct insert_heap_cb_data {
+typedef struct {
 	IDL_tree interface_ident;
 	GTree *ident_heap;
 	int insert_conflict;
-};
+} InsertHeapData;
 
-static void insert_heap_cb (IDL_tree ident, IDL_tree p, struct insert_heap_cb_data *data)
+static void insert_heap_cb (IDL_tree ident, IDL_tree p, InsertHeapData *data)
 {
 	if (!is_inheritance_conflict (p))
 		return;
@@ -514,7 +470,7 @@ static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree iden
 					 GTree *ident_heap, GHashTable *visited_interfaces)
 {
 	IDL_tree q, scope;
-	struct insert_heap_cb_data data;
+	InsertHeapData data;
 
 	assert (ident_scope != NULL);
 	assert (IDL_NODE_TYPE (ident_scope) == IDLN_IDENT);

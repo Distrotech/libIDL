@@ -29,7 +29,7 @@ typedef struct {
 } WalkData;
 
 static gboolean
-print_repo_id (IDLTreeFuncData *tfd, WalkData *data)
+print_repo_id (IDL_tree_func_data *tfd, WalkData *data)
 {
 	char *repo_id = NULL;
 	IDL_tree p;
@@ -50,7 +50,7 @@ print_repo_id (IDLTreeFuncData *tfd, WalkData *data)
 }
 
 static gboolean
-print_xpidl_exts (IDLTreeFuncData *tfd, WalkData *data)
+print_xpidl_exts (IDL_tree_func_data *tfd, WalkData *data)
 {
 	IDL_tree p;
 
@@ -82,7 +82,7 @@ print_xpidl_exts (IDLTreeFuncData *tfd, WalkData *data)
 }
 
 static gboolean
-print_ident_comments (IDLTreeFuncData *tfd, WalkData *data)
+print_ident_comments (IDL_tree_func_data *tfd, WalkData *data)
 {
 	GSList *list;
 	IDL_tree p;
@@ -102,7 +102,7 @@ print_ident_comments (IDLTreeFuncData *tfd, WalkData *data)
 }
 
 static gboolean
-print_const_dcls (IDLTreeFuncData *tfd, WalkData *data)
+print_const_dcls (IDL_tree_func_data *tfd, WalkData *data)
 {
 	IDL_tree p;
 
