@@ -24,7 +24,11 @@
 #ifndef __IDL_H
 #define __IDL_H
 
-#include <wchar.h>
+#ifdef __FreeBSD__
+#  include <stddef.h>
+#else /* __FreeBSD__ */
+#  include <wchar.h>
+#endif /* __FreeBSD__ */
 
 #ifdef __cplusplus
 extern "C" {
