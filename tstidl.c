@@ -20,6 +20,20 @@ void IDL_ns_print_idents(FILE *o, IDL_tree l)
 	fprintf(o, "\n");
 }
 
+void IDL_ns_print_qualified(IDL_tree p)
+{
+	IDL_tree l;
+
+	if (p == NULL)
+		return;
+
+	l = IDL_ns_qualified_ident_new(p);
+	if (l != NULL) {
+		IDL_ns_print_idents(stdout, l);
+		IDL_tree_free(l);
+	}
+}
+
 void IDL_ns_rcs_traverse(IDL_tree p)
 {
 	if (p == NULL)
@@ -27,16 +41,14 @@ void IDL_ns_rcs_traverse(IDL_tree p)
 
 	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
 
-	if (IDL_GENTREE(p).children == NULL) {
-		IDL_tree l = IDL_ns_qualified_ident_new(p);
-		if (l != NULL) {
-			IDL_ns_print_idents(stdout, l);
-			IDL_tree_free(l);
+	while (p != NULL) {
+		if (IDL_GENTREE(p).children == NULL) {
+			/* node is a leaf */
+			IDL_ns_print_qualified(p);
 		}
+		IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
+		p = IDL_GENTREE(p).siblings;
 	}
-
-	IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
-	IDL_ns_rcs_traverse(IDL_GENTREE(p).siblings);
 }
 
 void IDL_ns_dump_namespace(IDL_ns ns)
@@ -54,14 +66,14 @@ int main(int argc, char *argv[])
 
 	__IDL_debug = 0;
 
-	if (argc != 3) {
-		fprintf(stderr, "usage: tstidl <filename> <fold>\n");
+	if (argc < 2) {
+		fprintf(stderr, "usage: tstidl <filename> [fold constants, 0 or 1]\n");
 		exit(1);
 	}
 
 	fn = argv[1];
 
-	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, atoi(argv[2]));
+	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, argc == 3 ? atoi(argv[2]) : 0);
 
 	if (rv == IDL_SUCCESS) {
 		void __IDL_tree_print(IDL_tree p);
