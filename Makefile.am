@@ -18,7 +18,7 @@ lexer.c: lexer.l
 
 parser.c: parser.y
 	rm -f $@
-	$(YACC) $(YFLAGS) $<
+	$(YACC) $(YFLAGS) $< -o $@
 
 EXTRA_DIST		= BUGS
 info_TEXINFOS		= libIDL.texi
