@@ -68,11 +68,10 @@ CPP_PROGRAM="$CPP"
 AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 
 AM_PROG_LEX
-if [[ "$LEX" = "flex" ]]; then
-	LFLAGS="-8"
-else
-	LFLAGS=""
+if [[ "$LEX" != "flex" ]]; then
+	AC_MSG_WARN(flex is required to create the $PACKAGE $VERSION scanner)
 fi
+LFLAGS="-8"
 AC_SUBST(LFLAGS)
 AC_PROG_YACC
 AM_PROG_LIBTOOL
@@ -101,6 +100,18 @@ AC_UPDATE_IF_CHANGED(IDL.h, IDL.h.new)
 echo
 echo libIDL $LIBIDL_LIBRARY_VERSION configuration complete
 echo
+if [[ "$LEX" != "flex" ]]; then
+	echo "  Flex installed: no"
+	echo
+	echo " -----------------------------------------------------------"
+	echo "    WARNING: flex was not found.  Either use the lexer.c"
+	echo "    that comes with the official distribution or install"
+	echo "    flex if you want to regenerate lexer.c from lexer.l."
+	echo " -----------------------------------------------------------"
+	echo
+else
+	echo "  Flex installed: yes"
+fi
 echo "  C Preprocessor: \"$CPP_PROGRAM\""
 if [[ "$ac_cv_cpp_pipe_stdin" = "yes" ]]; then
 	echo "  Standard input supported."

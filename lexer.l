@@ -187,7 +187,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	g_free (filename2);
 }
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{whitespace}
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{whitespace}		;
 {b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
@@ -317,7 +317,7 @@ wstring			tokreturn (TOK_WSTRING);
 	tokreturn (TOK_DQSTRING);
 }
 <INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{newline}		++__IDL_cur_line;
-<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>\/\/.*
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>\/\/.*		;
 <INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>.			tokreturn (yytext[0]);
 
 %%
@@ -336,6 +336,7 @@ void __IDL_lex_init (void)
 void __IDL_lex_cleanup (void)
 {
 	__IDL_cur_filename = NULL;
+	YY_NEW_FILE;
 }
 
 int yywrap (void)

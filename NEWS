@@ -1,4 +1,4 @@
-* Status as of 4/12/99
+* Status as of 4/24/99
 
 Version 0.6.8 Released
 
@@ -27,6 +27,13 @@ without needing #pragmas:
 - New parse flag: IDLF_INHIBIT_TAG_ONLY: you can opt not to have
 inhibited nodes removed during parse time.  They can be removed later
 by calling IDL_tree_remove_inhibits, which is now a public function.
+
+** Bug Fixes for libIDL 0.6.8 from 0.6.4
+
+- Multiple calls to IDL_parse_filename are now fixed when one of them
+fails.  As a result, we now require flex as a side effect to generate
+the scanner.  You can compile without having flex however, since the
+pre-generated scanner is included in the source distribution.
 
 
 * Status as of 3/23/99

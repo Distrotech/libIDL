@@ -1407,6 +1407,11 @@ sqstring:		TOK_SQSTRING			{
 
 %%
 
+void __IDL_parser_reset (void)
+{
+	yyclearin;
+}
+
 static const char *IDL_ns_get_cur_prefix (IDL_ns ns)
 {
 	IDL_tree p;

@@ -1,6 +1,20 @@
-1999-04-12  Andrew T. Veliath  <andrewtv@usa.net>
+1999-04-24  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.8.
+
+	* util.c (IDL_parse_filename):
+	(IDL_parse_filename_with_input): Call __IDL_parser_reset after
+	parse.
+
+	* configure.in: Print a warning if flex isn't installed (one can
+	still compile the source distributed flex scanner, however).
+
+	* lexer.l (__IDL_lex_cleanup): Call YY_NEW_FILE.  Because of this
+	we now require flex, this is not in standard lex.
+
+	* parser.y (__IDL_parser_reset): New function; call yyclearin.
+
+1999-04-12  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* IDL.h.new.in (IDLF_INHIBIT_INCLUDES): New parse flag;
 	automatically inhibits included files.

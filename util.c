@@ -334,6 +334,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	g_hash_table_destroy (__IDL_structunion_ht);
 	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup ();
+	__IDL_parser_reset ();
 	__IDL_real_filename = NULL;
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = NULL;
@@ -439,6 +440,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	g_hash_table_destroy (__IDL_structunion_ht);
 	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup ();
+	__IDL_parser_reset ();
 	__IDL_real_filename = NULL;
 	for (slist = __IDL_new_ident_comments; slist; slist = slist->next)
 		g_free (slist->data);
