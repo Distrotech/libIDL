@@ -1582,8 +1582,10 @@ static int resolve_forward_dcls(IDL_tree p, GHashTable *table)
 	if (IDL_NODE_TYPE(p) == IDLN_INTERFACE) {
 		char *orig, *s = IDL_ns_ident_to_qstring(IDL_INTERFACE(p).ident, "::", 0);
 
-		if (g_hash_table_lookup_extended(table, s, (gpointer)&orig, NULL))
+		if (g_hash_table_lookup_extended(table, s, (gpointer)&orig, NULL)) {
 			g_hash_table_remove(table, orig);
+			free(orig);
+		}
 		free(s);
 	}
 
