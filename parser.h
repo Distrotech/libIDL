@@ -4,6 +4,8 @@ typedef union {
 	long integer;
 	float floatp;
 	int boolean;
+	enum IDL_unaryop unaryop;
+	enum IDL_param_attr paramattr;
 } YYSTYPE;
 #define	TOK_ANY	258
 #define	TOK_ATTRIBUTE	259

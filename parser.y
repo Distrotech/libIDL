@@ -47,6 +47,7 @@ void				__idl_print_tree(IDL_tree p);
 
 static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
+static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 %}
 
 %union {
@@ -55,6 +56,8 @@ static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 	long integer;
 	float floatp;
 	int boolean;
+	enum IDL_unaryop unaryop;
+	enum IDL_param_attr paramattr;
 }
 
 %token TOK_ANY			"any"
@@ -108,18 +111,40 @@ static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 
 %type <tree>			specification
 %type <tree>			definition_list definition
-%type <tree>			type_dcl type_spec type_declarator declarator_list declarator
+%type <tree>			type_dcl const_dcl except_dcl attr_dcl op_dcl
+%type <tree>			type_spec type_declarator declarator_list declarator
 %type <tree>			simple_type_spec constr_type_spec base_type_spec
-%type <tree>			simple_declarator /* complex_declarator array_declarator */
+%type <tree>			template_type_spec sequence_type
+%type <tree>			simple_declarator complex_declarator array_declarator
+%type <tree>			simple_declarator_list
 %type <tree>			struct_type union_type
-%type <tree>			member member_list enumerator_list
+%type <tree>			member member_list member_zlist enumerator_list
 %type <tree>			switch_type_spec switch_body
-
-%type <tree>			string_lit ident floating_pt_type integer_type
+%type <tree>			interface interface_dcl
+%type <tree>			interface_body z_scoped_name scoped_name_list
+%type <tree>			export_list export
+%type <tree>			module const_type
+%type <tree>			ident floating_pt_type integer_type
 %type <tree>			char_type wide_char_type boolean_type octet_type
+%type <tree>			string_type wide_string_type fixed_pt_type fixed_pt_const_type
 %type <tree>			any_type object_type enum_type scoped_name
+%type <tree>			case_list case_label fixed_array_size_list
+%type <tree>			fixed_array_size positive_int_const
 
-%type <integer>			signed_int unsigned_int
+%type <tree>			param_type_spec op_type_spec parameter_dcls
+%type <tree>			is_raises_expr is_context_expr param_dcl_list
+%type <tree>			param_dcl raises_expr context_expr
+
+%type <tree>			const_exp or_expr xor_expr and_expr shift_expr
+%type <tree>			add_expr mult_expr unary_expr primary_expr literal
+
+%type <tree>			string_lit integer_lit
+%type <tree>			string_lit_list
+
+%type <unaryop>			unary_op
+%type <paramattr>		param_attribute
+
+%type <integer>			signed_int unsigned_int is_readonly is_oneway
 
 %start start
 
@@ -145,7 +170,8 @@ idl_finish:						{
 }
 	;
 
-specification:		definition_list
+specification:		/* empty */			{ yywarning("file is empty"); }
+|			definition_list
 	;
 
 definition_list:	definition			{ $$ = list_start($1); }
@@ -153,9 +179,53 @@ definition_list:	definition			{ $$ = list_start($1); }
 	;
 
 definition:		type_dcl ';'
+|			const_dcl ';'
+|			except_dcl ';'
+|			interface ';'
+|			module ';'
+	;
+
+interface:		interface_dcl
+	;
+
+module:			"module" ident '{'
+				definition_list
+			'}'				{ $$ = IDL_module_new($2, $4); }
+	;
+
+interface_dcl:		"interface" ident z_scoped_name '{'
+				interface_body
+			'}'				{ $$ = IDL_interface_new($2, $3, $5); }
+	;
+
+z_scoped_name:		/* empty */			{ $$ = NULL; }
+|			':' scoped_name_list		{ $$ = $2; }
+	;
+
+scoped_name_list:	scoped_name			{ $$ = list_start($1); }
+|			scoped_name_list
+			',' scoped_name			{ $$ = list_chain($1, $3); }
+	;
+
+interface_body:		export_list
+	;
+
+export_list:		/* empty */			{ $$ = NULL; }
+|			export_list export		{ $$ = zlist_chain($1, $2); }
+	;
+
+export:			type_dcl ';'
+|			const_dcl ';'
+|			except_dcl ';'
+|			attr_dcl ';'
+|			op_dcl ';'
 	;
 
 type_dcl:		"typedef" type_declarator	{ $$ = $2; }
+|			struct_type
+|			union_type
+|			enum_type
+|			"native" simple_declarator	{ $$ = $2; }
 	;
 
 type_declarator:	type_spec declarator_list	{ $$ = IDL_type_dcl_new($1, $2); }
@@ -166,10 +236,13 @@ type_spec:		simple_type_spec
 	;
 
 simple_type_spec:	base_type_spec
+|			template_type_spec
+|			scoped_name
 	;
 
 constr_type_spec:	struct_type
 |			union_type
+|			enum_type
 	;
 
 struct_type:		"struct" ident '{'
@@ -191,19 +264,168 @@ switch_type_spec:	integer_type
 |			scoped_name
 	;
 
+switch_body:		case_list
+	;
+
+case_list:		case_label			{ $$ = list_start($1); }
+|			case_list case_label		{ $$ = list_chain($1, $2); }
+	;
+
+case_label:		"case" const_exp ':'		{ $$ = IDL_case_label_new($2); }
+|			"default" ':'			{ $$ = IDL_case_label_new(NULL); }
+	;
+
+const_dcl:		"const" const_type ident
+			'=' const_exp			{ $$ = IDL_const_dcl_new($2, $3, $5); }
+	;
+
+except_dcl:		"exception" ident '{'
+				member_zlist
+			'}'				{ $$ = IDL_except_dcl_new($2, $4); }
+	;
+
+member_zlist:		/* empty */			{ $$ = NULL; }
+|			member_zlist member		{ $$ = zlist_chain($1, $2); }
+	;
+
+is_readonly:		/* empty */			{ $$ = IDL_FALSE; }
+|			"readonly"			{ $$ = IDL_TRUE; }
+	;
+
+attr_dcl:		is_readonly "attribute"
+			param_type_spec
+			simple_declarator_list		{ $$ = IDL_attr_dcl_new($1, $3, $4); }
+	;
+
+param_type_spec:	base_type_spec
+|			string_type
+|			wide_string_type
+|			fixed_pt_type
+|			scoped_name
+	;
+
+is_oneway:		/* empty */			{ $$ = IDL_FALSE; }
+|			"oneway"			{ $$ = IDL_TRUE; }
+	;
+
+op_dcl:			is_oneway op_type_spec ident
+			parameter_dcls
+			is_raises_expr
+			is_context_expr			{ $$ = $2; }
+	;
+
+op_type_spec:		param_type_spec
+|			"void"				{ $$ = NULL; }
+	;
+
+parameter_dcls:		'(' param_dcl_list ')'		{ $$ = $2; }
+|			'(' ')'				{ $$ = NULL; }
+	;
+
+param_dcl_list:		param_dcl			{ $$ = list_start($1); }
+|			param_dcl_list ',' param_dcl	{ $$ = list_chain($1, $3); }
+	;
+
+param_dcl:		param_attribute
+			param_type_spec
+			simple_declarator		{ $$ = IDL_param_dcl_new($1, $2, $3); }
+	;
+
+param_attribute:	"in"				{ $$ = IDL_PARAM_IN; }
+|			"out"				{ $$ = IDL_PARAM_OUT; }
+|			"inout"				{ $$ = IDL_PARAM_INOUT; }
+	;
+
+is_raises_expr:		/* empty */			{ $$ = NULL; }
+|			raises_expr
+	;
+
+is_context_expr:	/* empty */			{ $$ = NULL; }
+|			context_expr
+	;
+
+raises_expr:		"raises" '('
+				scoped_name_list
+			')'				{ $$ = $3; }
+	;
+
+context_expr:		"context" '('
+				string_lit_list
+			')'				{ $$ = $3; }
+	;
+
+const_type:		integer_type
+|			char_type
+|			wide_char_type
+|			boolean_type
+|			floating_pt_type
+|			string_type
+|			wide_string_type
+|			fixed_pt_const_type
+|			scoped_name
+	;
+
+const_exp:		or_expr
+	;
+
+or_expr:		xor_expr
+|			or_expr '|' xor_expr		{ $$ = IDL_binop_new(IDL_BINOP_OR, $1, $3); }
+	;
+
+xor_expr:		and_expr
+|			xor_expr '^' and_expr		{ $$ = IDL_binop_new(IDL_BINOP_XOR, $1, $3); }
+	;
+
+and_expr:		shift_expr
+|			and_expr '&' shift_expr		{ $$ = IDL_binop_new(IDL_BINOP_AND, $1, $3); }
+	;
+
+shift_expr:		add_expr
+|			shift_expr ">>" add_expr	{ $$ = IDL_binop_new(IDL_BINOP_SHR, $1, $3); }
+|			shift_expr "<<" add_expr	{ $$ = IDL_binop_new(IDL_BINOP_SHL, $1, $3); }
+	;
+
+add_expr:		mult_expr
+|			add_expr '+' mult_expr		{ $$ = IDL_binop_new(IDL_BINOP_ADD, $1, $3); }
+|			add_expr '-' mult_expr		{ $$ = IDL_binop_new(IDL_BINOP_SUB, $1, $3); }
+	;
+
+mult_expr:		unary_expr
+|			mult_expr '*' unary_expr	{ $$ = IDL_binop_new(IDL_BINOP_MULT, $1, $3); }
+|			mult_expr '/' unary_expr	{ $$ = IDL_binop_new(IDL_BINOP_DIV, $1, $3); }
+|			mult_expr '%' unary_expr	{ $$ = IDL_binop_new(IDL_BINOP_MOD, $1, $3); }
+	;
+
+unary_expr:		unary_op primary_expr		{ $$ = IDL_unaryop_new($1, $2); }
+|			primary_expr
+	;
+
+unary_op:		'-'				{ $$ = IDL_UNARYOP_MINUS; }
+|			'+'				{ $$ = IDL_UNARYOP_PLUS; }
+|			'~'				{ $$ = IDL_UNARYOP_COMPLEMENT; }
+	;
+
+primary_expr:		scoped_name
+|			literal
+|			'(' const_exp ')'		{ $$ = $2; }
+	;
+
+literal:		string_lit
+|			integer_lit
+	;
+
 enum_type:		"enum" ident '{'
 				enumerator_list
 			'}'				{ $$ = IDL_type_enum_new($2, $4); }
 	;
 
-scoped_name:						{ $$ = NULL; }
-	;
-
-switch_body:						{ $$ = NULL; }
+scoped_name:		ident				{ $$ = list_start($1); }
+|			"::" ident			{ $$ = list_start($2); }
+|			scoped_name "::" ident		{ $$ = list_chain($1, $3); }
 	;
 
 enumerator_list:	ident				{ $$ = list_start($1); }
-|			enumerator_list ident		{ $$ = list_chain($1, $2); }
+|			enumerator_list ',' ident	{ $$ = list_chain($1, $3); }
 	;
 
 member_list:		member				{ $$ = list_start($1); }
@@ -223,9 +445,31 @@ base_type_spec:		floating_pt_type
 |			object_type
 	;
 
+template_type_spec:	sequence_type
+|			string_type
+|			wide_string_type
+|			fixed_pt_type
+	;
+
+sequence_type:		"sequence" '<'
+				simple_type_spec ',' positive_int_const
+			'>'				{ $$ = IDL_type_sequence_new($3, $5); }
+|			"sequence" '<'
+				simple_type_spec
+			'>'				{ $$ = IDL_type_sequence_new($3, NULL); }
+	;
+
 floating_pt_type:	"float"				{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_FLOAT); }
 |			"double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_DOUBLE); }
 |			"long" "double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_LONGDOUBLE); }
+	;
+
+fixed_pt_type:		"fixed" '<'
+				positive_int_const ',' integer_lit
+			'>'				{ $$ = IDL_type_fixed_new($3, $5); }
+	;
+
+fixed_pt_const_type:	"fixed"				{ $$ = IDL_type_fixed_new(NULL, NULL); }
 	;
 
 integer_type:		signed_int			{ $$ = IDL_type_integer_new(IDL_TRUE, $1); }
@@ -278,33 +522,78 @@ any_type:		"any"			{ $$ = IDL_type_any_new(); }
 object_type:		"Object"		{ $$ = IDL_type_object_new(); }
 	;
 
-declarator_list:	declarator			{ $$ = list_start($1); }
-|			declarator_list ',' declarator	{ $$ = list_chain($1, $3); }
+string_type:		"string" '<'
+				positive_int_const
+				'>'		{ $$ = IDL_type_string_new($3); }
+|			"string"		{ $$ = IDL_type_string_new(NULL); }
+	;
+
+wide_string_type:	"wstring" '<'
+				positive_int_const
+			'>'			{ $$ = IDL_type_wide_string_new($3); }
+|			"wstring"		{ $$ = IDL_type_wide_string_new(NULL); }
+	;
+
+declarator_list:	declarator		{ $$ = list_start($1); }
+|			declarator_list 
+			',' declarator		{ $$ = list_chain($1, $3); }
 	;
 
 declarator:		simple_declarator
-/* |			complex_declarator */
+|			complex_declarator
 	;
 
 simple_declarator:	ident
 	;
 
+complex_declarator:	array_declarator
+	;
+
+simple_declarator_list:	simple_declarator		{ $$ = list_start($1); }
+|			simple_declarator_list
+			simple_declarator		{ $$ = list_chain($1, $2); }
+	;
+
+
+array_declarator:	ident fixed_array_size_list	{ $$ = IDL_type_array_new($1, $2); }
+	;
+
+fixed_array_size_list:	fixed_array_size		{ $$ = list_start($1); }
+|			fixed_array_size_list
+			fixed_array_size		{ $$ = list_chain($1, $2); }
+	;
+
+fixed_array_size:	'[' positive_int_const ']'	{ $$ = $2; }
+	;
 
 ident:			TOK_IDENT			{
 	int added;
 
 	IDL_tree p = IDL_ident_get(&__idl_symtab, $1, IDL_TRUE, &added);
 
-	if (added == IDL_FALSE)
-		yyerror("duplicate identifier");
-
 	$$ = p;
 }
 	;
 
-string_lit:		dqstring_cat			{
-	$$ = IDL_string_new($1);
+string_lit_list:	string_lit			{ $$ = list_start($1); }
+|			string_lit_list ',' string_lit	{ $$ = list_chain($1, $3); }
+	;
+
+positive_int_const:	TOK_INTEGER			{
+	if ($1 < 0) {
+		yyerror("cannot use negative value, using absolute value");
+		$$ = IDL_integer_new(-$1);
+	}
+	else
+		$$ = IDL_integer_new($1);
 }
+	;
+
+
+integer_lit:		TOK_INTEGER			{ $$ = IDL_integer_new($1); }
+	;
+
+string_lit:		dqstring_cat			{ $$ = IDL_string_new($1); }
 	;
 
 dqstring_cat:		dqstring
@@ -390,7 +679,7 @@ static void do_escapes(char *s)
 
 void __idl_print_tree(IDL_tree p)
 {
-	if (!p)
+	if (p == NULL)
 		return;
 
 	switch (IDL_NODE_TYPE(p)) {
@@ -403,7 +692,11 @@ void __idl_print_tree(IDL_tree p)
 		break;
 
 	case IDLN_STRING:
-		printf("IDL string: %s\n", IDL_STRING(p).str);
+		printf("IDL string: %s\n", IDL_STRING(p).value);
+		break;
+		
+	case IDLN_INTEGER:
+		printf("IDL integer: %d\n", IDL_INTEGER(p).value);
 		break;
 		
 	case IDLN_IDENT:
@@ -421,15 +714,65 @@ void __idl_print_tree(IDL_tree p)
 		__idl_print_tree(IDL_TYPE_DCL(p).type_spec);
 		__idl_print_tree(IDL_TYPE_DCL(p).dcls);
 		break;
+
+	case IDLN_CONST_DCL:
+		printf("IDL const declaration\n");
+		__idl_print_tree(IDL_CONST_DCL(p).const_type);
+		__idl_print_tree(IDL_CONST_DCL(p).ident);
+		__idl_print_tree(IDL_CONST_DCL(p).const_exp);
+		break;
+		
+	case IDLN_EXCEPT_DCL:
+		printf("IDL exception declaration\n");
+		__idl_print_tree(IDL_EXCEPT_DCL(p).ident);
+		__idl_print_tree(IDL_EXCEPT_DCL(p).members);
+		break;
+		
+	case IDLN_ATTR_DCL:
+		printf("IDL attr declaration\n");
+		__idl_print_tree(IDL_ATTR_DCL(p).param_type_spec);
+		__idl_print_tree(IDL_ATTR_DCL(p).simple_declarations);
+		break;
+		
+	case IDLN_OP_DCL:
+		printf("IDL op declaration\n");
+		__idl_print_tree(IDL_OP_DCL(p).op_type_spec);
+		__idl_print_tree(IDL_OP_DCL(p).ident);
+		__idl_print_tree(IDL_OP_DCL(p).parameter_dcls);
+		__idl_print_tree(IDL_OP_DCL(p).raises_expr);
+		__idl_print_tree(IDL_OP_DCL(p).context_expr);
+		break;
+
+	case IDLN_PARAM_DCL:
+		printf("IDL param declaration: %d\n", IDL_PARAM_DCL(p).attr);
+		__idl_print_tree(IDL_PARAM_DCL(p).param_type_spec);
+		__idl_print_tree(IDL_PARAM_DCL(p).simple_declarator);
+		break;
 		
 	case IDLN_TYPE_FLOAT:
 		printf("IDL float type: %d\n", IDL_TYPE_FLOAT(p).f_type);
+		break;
+
+	case IDLN_TYPE_FIXED:
+		printf("IDL fixed type\n");
+		__idl_print_tree(IDL_TYPE_FIXED(p).positive_int_const);
+		__idl_print_tree(IDL_TYPE_FIXED(p).integer_lit);
 		break;
 
 	case IDLN_TYPE_INTEGER:
 		printf("IDL integer type: %d %d\n",
 		       IDL_TYPE_INTEGER(p).f_signed,
 		       IDL_TYPE_INTEGER(p).f_type);
+		break;
+
+	case IDLN_TYPE_STRING:
+		printf("IDL string type\n");
+		__idl_print_tree(IDL_TYPE_STRING(p).positive_int_const);
+		break;
+
+	case IDLN_TYPE_WIDE_STRING:
+		printf("IDL wide string type\n");
+		__idl_print_tree(IDL_TYPE_WIDE_STRING(p).positive_int_const);
 		break;
 
 	case IDLN_TYPE_CHAR:
@@ -456,6 +799,22 @@ void __idl_print_tree(IDL_tree p)
 		printf("IDL object type\n");
 		break;
 
+	case IDLN_TYPE_ENUM:
+		printf("IDL enum type\n");
+		break;
+
+	case IDLN_TYPE_SEQUENCE:
+		printf("IDL sequence type\n");
+		__idl_print_tree(IDL_TYPE_SEQUENCE(p).simple_type_spec);
+		__idl_print_tree(IDL_TYPE_SEQUENCE(p).positive_int_const);
+		break;
+
+	case IDLN_TYPE_ARRAY:
+		printf("IDL array type\n");
+		__idl_print_tree(IDL_TYPE_ARRAY(p).ident);
+		__idl_print_tree(IDL_TYPE_ARRAY(p).size_list);
+		break;
+
 	case IDLN_TYPE_STRUCT:
 		printf("IDL struct type\n");
 		__idl_print_tree(IDL_TYPE_STRUCT(p).ident);
@@ -467,6 +826,32 @@ void __idl_print_tree(IDL_tree p)
 		__idl_print_tree(IDL_TYPE_UNION(p).ident);
 		__idl_print_tree(IDL_TYPE_UNION(p).switch_type_spec);
 		__idl_print_tree(IDL_TYPE_UNION(p).switch_body);
+		break;
+
+	case IDLN_CASE_LABEL:
+		__idl_print_tree(IDL_CASE_LABEL(p).const_exp);
+		break;
+
+	case IDLN_INTERFACE:
+		__idl_print_tree(IDL_INTERFACE(p).ident);
+		__idl_print_tree(IDL_INTERFACE(p).inheritence_spec);
+		__idl_print_tree(IDL_INTERFACE(p).body);
+		break;
+
+	case IDLN_MODULE:
+		__idl_print_tree(IDL_MODULE(p).ident);
+		__idl_print_tree(IDL_MODULE(p).definition_list);
+		break;		
+
+	case IDLN_BINOP:
+		printf("IDL binop: op %d\n", IDL_BINOP(p).op);
+		__idl_print_tree(IDL_BINOP(p).left);
+		__idl_print_tree(IDL_BINOP(p).right);
+		break;
+
+	case IDLN_UNARYOP:
+		printf("IDL unary: op %d\n", IDL_UNARYOP(p).op);
+		__idl_print_tree(IDL_UNARYOP(p).operand);
 		break;
 		
 	default:
@@ -493,7 +878,8 @@ static void __idl_tree_free(IDL_tree p, int idents)
 		break;
 
 	case IDLN_STRING:
-		free(IDL_STRING(p).str);
+		free(IDL_STRING(p).value);
+	case IDLN_INTEGER:
 		free(p);
 		break;
 
@@ -507,27 +893,93 @@ static void __idl_tree_free(IDL_tree p, int idents)
 	case IDLN_MEMBER:
 		__idl_tree_free(IDL_MEMBER(p).type_spec, idents);
 		__idl_tree_free(IDL_MEMBER(p).dcls, idents);
+		free(p);
 		break;
 
 	case IDLN_TYPE_ENUM:
 		__idl_tree_free(IDL_TYPE_ENUM(p).ident, idents);
 		__idl_tree_free(IDL_TYPE_ENUM(p).enumerator_list, idents);
+		free(p);
+		break;
+
+	case IDLN_TYPE_SEQUENCE:
+		__idl_tree_free(IDL_TYPE_SEQUENCE(p).simple_type_spec, idents);
+		__idl_tree_free(IDL_TYPE_SEQUENCE(p).positive_int_const, idents);
+		free(p);
+		break;
+
+	case IDLN_TYPE_ARRAY:
+		__idl_tree_free(IDL_TYPE_ARRAY(p).ident, idents);
+		__idl_tree_free(IDL_TYPE_ARRAY(p).size_list, idents);
+		free(p);
 		break;
 
 	case IDLN_TYPE_STRUCT:
 		__idl_tree_free(IDL_TYPE_STRUCT(p).ident, idents);
 		__idl_tree_free(IDL_TYPE_STRUCT(p).member_list, idents);
+		free(p);
 		break;
 
 	case IDLN_TYPE_UNION:
 		__idl_tree_free(IDL_TYPE_UNION(p).ident, idents);
 		__idl_tree_free(IDL_TYPE_UNION(p).switch_type_spec, idents);
 		__idl_tree_free(IDL_TYPE_UNION(p).switch_body, idents);
+		free(p);
 		break;
 				
 	case IDLN_TYPE_DCL:
 		__idl_tree_free(IDL_TYPE_DCL(p).type_spec, idents);
 		__idl_tree_free(IDL_TYPE_DCL(p).dcls, idents);
+		free(p);
+		break;
+
+	case IDLN_CONST_DCL:
+		__idl_tree_free(IDL_CONST_DCL(p).const_type, idents);
+		__idl_tree_free(IDL_CONST_DCL(p).ident, idents);
+		__idl_tree_free(IDL_CONST_DCL(p).const_exp, idents);
+		free(p);
+		break;
+
+	case IDLN_EXCEPT_DCL:
+		__idl_tree_free(IDL_EXCEPT_DCL(p).ident, idents);
+		__idl_tree_free(IDL_EXCEPT_DCL(p).members, idents);
+		free(p);
+		break;
+		
+	case IDLN_ATTR_DCL:
+		__idl_tree_free(IDL_ATTR_DCL(p).param_type_spec, idents);
+		__idl_tree_free(IDL_ATTR_DCL(p).simple_declarations, idents);
+		free(p);
+		break;
+		
+	case IDLN_OP_DCL:
+		__idl_tree_free(IDL_OP_DCL(p).op_type_spec, idents);
+		__idl_tree_free(IDL_OP_DCL(p).ident, idents);
+		__idl_tree_free(IDL_OP_DCL(p).parameter_dcls, idents);
+		__idl_tree_free(IDL_OP_DCL(p).raises_expr, idents);
+		__idl_tree_free(IDL_OP_DCL(p).context_expr, idents);
+		free(p);
+		break;
+
+	case IDLN_PARAM_DCL:
+		__idl_tree_free(IDL_PARAM_DCL(p).param_type_spec, idents);
+		__idl_tree_free(IDL_PARAM_DCL(p).simple_declarator, idents);
+		free(p);
+		break;
+		
+	case IDLN_TYPE_STRING:
+		__idl_tree_free(IDL_TYPE_STRING(p).positive_int_const, idents);
+		free(p);
+		break;
+		
+	case IDLN_TYPE_WIDE_STRING:
+		__idl_tree_free(IDL_TYPE_WIDE_STRING(p).positive_int_const, idents);
+		free(p);
+		break;
+		
+	case IDLN_TYPE_FIXED:
+		__idl_tree_free(IDL_TYPE_FIXED(p).positive_int_const, idents);
+		__idl_tree_free(IDL_TYPE_FIXED(p).integer_lit, idents);
 		free(p);
 		break;
 
@@ -538,8 +990,38 @@ static void __idl_tree_free(IDL_tree p, int idents)
 	case IDLN_TYPE_BOOLEAN:
 	case IDLN_TYPE_OCTET:
 	case IDLN_TYPE_ANY:
+	case IDLN_TYPE_OBJECT:
 		free(p);
 		break;
+
+	case IDLN_CASE_LABEL:
+		__idl_tree_free(IDL_CASE_LABEL(p).const_exp, idents);
+		free(p);
+		break;
+		
+	case IDLN_INTERFACE:
+		__idl_tree_free(IDL_INTERFACE(p).ident, idents);
+		__idl_tree_free(IDL_INTERFACE(p).inheritence_spec, idents);
+		__idl_tree_free(IDL_INTERFACE(p).body, idents);
+		free(p);
+		break;
+
+	case IDLN_MODULE:
+		__idl_tree_free(IDL_MODULE(p).ident, idents);
+		__idl_tree_free(IDL_MODULE(p).definition_list, idents);
+		free(p);
+		break;
+
+	case IDLN_BINOP:
+		__idl_tree_free(IDL_BINOP(p).left, idents);
+		__idl_tree_free(IDL_BINOP(p).right, idents);
+		free(p);
+		break;
+
+	case IDLN_UNARYOP:
+		__idl_tree_free(IDL_UNARYOP(p).operand, idents);
+		free(p);
+		break;		
 		
 	default:
 		fprintf(stderr, "warning: free unknown node: %d\n", IDL_NODE_TYPE(p));
@@ -625,6 +1107,14 @@ static IDL_tree list_chain(IDL_tree a, IDL_tree b)
 	return a;
 }
 
+static IDL_tree zlist_chain(IDL_tree a, IDL_tree b)
+{
+	if (a == NULL)
+		return list_start(b);
+	else
+		return list_chain(a, b);
+}
+
 static IDL_tree IDL_node_new(IDL_tree_type type)
 {
 	IDL_tree p;
@@ -646,11 +1136,20 @@ IDL_tree IDL_list_new(IDL_tree data)
 	return p;
 }
 
-IDL_tree IDL_string_new(char *s)
+IDL_tree IDL_string_new(char *value)
 {
 	IDL_tree p = IDL_node_new(IDLN_STRING);
 
-	IDL_STRING(p).str = s;
+	IDL_STRING(p).value = value;
+
+	return p;
+}
+
+IDL_tree IDL_integer_new(long value)
+{
+	IDL_tree p = IDL_node_new(IDLN_INTEGER);
+
+	IDL_INTEGER(p).value = value;
 
 	return p;
 }
@@ -720,7 +1219,7 @@ IDL_tree IDL_type_dcl_new(IDL_tree type_spec, IDL_tree dcls)
 	return p;
 }
 
-IDL_tree IDL_type_float_new(unsigned f_type)
+IDL_tree IDL_type_float_new(enum IDL_float_type f_type)
 {
 	IDL_tree p = IDL_node_new(IDLN_TYPE_FLOAT);
 	
@@ -729,7 +1228,19 @@ IDL_tree IDL_type_float_new(unsigned f_type)
 	return p;
 }
 
-IDL_tree IDL_type_integer_new(unsigned f_signed, unsigned f_type)
+IDL_tree IDL_type_fixed_new(IDL_tree positive_int_const,
+			    IDL_tree integer_lit)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_FIXED);
+	
+	IDL_TYPE_FIXED(p).positive_int_const = positive_int_const;
+	IDL_TYPE_FIXED(p).integer_lit = integer_lit;
+
+	return p;
+}
+
+
+IDL_tree IDL_type_integer_new(unsigned f_signed, enum IDL_integer_type f_type)
 {
 	IDL_tree p = IDL_node_new(IDLN_TYPE_INTEGER);
 	
@@ -769,6 +1280,46 @@ IDL_tree IDL_type_object_new(void)
 	return IDL_node_new(IDLN_TYPE_OBJECT);
 }
 
+IDL_tree IDL_type_string_new(IDL_tree positive_int_const)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_STRING);
+	
+	IDL_TYPE_STRING(p).positive_int_const = positive_int_const;
+
+	return p;
+}
+
+IDL_tree IDL_type_wide_string_new(IDL_tree positive_int_const)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_WIDE_STRING);
+	
+	IDL_TYPE_WIDE_STRING(p).positive_int_const = positive_int_const;
+
+	return p;
+}
+
+IDL_tree IDL_type_array_new(IDL_tree ident,
+			    IDL_tree size_list)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_ARRAY);
+	
+	IDL_TYPE_ARRAY(p).ident = ident;
+	IDL_TYPE_ARRAY(p).size_list = size_list;
+
+	return p;
+}
+
+IDL_tree IDL_type_sequence_new(IDL_tree simple_type_spec,
+			       IDL_tree positive_int_const)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_SEQUENCE);
+	
+	IDL_TYPE_SEQUENCE(p).simple_type_spec = simple_type_spec;
+	IDL_TYPE_SEQUENCE(p).positive_int_const = positive_int_const;
+
+	return p;
+}
+
 IDL_tree IDL_type_struct_new(IDL_tree ident, IDL_tree member_list)
 {
 	IDL_tree p = IDL_node_new(IDLN_TYPE_STRUCT);
@@ -796,6 +1347,124 @@ IDL_tree IDL_type_enum_new(IDL_tree ident, IDL_tree enumerator_list)
 	
 	IDL_TYPE_ENUM(p).ident = ident;
 	IDL_TYPE_ENUM(p).enumerator_list = enumerator_list;
+
+	return p;
+}
+
+IDL_tree IDL_case_label_new(IDL_tree const_exp)
+{
+	IDL_tree p = IDL_node_new(IDLN_CASE_LABEL);
+	
+	IDL_CASE_LABEL(p).f_default = const_exp ? IDL_FALSE : IDL_TRUE;
+	IDL_CASE_LABEL(p).const_exp = const_exp;
+
+	return p;
+}
+
+IDL_tree IDL_interface_new(IDL_tree ident, IDL_tree inheritence_spec, IDL_tree body)
+{
+	IDL_tree p = IDL_node_new(IDLN_INTERFACE);
+	
+	IDL_INTERFACE(p).ident = ident;
+	IDL_INTERFACE(p).inheritence_spec = inheritence_spec;
+	IDL_INTERFACE(p).body = body;
+
+	return p;
+}
+
+IDL_tree IDL_module_new(IDL_tree ident, IDL_tree definition_list)
+{
+	IDL_tree p = IDL_node_new(IDLN_MODULE);
+	
+	IDL_MODULE(p).ident = ident;
+	IDL_MODULE(p).definition_list = definition_list;
+
+	return p;
+}
+
+IDL_tree IDL_binop_new(enum IDL_binop op, IDL_tree left, IDL_tree right)
+{
+	IDL_tree p = IDL_node_new(IDLN_BINOP);
+	
+	IDL_BINOP(p).op = op;
+	IDL_BINOP(p).left = left;
+	IDL_BINOP(p).right = right;
+
+	return p;
+}
+
+IDL_tree IDL_unaryop_new(enum IDL_unaryop op, IDL_tree operand)
+{
+	IDL_tree p = IDL_node_new(IDLN_UNARYOP);
+	
+	IDL_UNARYOP(p).op = op;
+	IDL_UNARYOP(p).operand = operand;
+
+	return p;
+}
+
+IDL_tree IDL_const_dcl_new(IDL_tree const_type, IDL_tree ident, IDL_tree const_exp)
+{
+	IDL_tree p = IDL_node_new(IDLN_CONST_DCL);
+	
+	IDL_CONST_DCL(p).const_type = const_type;
+	IDL_CONST_DCL(p).ident = ident;
+	IDL_CONST_DCL(p).const_exp = const_exp;
+
+	return p;
+}
+
+IDL_tree IDL_except_dcl_new(IDL_tree ident, IDL_tree members)
+{
+	IDL_tree p = IDL_node_new(IDLN_EXCEPT_DCL);
+	
+	IDL_EXCEPT_DCL(p).ident = ident;
+	IDL_EXCEPT_DCL(p).members = members;
+
+	return p;
+}
+
+IDL_tree IDL_attr_dcl_new(unsigned f_readonly,
+			  IDL_tree param_type_spec,
+			  IDL_tree simple_declarations)
+{
+	IDL_tree p = IDL_node_new(IDLN_ATTR_DCL);
+	
+	IDL_ATTR_DCL(p).f_readonly = f_readonly;
+	IDL_ATTR_DCL(p).param_type_spec = param_type_spec;
+	IDL_ATTR_DCL(p).simple_declarations = simple_declarations;
+
+	return p;
+}
+
+IDL_tree IDL_op_dcl_new(unsigned f_oneway,
+			IDL_tree op_type_spec,
+			IDL_tree ident,
+			IDL_tree parameter_dcls,
+			IDL_tree raises_expr,
+			IDL_tree context_expr)
+{
+	IDL_tree p = IDL_node_new(IDLN_OP_DCL);
+	
+	IDL_OP_DCL(p).f_oneway = f_oneway;
+	IDL_OP_DCL(p).op_type_spec = op_type_spec;
+	IDL_OP_DCL(p).ident = ident;
+	IDL_OP_DCL(p).parameter_dcls = parameter_dcls;
+	IDL_OP_DCL(p).raises_expr = raises_expr;
+	IDL_OP_DCL(p).context_expr = context_expr;
+
+	return p;
+}
+
+IDL_tree IDL_param_dcl_new(enum IDL_param_attr attr,
+			   IDL_tree param_type_spec,
+			   IDL_tree simple_declarator)
+{
+	IDL_tree p = IDL_node_new(IDLN_PARAM_DCL);
+	
+	IDL_PARAM_DCL(p).attr = attr;
+	IDL_PARAM_DCL(p).param_type_spec = param_type_spec;
+	IDL_PARAM_DCL(p).simple_declarator = simple_declarator;
 
 	return p;
 }

@@ -1,0 +1,36 @@
+1998-06-23  Andrew Veliath  <andrewtv@usa.net>
+
+	* Almost all tree generation stuff added
+
+	* Implement const_dcl and const_exp
+
+	* Implement type_dcl, interface and module non-terminals
+	
+1998-06-22  Andrew Veliath  <andrewtv@usa.net>
+
+	* Start implementing tree generation code
+
+	* Add IDL_root_free, IDL_symtab_free
+
+	* Modify IDL_parse_filename to include callbacks,
+	  return a symbol table
+
+	* Implmenent warning/error callback functionality
+
+	* Move idl.c code to parser.y, delete idl.c
+
+1998-06-17  Andrew Veliath  <andrewtv@usa.net>
+
+	* Implement IDL_parse_filename
+	
+	* Implement supporting code for error and warning detection
+	
+	* Create rename.h to rename yacc/lex stuff
+
+	* Add strdup definition to util.[ch] and autoconf
+	
+	* Create util.c, util.h
+	
+	* Create lexer.l, parser.l, idl.h, idl.c
+
+	* Create library structure, automake and autoconf files

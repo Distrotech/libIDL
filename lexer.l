@@ -53,13 +53,14 @@ dqstring		\"[^\"\n]*[\"\n]
 {cpp_pragma}		{ __idl_do_pragma(yytext); }
 {cpp_status}		{
 	int line;
-	char filename[512];
+	char *filename = (char *)malloc(strlen(yytext) + 1);
 
-	sscanf(yytext, "# %d %511s", &__idl_cur_line, filename);
+	sscanf(yytext, "# %d %s", &__idl_cur_line, filename);
 	if (__idl_cur_filename)
 		free(__idl_cur_filename);
 	__idl_cur_filename = strdup(filename + 1);
 	__idl_cur_filename[strlen(filename) - 2] = 0;
+	free(filename);
 }
 {whitespace}
 {b8_int}		{
