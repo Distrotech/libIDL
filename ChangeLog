@@ -1,5 +1,7 @@
 1998-11-27  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* libIDL.def: New file.
+
 	* util.h (alloca): Define if compiling for Win32.
 
 	* Makefile.am (MAINTAINERCLEANFILES): Change to maintainer clean
