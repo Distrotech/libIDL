@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <idl.h>
 
+
+
 int IDL_cb(int level, int num, int line, const char *filename, const char *s)
 {
 	fprintf(stderr, "%s:%d: %s\n", filename, line, s);
@@ -25,13 +27,16 @@ int main(int argc, char *argv[])
 	if (rv == IDL_SUCCESS) {
 		void __idl_print_tree(IDL_tree p);
 		
-		fprintf(stderr, "tstidl: IDL_SUCCESS: %p\n", tree);
-		
+#if 1
+		fprintf(stderr, "tstidl: IDL_SUCCESS: %p\n", tree);		
 		printf("Walking Root Tree\n");
 		__idl_print_tree(tree);
 		printf("Walking Symbol Table\n");
 		__idl_print_tree(symtab);
-
+#else
+		emit_CXX(tree);
+#endif
+	
 		IDL_root_free(tree);
 		IDL_symtab_free(symtab);
 		

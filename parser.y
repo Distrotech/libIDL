@@ -54,7 +54,8 @@ static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 	IDL_tree tree;
 	char *str;
 	long integer;
-	float floatp;
+	double floatp;
+	double fixedp;
 	int boolean;
 	enum IDL_unaryop unaryop;
 	enum IDL_param_attr paramattr;
@@ -120,7 +121,7 @@ static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 %type <tree>			struct_type union_type
 %type <tree>			member member_list member_zlist enumerator_list
 %type <tree>			switch_type_spec switch_body
-%type <tree>			interface interface_dcl
+%type <tree>			interface interface_dcl forward_dcl
 %type <tree>			interface_body z_scoped_name scoped_name_list
 %type <tree>			export_list export
 %type <tree>			module const_type
@@ -138,7 +139,10 @@ static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 %type <tree>			const_exp or_expr xor_expr and_expr shift_expr
 %type <tree>			add_expr mult_expr unary_expr primary_expr literal
 
-%type <tree>			string_lit integer_lit
+%type <tree>			integer_lit
+%type <tree>			string_lit char_lit /* wide_string_lit wide_char_lit */ 
+%type <tree>			fixed_pt_lit floating_pt_lit
+%type <tree>			boolean_lit
 %type <tree>			string_lit_list
 
 %type <unaryop>			unary_op
@@ -186,6 +190,7 @@ definition:		type_dcl ';'
 	;
 
 interface:		interface_dcl
+|			forward_dcl
 	;
 
 module:			"module" ident '{'
@@ -196,6 +201,9 @@ module:			"module" ident '{'
 interface_dcl:		"interface" ident z_scoped_name '{'
 				interface_body
 			'}'				{ $$ = IDL_interface_new($2, $3, $5); }
+	;
+
+forward_dcl:		"interface" ident		{ $$ = IDL_forward_dcl_new($2); }
 	;
 
 z_scoped_name:		/* empty */			{ $$ = NULL; }
@@ -410,8 +418,18 @@ primary_expr:		scoped_name
 |			'(' const_exp ')'		{ $$ = $2; }
 	;
 
-literal:		string_lit
-|			integer_lit
+literal:		integer_lit
+|			string_lit
+/*
+|			wide_string_lit
+*/
+|			char_lit
+/*
+|			wide_char_lit
+*/
+|			fixed_pt_lit
+|			floating_pt_lit
+|			boolean_lit
 	;
 
 enum_type:		"enum" ident '{'
@@ -596,6 +614,19 @@ integer_lit:		TOK_INTEGER			{ $$ = IDL_integer_new($1); }
 string_lit:		dqstring_cat			{ $$ = IDL_string_new($1); }
 	;
 
+char_lit:		sqstring			{ $$ = IDL_char_new($1); }
+	;
+
+fixed_pt_lit:		TOK_FIXEDP			{ $$ = IDL_fixed_new($1); }
+	;
+
+floating_pt_lit:	TOK_FLOATP			{ $$ = IDL_float_new($1); }
+	;
+
+boolean_lit:		"TRUE"				{ $$ = IDL_boolean_new(IDL_TRUE); }
+|			"FALSE"				{ $$ = IDL_boolean_new(IDL_FALSE); }
+	;
+
 dqstring_cat:		dqstring
 |			dqstring_cat dqstring		{
 	char *catstr = (char *)malloc(strlen($1) + strlen($2) + 1);
@@ -660,7 +691,7 @@ void __idl_do_pragma(const char *s)
 	char *fmt = "unknown pragma: %s";
 	char *msg = (char *)malloc(strlen(fmt) + strlen(s) - 2 + 1);
 	sprintf(msg, fmt, s);
-	yywarning("unknown pragma");
+	yywarning(msg);
 	free(msg);
 }
 
@@ -691,12 +722,29 @@ void __idl_print_tree(IDL_tree p)
 		}
 		break;
 
+	case IDLN_INTEGER:
+		printf("IDL integer: %d\n", IDL_INTEGER(p).value);
+		break;
+		
 	case IDLN_STRING:
 		printf("IDL string: %s\n", IDL_STRING(p).value);
 		break;
 		
-	case IDLN_INTEGER:
-		printf("IDL integer: %d\n", IDL_INTEGER(p).value);
+	case IDLN_CHAR:
+		printf("IDL char: %s\n", IDL_CHAR(p).value);
+		break;
+		
+	case IDLN_FIXED:
+		printf("IDL fixed: %g\n", IDL_FIXED(p).value);
+		break;
+		
+	case IDLN_FLOAT:
+		printf("IDL float: %g\n", IDL_FLOAT(p).value);
+		break;
+		
+	case IDLN_BOOLEAN:
+		printf("IDL boolean: %s\n",
+		       IDL_BOOLEAN(p).value ? "TRUE" : "FALSE");
 		break;
 		
 	case IDLN_IDENT:
@@ -747,6 +795,11 @@ void __idl_print_tree(IDL_tree p)
 		printf("IDL param declaration: %d\n", IDL_PARAM_DCL(p).attr);
 		__idl_print_tree(IDL_PARAM_DCL(p).param_type_spec);
 		__idl_print_tree(IDL_PARAM_DCL(p).simple_declarator);
+		break;
+
+	case IDLN_FORWARD_DCL:
+		printf("IDL forward declaration\n");
+		__idl_print_tree(IDL_FORWARD_DCL(p).ident);
 		break;
 		
 	case IDLN_TYPE_FLOAT:
@@ -877,9 +930,20 @@ static void __idl_tree_free(IDL_tree p, int idents)
 		}
 		break;
 
+	case IDLN_INTEGER:
+	case IDLN_FIXED:
+	case IDLN_FLOAT:
+	case IDLN_BOOLEAN:
+		free(p);
+		break;
+
 	case IDLN_STRING:
 		free(IDL_STRING(p).value);
-	case IDLN_INTEGER:
+		free(p);
+		break;
+
+	case IDLN_CHAR:
+		free(IDL_CHAR(p).value);
 		free(p);
 		break;
 
@@ -964,6 +1028,11 @@ static void __idl_tree_free(IDL_tree p, int idents)
 	case IDLN_PARAM_DCL:
 		__idl_tree_free(IDL_PARAM_DCL(p).param_type_spec, idents);
 		__idl_tree_free(IDL_PARAM_DCL(p).simple_declarator, idents);
+		free(p);
+		break;
+		
+	case IDLN_FORWARD_DCL:
+		__idl_tree_free(IDL_FORWARD_DCL(p).ident, idents);
 		free(p);
 		break;
 		
@@ -1136,6 +1205,15 @@ IDL_tree IDL_list_new(IDL_tree data)
 	return p;
 }
 
+IDL_tree IDL_integer_new(long value)
+{
+	IDL_tree p = IDL_node_new(IDLN_INTEGER);
+
+	IDL_INTEGER(p).value = value;
+
+	return p;
+}
+
 IDL_tree IDL_string_new(char *value)
 {
 	IDL_tree p = IDL_node_new(IDLN_STRING);
@@ -1145,11 +1223,56 @@ IDL_tree IDL_string_new(char *value)
 	return p;
 }
 
-IDL_tree IDL_integer_new(long value)
+IDL_tree IDL_wide_string_new(wchar_t *value)
 {
-	IDL_tree p = IDL_node_new(IDLN_INTEGER);
+	IDL_tree p = IDL_node_new(IDLN_WIDE_STRING);
 
-	IDL_INTEGER(p).value = value;
+	IDL_WIDE_STRING(p).value = value;
+
+	return p;
+}
+
+IDL_tree IDL_char_new(char *value)
+{
+	IDL_tree p = IDL_node_new(IDLN_CHAR);
+
+	IDL_CHAR(p).value = value;
+
+	return p;
+}
+
+IDL_tree IDL_wide_char_new(wchar_t *value)
+{
+	IDL_tree p = IDL_node_new(IDLN_WIDE_CHAR);
+
+	IDL_WIDE_CHAR(p).value = value;
+
+	return p;
+}
+
+IDL_tree IDL_fixed_new(double value)
+{
+	IDL_tree p = IDL_node_new(IDLN_FIXED);
+
+	IDL_FIXED(p).value = value;
+
+	return p;
+}
+
+IDL_tree IDL_float_new(double value)
+{
+	IDL_tree p = IDL_node_new(IDLN_FLOAT);
+
+	IDL_FLOAT(p).value = value;
+
+	return p;
+}
+
+IDL_tree IDL_boolean_new(unsigned value)
+{
+	IDL_tree p = IDL_node_new(IDLN_BOOLEAN);
+
+	IDL_BOOLEAN(p).value = value;
 
 	return p;
 }
@@ -1465,6 +1588,15 @@ IDL_tree IDL_param_dcl_new(enum IDL_param_attr attr,
 	IDL_PARAM_DCL(p).attr = attr;
 	IDL_PARAM_DCL(p).param_type_spec = param_type_spec;
 	IDL_PARAM_DCL(p).simple_declarator = simple_declarator;
+
+	return p;
+}
+
+IDL_tree IDL_forward_dcl_new(IDL_tree ident)
+{
+	IDL_tree p = IDL_node_new(IDLN_FORWARD_DCL);
+	
+	IDL_FORWARD_DCL(p).ident = ident;
 
 	return p;
 }

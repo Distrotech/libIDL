@@ -25,6 +25,8 @@
 #ifndef __IDL_H
 #define __IDL_H
 
+#include <wchar.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,17 +49,53 @@ struct _IDL_LIST {
 #define IDL_LIST(a)			((a)->u.idl_list)
 IDL_tree				IDL_list_new(IDL_tree data);
 
+struct _IDL_INTEGER {
+	long value;
+};
+#define IDL_INTEGER(a)			((a)->u.idl_integer)
+IDL_tree				IDL_integer_new(long value);
+
 struct _IDL_STRING {
 	char *value;
 };
 #define IDL_STRING(a)			((a)->u.idl_string)
 IDL_tree				IDL_string_new(char *value);
 
-struct _IDL_INTEGER {
-	long value;
+struct _IDL_WIDE_STRING {
+	wchar_t *value;
 };
-#define IDL_INTEGER(a)			((a)->u.idl_integer)
-IDL_tree				IDL_integer_new(long value);
+#define IDL_WIDE_STRING(a)		((a)->u.idl_wide_string)
+IDL_tree				IDL_wide_string_new(wchar_t *value);
+
+struct _IDL_CHAR {
+	char *value;
+};
+#define IDL_CHAR(a)			((a)->u.idl_char)
+IDL_tree				IDL_char_new(char *value);
+
+struct _IDL_WIDE_CHAR {
+	wchar_t *value;
+};
+#define IDL_WIDE_CHAR(a)		((a)->u.idl_wide_char)
+IDL_tree				IDL_wide_char_new(wchar_t *value);
+
+struct _IDL_FIXED {
+	double value;
+};
+#define IDL_FIXED(a)			((a)->u.idl_fixed)
+IDL_tree				IDL_fixed_new(double value);
+
+struct _IDL_FLOAT {
+	double value;
+};
+#define IDL_FLOAT(a)			((a)->u.idl_float)
+IDL_tree				IDL_float_new(double value);
+
+struct _IDL_BOOLEAN {
+	unsigned value;
+};
+#define IDL_BOOLEAN(a)			((a)->u.idl_boolean)
+IDL_tree				IDL_boolean_new(unsigned value);
 
 struct _IDL_IDENT {
 	char *str;
@@ -65,7 +103,6 @@ struct _IDL_IDENT {
 #define IDL_IDENT(a)			((a)->u.idl_ident)
 IDL_tree				IDL_ident_get(IDL_tree *table, char *s_ident,
 						      int add, int *added);
-
 struct _IDL_TYPE_FLOAT {
 	enum IDL_float_type {
 		IDL_FLOAT_TYPE_FLOAT,
@@ -156,7 +193,6 @@ struct _IDL_TYPE_UNION {
 IDL_tree				IDL_type_union_new(IDL_tree ident,
 							   IDL_tree switch_type_spec,
 							   IDL_tree switch_body);
-
 struct _IDL_MEMBER {
 	IDL_tree type_spec;
 	IDL_tree dcls;
@@ -242,6 +278,12 @@ struct _IDL_INTERFACE {
 #define IDL_INTERFACE(a)		((a)->u.idl_interface)
 IDL_tree				IDL_interface_new(IDL_tree ident, IDL_tree inheritence_spec, IDL_tree body);
 
+struct _IDL_FORWARD_DCL {
+	IDL_tree ident;
+};
+#define IDL_FORWARD_DCL(a)		((a)->u.idl_forward_dcl)
+IDL_tree				IDL_forward_dcl_new(IDL_tree ident);
+
 struct _IDL_MODULE {
 	IDL_tree ident;
 	IDL_tree definition_list;
@@ -281,8 +323,14 @@ IDL_tree				IDL_unaryop_new(enum IDL_unaryop op, IDL_tree operand);
 typedef enum {
 	IDLN_NONE,
 	IDLN_LIST,
-	IDLN_STRING,
 	IDLN_INTEGER,
+	IDLN_STRING,
+	IDLN_WIDE_STRING,
+	IDLN_CHAR,
+	IDLN_WIDE_CHAR,
+	IDLN_FIXED,
+	IDLN_FLOAT,
+	IDLN_BOOLEAN,
 	IDLN_IDENT,
 	IDLN_TYPE_DCL,
 	IDLN_CONST_DCL,
@@ -290,6 +338,7 @@ typedef enum {
 	IDLN_ATTR_DCL,
 	IDLN_OP_DCL,
 	IDLN_PARAM_DCL,
+	IDLN_FORWARD_DCL,
 	IDLN_TYPE_INTEGER,
 	IDLN_TYPE_FLOAT,
 	IDLN_TYPE_FIXED,
@@ -318,15 +367,22 @@ struct _IDL_tree_node {
 	IDL_tree_type type;
 	union {
 		struct _IDL_LIST idl_list;
-		struct _IDL_STRING idl_string;
 		struct _IDL_INTEGER idl_integer;
+		struct _IDL_STRING idl_string;
+		struct _IDL_WIDE_STRING idl_wide_string;
+		struct _IDL_CHAR idl_char;
+		struct _IDL_WIDE_CHAR idl_wide_char;
+		struct _IDL_FIXED idl_fixed;
+		struct _IDL_FLOAT idl_float;
+		struct _IDL_BOOLEAN idl_boolean;
 		struct _IDL_IDENT idl_ident;
 		struct _IDL_TYPE_DCL idl_type_dcl;
 		struct _IDL_CONST_DCL idl_const_dcl;
 		struct _IDL_EXCEPT_DCL idl_except_dcl;
 		struct _IDL_ATTR_DCL idl_attr_dcl;
 		struct _IDL_OP_DCL idl_op_dcl;
-		struct _IDL_PARAM_DCL idl_param_dcl ;
+		struct _IDL_PARAM_DCL idl_param_dcl;
+		struct _IDL_FORWARD_DCL idl_forward_dcl;
 		struct _IDL_TYPE_FLOAT idl_type_float;
 		struct _IDL_TYPE_FIXED idl_type_fixed;
 		struct _IDL_TYPE_INTEGER idl_type_integer;

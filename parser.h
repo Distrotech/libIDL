@@ -2,7 +2,8 @@ typedef union {
 	IDL_tree tree;
 	char *str;
 	long integer;
-	float floatp;
+	double floatp;
+	double fixedp;
 	int boolean;
 	enum IDL_unaryop unaryop;
 	enum IDL_param_attr paramattr;
