@@ -1,3 +1,9 @@
+1999-03-12  Nuno Ferreira  <nmrf@rnl.ist.utl.pt>
+
+	* Makefile.am: Make parser files generation work when using
+	AM_MAKEFLAGS=-j4.
+
+
 1999-03-19  Raja R Harinath  <harinath@cs.umn.edu>
 
 	* Makefile.am (IDL.h): Add rule to autoupdate IDL.h.

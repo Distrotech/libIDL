@@ -13,10 +13,15 @@ lexer.c: $(srcdir)/lexer.l
 	@rm -f $@
 	$(LEX) $(LFLAGS) -t $< | sed -e 's/yy/__IDL_/g' >$@
 
-parser.c parser.h: $(srcdir)/parser.y
+stamp-parser: $(srcdir)/parser.y
 	$(YACC) $(YFLAGS) $<
-	test -f y.tab.c && mv -f y.tab.c parser.c
-	test -f y.tab.h && mv -f y.tab.h parser.h
+	touch $@
+
+parser.c: stamp-parser
+	mv -f y.tab.c parser.c
+
+parser.h: stamp-parser
+	mv -f y.tab.h parser.h
 
 IDL.h: IDL.h.new
 	@:
@@ -35,7 +40,7 @@ noinst_PROGRAMS		= tstidl
 
 bin_SCRIPTS		= libIDL-config
 
-BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h
+BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h stamp-parser
 
 libIDL_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h
