@@ -126,7 +126,6 @@ interface		return TOK_INTERFACE;
 long			return TOK_LONG;
 module			return TOK_MODULE;
 native			return TOK_NATIVE;
-Object			return TOK_OBJECT;
 octet			return TOK_OCTET;
 oneway			return TOK_ONEWAY;
 out			return TOK_OUT;

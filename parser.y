@@ -89,7 +89,8 @@ static int			idl_nerrors, idl_nwarnings;
 static IDL_tree			idl_root;
 static IDL_ns			idl_ns;
 static IDL_callback		idl_msgcb;
-static int			idl_is_parsing = IDL_FALSE;
+static int			idl_is_okay;
+static int			idl_is_parsing;
 %}
 
 %union {
@@ -180,11 +181,38 @@ definition_list:	definition			{ $$ = list_start($1); }
 |			definition_list definition	{ $$ = list_chain($1, $2); }
 	;
 
-definition:		type_dcl ';'
-|			const_dcl ';'
-|			except_dcl ';'
-|			interface ';'
-|			module ';'
+check_semicolon:	';'
+|			/* empty */			{
+	IDL_tree p = $<tree>0;
+	char *what;
+
+	assert(p != NULL);
+
+	switch (IDL_NODE_TYPE(p)) {
+	case IDLN_TYPE_DCL: what = "type"; break;
+	case IDLN_CONST_DCL: what = "constant"; break;
+	case IDLN_EXCEPT_DCL: what = "exception"; break;
+	case IDLN_FORWARD_DCL: what = "forward declaration"; break;
+	case IDLN_INTERFACE: what = "interface"; break;
+	case IDLN_MODULE: what = "module"; break;
+	case IDLN_ATTR_DCL: what = "attribute"; break;
+	case IDLN_OP_DCL: what = "operation"; break;
+	case IDLN_MEMBER: what = "member"; break;
+	default:
+		what = "unknown (internal error)";
+		break;
+	}
+	
+	yyerrorv("Missing semicolon after %s", what);
+	idl_is_okay = IDL_FALSE;
+}
+	;
+
+definition:		type_dcl check_semicolon
+|			const_dcl check_semicolon
+|			except_dcl check_semicolon
+|			interface check_semicolon
+|			module check_semicolon
 	;
 
 interface:		interface_dcl
@@ -245,11 +273,11 @@ export_list:		/* empty */			{ $$ = NULL; }
 |			export_list export		{ $$ = zlist_chain($1, $2); }
 	;
 
-export:			type_dcl ';'
-|			const_dcl ';'
-|			except_dcl ';'
-|			attr_dcl ';'
-|			op_dcl ';'
+export:			type_dcl check_semicolon
+|			except_dcl check_semicolon
+|			op_dcl check_semicolon
+|			attr_dcl check_semicolon
+|			const_dcl check_semicolon
 	;
 
 type_dcl:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
@@ -303,7 +331,7 @@ case_stmt_list:		case_stmt			{ $$ = list_start($1); }
 	;
 
 case_stmt:		case_label_list
-			element_spec ';'		{ $$ = IDL_case_stmt_new($1, $2); }
+			element_spec check_semicolon	{ $$ = IDL_case_stmt_new($1, $2); }
 	;
 
 element_spec:		type_spec declarator		{ $$ = IDL_member_new($1, list_start($2)); }
@@ -530,7 +558,8 @@ member_list:		member				{ $$ = list_start($1); }
 |			member_list member		{ $$ = list_chain($1, $2); }
 	;
 
-member:			type_spec declarator_list ';'	{ $$ = IDL_member_new($1, $2); }
+member:			type_spec declarator_list
+			check_semicolon			{ $$ = IDL_member_new($1, $2); }
 	;
 
 base_type_spec:		floating_pt_type
@@ -648,8 +677,8 @@ complex_declarator:	array_declarator
 	;
 
 simple_declarator_list:	simple_declarator		{ $$ = list_start($1); }
-|			simple_declarator_list
-			simple_declarator		{ $$ = list_chain($1, $2); }
+|			simple_declarator_list ','
+			simple_declarator		{ $$ = list_chain($1, $3); }
 	;
 
 array_declarator:	new_ident
@@ -1870,7 +1899,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	FILE *input;
 	char *cmd;
 #ifdef HAVE_CPP_PIPE_STDIN
-	char *fmt = CPP_PROGRAM " - %s < \"%s\"";
+	char *fmt = CPP_PROGRAM " - %s < \"%s\" 2>/dev/null";
 #else
 	char *fmt = CPP_PROGRAM " -I- -I%s %s \"%s\"";
 	char *s, *tmpfilename;
@@ -1963,6 +1992,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	flags = parse_flags;
 	idl_ns = IDL_ns_new();
 	idl_is_parsing = IDL_TRUE;
+	idl_is_okay = IDL_TRUE;
 	__IDL_lex_init();
 	__IDL_real_filename = filename;
 #ifndef HAVE_CPP_PIPE_STDIN
@@ -1983,7 +2013,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	free(tmpfilename);
 #endif
 
-	if (rv != 0) {
+	if (rv != 0 || !idl_is_okay) {
 		if (tree)
 			*tree = NULL;
 
@@ -2408,7 +2438,7 @@ IDL_tree IDL_interface_new(IDL_tree ident, IDL_tree inheritance_spec, IDL_tree b
 {
 	IDL_tree p = IDL_node_new(IDLN_INTERFACE);
 
-	/* Make sure the up node points the the interface */
+	/* Make sure the up node points to the interface */
 	if (ident && IDL_NODE_UP(ident) &&
 	    IDL_NODE_TYPE(IDL_NODE_UP(ident)) != IDLN_INTERFACE)
 		IDL_NODE_UP(ident) = NULL;
