@@ -57,32 +57,6 @@
 	}					\
 } while (0)
 
-/* note IDLN_GENTREE is deliberately avoided in assign_up_node, since
-   the gentree is primarily for the namespaces... */
-
-#define assign_up_node(up, node)	do {		\
-	IDL_tree __a = node;				\
-							\
-	if (__a == NULL)				\
-		break;					\
-							\
-	assert(__a != up);				\
-							\
-	switch (IDL_NODE_TYPE(__a)) {			\
-	case IDLN_LIST:					\
-		for (; __a != NULL;			\
-		     __a = IDL_LIST(__a).next)		\
-			if (IDL_NODE_UP(__a) == NULL)	\
-				IDL_NODE_UP(__a) = up;	\
-		break;					\
-							\
-	default:					\
-		if (IDL_NODE_UP(__a) == NULL)		\
-			IDL_NODE_UP(__a) = up;		\
-		break;					\
-	}						\
-} while (0)
-
 extern int			yylex(void);
 
 void				__IDL_tree_print(IDL_tree p);
@@ -97,6 +71,7 @@ static IDL_tree			IDL_binop_eval(enum IDL_binop op,
 					       IDL_tree b);
 static IDL_tree			IDL_unaryop_eval(enum IDL_unaryop op,
 						 IDL_tree a);
+static void			assign_up_node(IDL_tree up, IDL_tree node);
 static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
@@ -123,7 +98,7 @@ static int			idl_is_parsing = IDL_FALSE;
 %token				TOK_ANY TOK_ATTRIBUTE TOK_BOOLEAN TOK_CASE TOK_CHAR
 %token				TOK_CONST TOK_CONTEXT TOK_DEFAULT TOK_DOUBLE TOK_ENUM
 %token				TOK_EXCEPTION TOK_FALSE TOK_FIXED TOK_FLOAT TOK_IN 
-%token				TOK_INOUT TOK_INTERFACE TOK_LONG TOK_NATIVE TOK_MODULE TOK_OBJECT
+%token				TOK_INOUT TOK_INTERFACE TOK_LONG TOK_MODULE TOK_NATIVE TOK_OBJECT
 %token				TOK_OCTET TOK_ONEWAY TOK_OUT TOK_RAISES TOK_READONLY 
 %token				TOK_SEQUENCE TOK_SHORT TOK_STRING TOK_STRUCT TOK_SWITCH
 %token				TOK_TRUE TOK_TYPEDEF TOK_UNSIGNED TOK_UNION TOK_VOID
@@ -180,7 +155,7 @@ start:			idl_init
 }
 	;
 
-idl_init:		/* emtpy */			{
+idl_init:		/* empty */			{
 	idl_nerrors = idl_nwarnings = 0;
 }
 	;
@@ -1703,7 +1678,7 @@ IDL_tree IDL_get_parent_node(IDL_tree p, IDL_tree_type type, int *levels)
 
 	while (p != NULL && IDL_NODE_TYPE(p) != type) {
 
-		if (IDL_is_scoped_node(p))
+		if (IDL_NODE_IS_SCOPED(p))
 			++count;
 		
 		p = IDL_NODE_UP(p);
@@ -1788,6 +1763,30 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		IDL_ns_free(idl_ns);
 
 	return IDL_SUCCESS;
+}
+
+/* note IDLN_GENTREE is deliberately avoided in assign_up_node, since
+   the gentree is primarily for the namespaces... */
+static void assign_up_node(IDL_tree up, IDL_tree node)
+{
+	if (node == NULL)
+		return;
+
+	assert(node != up);
+
+	switch (IDL_NODE_TYPE(node)) {
+	case IDLN_LIST:
+		for (; node != NULL;
+		     node = IDL_LIST(node).next)
+			if (IDL_NODE_UP(node) == NULL)
+				IDL_NODE_UP(node) = up;
+		break;
+
+	default:
+		if (IDL_NODE_UP(node) == NULL)
+			IDL_NODE_UP(node) = up;
+		break;
+	}
 }
 
 static IDL_tree list_start(IDL_tree a)
@@ -2294,8 +2293,9 @@ IDL_tree IDL_param_dcl_new(enum IDL_param_attr attr,
 IDL_tree IDL_forward_dcl_new(IDL_tree ident)
 {
 	IDL_tree p = IDL_node_new(IDLN_FORWARD_DCL);
-	
-	assign_up_node(p, ident);
+
+	/* forward declarations should let a later interface
+	   declaration assign the up node */
 	IDL_FORWARD_DCL(p).ident = ident;
 
 	return p;
