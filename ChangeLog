@@ -1,3 +1,7 @@
+2002-03-01  jacob berkman  <jacob@ximian.com>
+
+	* autogen.sh: call automake with --copy
+
 2002-02-04  Mark McLoughlin  <mark@skynet.ie>
 
 	* configure.in: Version 0.7.4.
