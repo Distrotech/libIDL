@@ -2715,7 +2715,9 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree p, IDL_tree parent, IDL_output_d
 	case IDLN_TYPE_UNION:
 		su_def = data->su_def;
 		data->su_def = TRUE;
-		idataf (data, "union" DELIM_SPACE);
+		if (!su_def)
+			doindent ();
+		dataf (data, "union" DELIM_SPACE);
 		IDL_emit_IDL_ident (IDL_TYPE_UNION (p).ident, parent, data);
 		dataf (data, DELIM_SPACE);
 		dataf (data, "switch" DELIM_SPACE "(");
@@ -2731,8 +2733,13 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree p, IDL_tree parent, IDL_output_d
 			       (IDL_tree_func) IDL_emit_node_pre_func,
 			       (IDL_tree_func) IDL_emit_node_post_func,
 			       data);
-		idataf (data, "};"); nl ();
 		data->su_def = su_def;
+		if (data->su_def)
+			idataf (data, "}");
+		else {
+			idataf (data, "};");
+			nl ();
+		}
 		return FALSE;
 
 	default:
@@ -2902,6 +2909,7 @@ static gboolean IDL_emit_IDL_param_dcl_pre (IDL_tree p, IDL_tree parent, IDL_out
 
 static gboolean IDL_emit_IDL_type_dcl_pre (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
+	IDL_tree q;
 	gboolean idents;
 
 	idataf (data, "typedef" DELIM_SPACE);
@@ -2911,11 +2919,16 @@ static gboolean IDL_emit_IDL_type_dcl_pre (IDL_tree p, IDL_tree parent, IDL_outp
 		       (IDL_tree_func) IDL_emit_node_pre_func,
 		       (IDL_tree_func) IDL_emit_node_post_func,
 		       data);
-	data->idents = idents;
 	dataf (data, DELIM_SPACE);
-	IDL_output_delim (IDL_TYPE_DCL (p).dcls, parent, data,
-			  (IDL_tree_func) IDL_emit_IDL_ident, NULL,
-			  IDLN_IDENT, IDLN_NONE, TRUE, DELIM_COMMA);
+	for (q = IDL_TYPE_DCL (p).dcls; q; q = IDL_LIST (q).next) {
+		IDL_tree_walk (IDL_LIST (q).data, parent,
+			       (IDL_tree_func) IDL_emit_node_pre_func,
+			       (IDL_tree_func) IDL_emit_node_post_func,
+			       data);
+		if (IDL_LIST (q).next)
+			dataf (data, DELIM_COMMA);
+	}
+	data->idents = idents;
 	IDL_emit_IDL_sc (p, parent, data);
 
 	return FALSE;
@@ -2973,8 +2986,11 @@ static gboolean IDL_emit_IDL_native_pre (IDL_tree p, IDL_tree parent, IDL_output
 static gboolean IDL_emit_IDL_case_stmt_pre (IDL_tree p, IDL_tree parent, IDL_output_data *data)
 {
 	IDL_tree q;
+	gboolean literals;
 	gboolean idents;
 
+	literals = data->literals;
+	data->literals = TRUE;
 	idents = data->idents;
 	data->idents = TRUE;
 	for (q = IDL_CASE_STMT (p).labels; q; q = IDL_LIST (q).next) {
@@ -2989,6 +3005,7 @@ static gboolean IDL_emit_IDL_case_stmt_pre (IDL_tree p, IDL_tree parent, IDL_out
 			idataf (data, "default:");
 		nl ();
 	}
+	data->literals = literals;
 	data->idents = idents;
 	indent ();
 

@@ -1,6 +1,10 @@
 1999-02-21  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* util.c (IDL_emit_IDL_type_dcl_pre): 
+
 	* Update version to 0.6.0.
+
+	* Improvements to some error messages and IDL_tree_to_IDL.
 
 	* Fully convert to glib memory routines.
 

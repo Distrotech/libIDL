@@ -1026,17 +1026,27 @@ simple_declarator_list:	simple_declarator		{ $$ = list_start ($1, TRUE); }
 	;
 
 array_declarator:	new_ident
-			fixed_array_size_list		{ $$ = IDL_type_array_new ($1, $2); }
+			fixed_array_size_list		{
+	IDL_tree p;
+	int i;
+
+	$$ = IDL_type_array_new ($1, $2);
+	for (i = 1, p = $2; p; ++i, p = IDL_LIST (p).next)
+		if (!IDL_LIST (p).data) {
+			char *s = IDL_ns_ident_to_qstring ($1, "::", 0);
+			yyerrorv ("Missing value in dimension %d of array `%s'", i, s);
+			g_free (s);
+		}
+}
 	;
 
-fixed_array_size_list:	fixed_array_size		{ $$ = list_start ($1, TRUE); }
+fixed_array_size_list:	fixed_array_size		{ $$ = list_start ($1, FALSE); }
 |			fixed_array_size_list
-			fixed_array_size		{ $$ = list_chain ($1, $2, TRUE); }
+			fixed_array_size		{ $$ = list_chain ($1, $2, FALSE); }
 	;
 
-fixed_array_size:	'[' 
-			positive_int_const 
-			']'				{ $$ = $2; }
+fixed_array_size:	'[' positive_int_const ']'	{ $$ = $2; }
+|			'[' ']'				{ $$ = NULL; }
 	;
 
 prop_hash:		TOK_PROP_KEY
