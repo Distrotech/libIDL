@@ -39,6 +39,8 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+
 /* version */
 #define LIBIDL_VERSION(a,b,c)		(((a) << 16) + ((b) << 8) + (c))
 #define LIBIDL_MAJOR_VERSION		@LIBIDL_MAJOR_VERSION@
