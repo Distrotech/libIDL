@@ -8,12 +8,12 @@ Version 0.6.0 Released
 with glib free routines, i.e. g_free.  For instance the value from
 IDL_ns_ident_to_qstring should be freed with g_free.
 
-- IDL_tree_func now pass an IDLTreeFuncData pointer instead of the
-just the tree node. This structure gives you the current node, the up
+- IDL_tree_func now passes an IDLTreeFuncData struct pointer instead
+of the just the tree node. This gives you the current node, the up
 path of the traversal, and the real up path (from the node's up
 pointer), which is useful since the paths can be different in the case
-of a predefined identifier referenced in a different place. Be sure
-to update your callbacks for 0.6.
+of a predefined identifier referenced in a different place. Be sure to
+update your callbacks for 0.6.
 
 - Do not rely on IDLN_* enumeration ordering.  An alternative method
 for using jumptables is mentioned in the IDL header file.
