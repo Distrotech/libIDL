@@ -2,8 +2,8 @@ typedef union {
 	IDL_tree tree;
 	char *str;
 	long integer;
-	double floatp;
-	double fixedp;
+	float floatp;
+	int boolean;
 } YYSTYPE;
 #define	TOK_ANY	258
 #define	TOK_ATTRIBUTE	259
@@ -42,12 +42,15 @@ typedef union {
 #define	TOK_VOID	292
 #define	TOK_WCHAR	293
 #define	TOK_WSTRING	294
-#define	TOK_IDENT	295
-#define	TOK_SQSTRING	296
-#define	TOK_DQSTRING	297
-#define	TOK_INTEGER	298
-#define	TOK_FLOATP	299
-#define	TOK_FIXEDP	300
+#define	TOK_OP_SCOPE	295
+#define	TOK_OP_SHR	296
+#define	TOK_OP_SHL	297
+#define	TOK_IDENT	298
+#define	TOK_SQSTRING	299
+#define	TOK_DQSTRING	300
+#define	TOK_INTEGER	301
+#define	TOK_FLOATP	302
+#define	TOK_FIXEDP	303
 
 
 extern YYSTYPE yylval;

@@ -75,7 +75,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	return TOK_INTEGER;
 }
 {fixed_lit}		{
-	yylval.fixedp = atof(yytext);
+	yylval.floatp = atof(yytext);
 	return TOK_FIXEDP;
 }
 {float_lit}		{

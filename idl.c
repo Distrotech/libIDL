@@ -30,11 +30,13 @@
 #include "rename.h"
 #include "util.h"
 
-int IDL_parse_filename(const char *filename, const char *cpp_args, IDL_tree *tree)
+int IDL_parse_filename(const char *filename, const char *cpp_args,
+		       IDL_callback cb, IDL_tree *tree, IDL_tree *symtab)
 {
 	extern void __idl_lex_init(void);
 	extern void __idl_lex_cleanup(void);
-	extern IDL_tree __idl_root;
+	extern IDL_tree __idl_root, __idl_symtab;
+	extern IDL_callback __idl_cb;
 	extern FILE *yyin;
 	FILE *input;
 	char *fmt = CPP_PROGRAM " %s %s";
@@ -58,15 +60,25 @@ int IDL_parse_filename(const char *filename, const char *cpp_args, IDL_tree *tre
 		return errno;
 
 	yyin = input;
+	__idl_cb = cb;
 	__idl_lex_init();
 	rv = yyparse();
 	__idl_lex_cleanup();
+	__idl_cb = NULL;
 	pclose(input);
 
 	if (rv != 0)
 		return IDL_ERROR;
 
-	*tree == __idl_root;
+	if (tree)
+		*tree = __idl_root;
+	else
+		free(__idl_root);
+	
+	if (symtab)
+		*symtab = __idl_symtab;
+	else
+		free(__idl_symtab);
 
 	return IDL_SUCCESS;
 }
