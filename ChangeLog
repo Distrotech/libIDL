@@ -1,3 +1,7 @@
+1999-02-09  Tom Tromey  <tromey@cygnus.com>
+
+	* libIDL.texi: Use @pxref and not @xref in parentheses.
+
 1999-02-06  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* parser.y: Detect recursive structure members.

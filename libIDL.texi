@@ -18,7 +18,7 @@ Copyright 1998 Andrew T. Veliath
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1998 Andrew T. Veliath
+Copyright @copyright{} 1998, 1999 Andrew T. Veliath
 @end titlepage
 
 @node Top, , , (dir)
@@ -131,13 +131,13 @@ main (int argc, char *argv[])
 IDL_tree
 
 A semi-opaque tree which encapsulates an IDL tree node.  Must be freed
-with IDL_tree_free (@xref{Functions}).
+with IDL_tree_free (@pxref{Functions}).
 
 @item
 IDL_ns
 
 A semi-opaque structure which encapsulates the IDL module namespace.
-Must be freed with IDL_ns_free (@xref{Functions}).
+Must be freed with IDL_ns_free (@pxref{Functions}).
 
 @item
 IDL_msg_callback
@@ -184,7 +184,7 @@ or defines in the form of -D<define>=<value>.
 
 @item
 CALLBACK: optional, if non-NULL, this function will be called when a
-warning or error is generated (@xref{Data Types}).  If not given,
+warning or error is generated (@pxref{Data Types}).  If not given,
 warnings and errors will be sent to stderr.  All errors and warning,
 including callbacks, are subject to MAX_MESSAGE_LEVEL as described
 below.
@@ -244,7 +244,7 @@ assumption that the function has taken care of it.
 ROOT: required, specifies the IDL_tree to traverse.
 
 @item
-FUNC: required, specifies the callback function (@xref{Data Types}).
+FUNC: required, specifies the callback function (@pxref{Data Types}).
 
 @item
 DATA: optional, specifies the callback data.
