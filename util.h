@@ -51,12 +51,18 @@ extern void		yyerror				(const char *s);
 extern void		yyerrorl			(const char *s, int ofs);
 extern void		yywarning			(int level, const char *s);
 extern void		yywarningl			(int level, const char *s, int ofs);
-extern void		yyerrorv			(const char *fmt, ...);
-extern void		yyerrorlv			(const char *fmt, int ofs, ...);
-extern void		yywarningv			(int level, const char *fmt, ...);
-extern void		yywarninglv			(int level, const char *fmt, int ofs, ...);
-extern void		yyerrornv			(IDL_tree p, const char *fmt, ...);
-extern void		yywarningnv			(IDL_tree p, int level, const char *fmt, ...);
+extern void		yyerrorv			(const char *fmt, ...)
+							G_GNUC_PRINTF (1, 2);
+extern void		yyerrorlv			(const char *fmt, int ofs, ...)
+							G_GNUC_PRINTF (1, 3);
+extern void		yywarningv			(int level, const char *fmt, ...)
+							G_GNUC_PRINTF (2, 3);
+extern void		yywarninglv			(int level, const char *fmt, int ofs, ...)
+							G_GNUC_PRINTF (2, 4);
+extern void		yyerrornv			(IDL_tree p, const char *fmt, ...)
+							G_GNUC_PRINTF (2, 3);
+extern void		yywarningnv			(IDL_tree p, int level, const char *fmt, ...)
+							G_GNUC_PRINTF (3, 4);
 
 extern guint		IDL_strcase_hash		(gconstpointer v);
 extern gint		IDL_strcase_equal		(gconstpointer a, gconstpointer b);

@@ -741,12 +741,14 @@ extern int		IDL_tree_get_node_info		(IDL_tree tree,
 
 extern void		IDL_tree_error			(IDL_tree p,
 							 const char *fmt,
-							 ...);
+							 ...)
+							G_GNUC_PRINTF (2, 3);
 
 extern void		IDL_tree_warning		(IDL_tree p,
 							 int level,
 							 const char *fmt,
-							 ...);
+							 ...)
+							G_GNUC_PRINTF (3, 4);
 
 extern const char *	IDL_tree_property_get		(IDL_tree tree,
 							 const char *key);

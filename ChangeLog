@@ -2,6 +2,9 @@
 
 	* Update version to 0.6.4.
 
+	* IDL.h.new.in, util.h: Use G_GNUC_PRINTF on warning and error
+	functions.
+
 	* util.c: Rework IDL_tree_to_IDL logic a bit to accept more node
 	types, even literals.
 

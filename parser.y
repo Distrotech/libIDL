@@ -430,7 +430,7 @@ interface:		z_declspec
 			pop_scope			{
 	if ($2) yywarningv (IDL_WARNING1,
 			    "Ignoring properties for forward declaration `%s'",
-			    IDL_IDENT ($4));
+			    IDL_IDENT ($4).str);
 	$$ = IDL_forward_dcl_new ($4);
 	IDL_NODE_DECLSPEC ($$) = $1;
 	if (__IDL_inhibits > 0)
