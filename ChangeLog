@@ -1,3 +1,9 @@
+2002-01-11  Fabrice <fabrice@gnu.org>
+
+	reviewed by: Mark McLoughlin  <mark@skynet.ie>
+
+	* lexer.l: gcc 3.0 update.
+
 2002-01-09  Michael Meeks  <michael@ximian.com>
 
 	* Version 0.7.2

@@ -202,8 +202,9 @@ dqstring		\"[^\"\n]*[\"\n]
 		}
 
 		if (mytext [0] ==  '<' &&
-		    (!strcmp (mytext, "<builtin>") ||
-		     !strcmp (mytext, "<stdin>")   ||
+		    (!strcmp (mytext, "<builtin>")  ||
+		     !strcmp (mytext, "<built-in>") ||
+		     !strcmp (mytext, "<stdin>")    ||
 		     !strcmp (mytext, "<command line>")))
 		    
 			yylval.tree = IDL_file_set ("", line);
