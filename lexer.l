@@ -69,7 +69,7 @@ static GSList *				codefrag_list_tail;
 whitespace		[ \t\f\r]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
-cpp_status		^#.*
+cpp_status		^{whitespace}#.*
 b8_int			0[0-9]*
 b10_int			-[1-9][0-9]*
 b10_uint		[1-9][0-9]*
@@ -86,35 +86,40 @@ native_type		[^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
-%s XPIDL CODEFRAG
-%x XPIDLPROP XPIDLNATIVE CODEFRAGX
+%p 5000
+
+%s XP
+%x XPPROP XPNAT 
+
+%s CFRG
+%x CFRGX
 
 %%
 	/* Global syntax */
 	if (__IDL_flags & IDLF_XPIDL)
-		BEGIN (XPIDL);
+		BEGIN (XP);
 	else if (__IDL_flags & IDLF_CODEFRAGS)
-		BEGIN (CODEFRAG);
+		BEGIN (CFRG);
 
 	/* Exclusive parser driven conditions */
 	if (__IDL_flagsi & IDLFP_XPIDL_PROPERTY)
-		BEGIN (XPIDLPROP);
+		BEGIN (XPPROP);
 	else if (__IDL_flagsi & IDLFP_XPIDL_NATIVE)
-		BEGIN (XPIDLNATIVE);
+		BEGIN (XPNAT);
 
-<XPIDL,CODEFRAG>^%\{.*					{
+<XP,CFRG>^%\{.*						{
 	char *s = yytext + 2;
 
 	while (isspace (*s)) ++s;
 	codefrag_desc = g_strdup (s);
 	codefrag_list = codefrag_list_tail = NULL;
-	BEGIN (CODEFRAGX);
+	BEGIN (CFRGX);
 }
-<CODEFRAGX>^%\}.*					{
+<CFRGX>^%\}.*						{
 	yylval.tree = IDL_codefrag_new (codefrag_desc, codefrag_list);
 	tokreturn (TOK_CODEFRAG);
 }
-<CODEFRAGX>.*						{
+<CFRGX>.*						{
 	char *s;
 	GSList *slist;
 
@@ -130,7 +135,7 @@ dqstring		\"[^\"\n]*[\"\n]
 		codefrag_list_tail = slist;
 	}
 }
-<*>{cpp_pragma}						{
+<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{cpp_pragma}	{
 	int n;
 	char *p = yytext;
 	char *s;
@@ -142,12 +147,17 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	__IDL_do_pragma (s);
 }
-<*>{cpp_status}						{
-	char *filename = g_malloc (strlen (yytext) + 1);
+<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{cpp_status}	{
+	char *starttext;
+	char *filename;
 	char *filename2;
 	int line;
 
-	sscanf (yytext, "# %d %s", &line, filename);
+	starttext = yytext;
+	while (isspace (*starttext)) ++starttext;
+	filename = g_malloc (strlen (starttext) + 1);
+
+	sscanf (starttext, "# %d %s", &line, filename);
 
 	if (*filename == '"') {
 		filename2 = g_strdup (filename + 1);
@@ -160,7 +170,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	g_free (filename2);
 }
-<*>{whitespace}
+<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{whitespace}
 {b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
@@ -207,7 +217,7 @@ interface		tokreturn (TOK_INTERFACE);
 long			tokreturn (TOK_LONG);
 module			tokreturn (TOK_MODULE);
 native			tokreturn (TOK_NATIVE);
-<XPIDL>noscript		tokreturn (TOK_NOSCRIPT);
+<XP>noscript		tokreturn (TOK_NOSCRIPT);
 octet			tokreturn (TOK_OCTET);
 oneway			tokreturn (TOK_ONEWAY);
 out			tokreturn (TOK_OUT);
@@ -221,7 +231,7 @@ switch			tokreturn (TOK_SWITCH);
 typedef			tokreturn (TOK_TYPEDEF);
 union			tokreturn (TOK_UNION);
 unsigned		tokreturn (TOK_UNSIGNED);
-<XPIDL>\.\.\.		tokreturn (TOK_VARARGS);
+<XP>\.\.\.		tokreturn (TOK_VARARGS);
 void			tokreturn (TOK_VOID);
 wchar			tokreturn (TOK_WCHAR);
 wstring			tokreturn (TOK_WSTRING);
@@ -256,16 +266,16 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-<XPIDLPROP>{prop_key}					{
+<XPPROP>{prop_key}					{
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_PROP_KEY);
 }
-<XPIDLPROP>{prop_value}					{
+<XPPROP>{prop_value}					{
 	yylval.str = g_strdup (yytext + 1);
 	yylval.str[strlen (yylval.str) - 1] = 0;
 	tokreturn (TOK_PROP_VALUE);
 }
-<XPIDLNATIVE>{native_type}				{
+<XPNAT>{native_type}					{
 	yylval.str = g_strdup (yytext);
 	yylval.str[strlen (yylval.str) - 1] = 0;
 	tokreturn (TOK_NATIVE_TYPE);
@@ -280,9 +290,9 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str[strlen (yytext) - 2] = 0;
 	tokreturn (TOK_DQSTRING);
 }
-<*>{newline}		++__IDL_cur_line;
-<*>\/\/.*
-<*>.			tokreturn (yytext[0]);
+<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{newline}		++__IDL_cur_line;
+<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>\/\/.*
+<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>.			tokreturn (yytext[0]);
 
 %%
 

@@ -18,10 +18,10 @@ stamp-parser: $(srcdir)/parser.y
 	touch $@
 
 parser.c: stamp-parser
-	mv -f y.tab.c parser.c
+	test -f y.tab.c && mv -f y.tab.c parser.c || touch $@
 
 parser.h: stamp-parser
-	mv -f y.tab.h parser.h
+	test -f y.tab.h && mv -f y.tab.h parser.h || touch $@
 
 IDL.h: IDL.h.new
 	@:
@@ -31,7 +31,8 @@ DISTCLEANFILES		= IDL.h
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
-			  libIDL.def libIDLConf.sh.in
+			  libIDL.def libIDLConf.sh.in \
+			  stamp-parser
 
 info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h

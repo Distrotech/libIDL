@@ -1,18 +1,28 @@
+1999-03-22  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.4.
+
+	* Makefile.am: Add stamp-parser to EXTRA_DIST so one isn't forced
+	to regenerate parser files. Tweak stamp rule to handle a time
+	change.
+
+	* lexer.l: Strip more whitespace from cpp status. Rework start
+	conditions to be compatible with standard lex (messier but
+	functionally equivalent). A flex generated scanner is the
+	preferred method, however.
+
 1999-03-12  Nuno Ferreira  <nmrf@rnl.ist.utl.pt>
 
 	* Makefile.am: Make parser files generation work when using
 	AM_MAKEFLAGS=-j4.
-
 
 1999-03-19  Raja R Harinath  <harinath@cs.umn.edu>
 
 	* Makefile.am (IDL.h): Add rule to autoupdate IDL.h.
 	* acinclude.m4 (AC_UPDATE_IF_CHANGED): Don't remove intermediate
 	file.  This prevents unnecessary rebuilding of IDL.h.new.
-	
-1999-03-18  Andrew T. Veliath  <andrewtv@usa.net>
 
-	* Update version to 0.6.4.
+1999-03-18  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* lexer.l: Handle independent code fragments.
 
