@@ -2,10 +2,10 @@
 #
 # libIDL Makefile.am
 #
-CFLAGS			= -g -O2 -DYYDEBUG=1 -DIDL_LIBRARY @GLIB_INCLUDES@
+INCLUDES		= -DYYDEBUG=1 -DIDL_LIBRARY @GLIB_INCLUDES@
 YFLAGS			= -d -v
 LFLAGS			= @LFLAGS@
-LIBS			= -L. -lIDL @GLIB_LIBS@
+LIBS			= @GLIB_LIBS@
 
 # rule to rename lex' yy prefix
 lexer.c: lexer.l
@@ -23,3 +23,4 @@ noinst_PROGRAMS		= tstidl
 
 libIDL_a_SOURCES	= parser.y lexer.l util.c
 tstidl_SOURCES		= tstidl.c
+tstidl_LDADD		= libIDL.a
