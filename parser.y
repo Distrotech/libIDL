@@ -163,6 +163,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		any_type
 %type <tree>		array_declarator
 %type <tree>		attr_dcl
+%type <tree>		attr_dcl_def
 %type <tree>		base_type_spec
 %type <tree>		boolean_lit
 %type <tree>		boolean_type
@@ -224,6 +225,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		object_type
 %type <tree>		octet_type
 %type <tree>		op_dcl
+%type <tree>		op_dcl_def
 %type <tree>		op_type_spec
 %type <tree>		or_expr
 %type <tree>		param_dcl
@@ -258,6 +260,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		wide_char_type
 %type <tree>		wide_string_type
 %type <tree>		xor_expr
+%type <tree>		z_definition_list
 %type <tree>		z_inheritance
 %type <tree>		typecode_type
 
@@ -275,6 +278,10 @@ static int		do_token_error			(IDL_tree p,
 
 specification:		/* empty */			{ yyerror ("Empty file"); YYABORT; }
 |			definition_list			{ __IDL_root = $1; }
+	;
+
+z_definition_list:	/* empty */			{ $$ = NULL; }
+|			definition_list
 	;
 
 definition_list:	definition			{ $$ = list_start ($1, TRUE); }
@@ -302,8 +309,11 @@ check_comma:		','
 	;
 
 illegal_ident:		scoped_name			{
-	assert (IDL_NODE_UP ($1) != NULL);
-	do_token_error (IDL_NODE_UP ($1), "Illegal context for", FALSE);
+	if (IDL_NODE_UP ($1))
+	    do_token_error (IDL_NODE_UP ($1), "Illegal context for", FALSE);
+	else
+		yyerror ("Illegal context for identifier");
+	YYABORT;
 }
 	;
 
@@ -320,54 +330,43 @@ definition:		type_dcl check_semicolon
 module_declspec:	z_declspec TOK_MODULE
 	;
 
-module:			module_declspec new_or_prev_scope '{'
-				definition_list
+module:			module_declspec
+			new_or_prev_scope		{
+	if (IDL_NODE_UP ($2) != NULL &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
+		yyerror ("Module definition conflicts");
+		do_token_error (IDL_NODE_UP ($2), "with", FALSE);
+		YYABORT;
+	}
+}			'{'
+				z_definition_list
 			'}' pop_scope			{
 	IDL_tree module;
 
-	if (IDL_NODE_UP ($2) != NULL &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
-		do_token_error (IDL_NODE_UP ($2), "Module definition conflicts with", FALSE);
-		IDL_tree_error ($2, "Previous declaration");
-		YYABORT;
+	if ($5 == NULL) {
+		yyerrorv ("Empty module declaration `%s' is not legal IDL",
+			  IDL_IDENT ($2).str);
+		module = NULL;
 	}
 
 	if (__IDL_flags & IDLF_COMBINE_REOPENED_MODULES) {
 		if (IDL_NODE_UP ($2) == NULL)
-			module = IDL_module_new ($2, $4);
+			module = IDL_module_new ($2, $5);
 		else {
 			module = IDL_NODE_UP ($2);
-			
 			IDL_MODULE (module).definition_list =
-				IDL_list_concat (IDL_MODULE (module).definition_list, $4);
-
+				IDL_list_concat (IDL_MODULE (module).definition_list, $5);
 			module = NULL;
 		}
 	} else
-		module = IDL_module_new ($2, $4);
+		module = IDL_module_new ($2, $5);
 
 	$$ = module;
-	IDL_NODE_DECLSPEC ($$) = $1;	
-	if (__IDL_inhibits > 0)
-		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
-}
-|			module_declspec new_or_prev_scope '{'
-			'}' pop_scope			{
-	if (IDL_NODE_UP ($2) != NULL &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
-		do_token_error (IDL_NODE_UP ($2), "Module definition conflicts with", FALSE);
-		IDL_tree_error ($2, "Previous declaration");
-		YYABORT;
-	}
-	yywarningv (IDL_WARNING1,
-		   "Empty module declaration `%s' is not legal IDL",
-		   IDL_IDENT ($2).str);
-
-	$$ = IDL_NODE_UP ($2) ? NULL : IDL_module_new ($2, NULL);
 	if ($$) {
-		IDL_NODE_DECLSPEC ($$) = $1;
+		IDL_NODE_DECLSPEC ($$) = $1;	
 		if (__IDL_inhibits > 0)
-			IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+			IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST |
+				IDLF_DECLSPEC_INHIBIT;
 	}
 }
 	;
@@ -386,18 +385,18 @@ interface_catch_ident:	new_or_prev_scope
 interface:		z_declspec
 			z_props
 			TOK_INTERFACE
-			interface_catch_ident
-			pop_scope
-			z_inheritance			{
+			interface_catch_ident		{
 	assert ($4 != NULL);
 	assert (IDL_NODE_TYPE ($4) == IDLN_IDENT);
 	assert (IDL_IDENT_TO_NS ($4) != NULL);
 	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($4)) == IDLN_GENTREE);
+
 	if (IDL_NODE_UP ($4) != NULL &&
 	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_INTERFACE &&
 	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
-		do_token_error (IDL_NODE_UP ($4), "Interface definition conflicts with", FALSE);
-		IDL_tree_error ($4, "Previous declaration");
+		yyerrorl ("Interface definition conflicts",
+			  __IDL_prev_token_line - __IDL_cur_token_line);
+		do_token_error (IDL_NODE_UP ($4), "with", FALSE);
 		YYABORT;
 	} else if (IDL_NODE_UP ($4) != NULL &&
 		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
@@ -405,19 +404,19 @@ interface:		z_declspec
 		IDL_tree_error ($4, "Previous declaration of interface `%s'", IDL_IDENT ($4).str);
 		YYABORT;
 	} else if (IDL_NODE_UP ($4) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL) {
-		$4->_file = __IDL_cur_filename;
-		$4->_line = __IDL_cur_line;
-	}
-	IDL_GENTREE (IDL_IDENT_TO_NS ($4))._import = $6;
-	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($4));
-	if (IDL_ns_check_for_ambiguous_inheritance ($4, $6))
-		__IDL_is_okay = FALSE;
+		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL)
+		__IDL_assign_this_location ($4, __IDL_cur_filename, __IDL_cur_line);
 }
-			'{'
+			pop_scope
+			z_inheritance			{
+	IDL_GENTREE (IDL_IDENT_TO_NS ($4))._import = $7;
+	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($4));
+	if (IDL_ns_check_for_ambiguous_inheritance ($4, $7))
+		__IDL_is_okay = FALSE;
+}			'{'
 				interface_body
 			'}' pop_scope			{
- 	$$ = IDL_interface_new ($4, $6, $9);
+ 	$$ = IDL_interface_new ($4, $7, $10);
 	IDL_NODE_DECLSPEC ($$) = $1;
 	if (__IDL_inhibits > 0)
 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
@@ -514,12 +513,28 @@ type_dcl:		z_declspec type_dcl_def		{
 }
 	;
 
-type_dcl_def:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
+type_dcl_def:		z_props TOK_TYPEDEF
+			type_declarator			{
+	IDL_tree_node node;
+	IDL_tree p, dcl;
+
+	$$ = $3;
+	node.properties = $1;
+	for (p = IDL_TYPE_DCL ($3).dcls; p; p = IDL_LIST (p).next) {
+		dcl = IDL_LIST (p).data;
+		IDL_tree_properties_copy (&node, dcl);
+	}
+	__IDL_free_properties (node.properties);
+}
 |			struct_type
 |			union_type
 |			enum_type
-|			TOK_NATIVE simple_declarator	{ $$ = IDL_native_new ($2); }
-|			TOK_NATIVE simple_declarator
+|			z_props TOK_NATIVE
+			simple_declarator		{
+	$$ = IDL_native_new ($3);
+	assign_props (IDL_NATIVE ($$).ident, $1);
+}
+|			z_props TOK_NATIVE simple_declarator
 			'('				{
 	/* Enable native type scanning */
 	if (__IDL_flags & IDLF_XPIDL)
@@ -532,8 +547,9 @@ type_dcl_def:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
 	/* Disable native type scanning */
 	if (__IDL_flags & IDLF_XPIDL)
 		__IDL_flagsi &= ~IDLFP_XPIDL_NATIVE;
-	$$ = IDL_native_new ($2);
-	IDL_NATIVE ($$).user_type = $5;
+	$$ = IDL_native_new ($3);
+	IDL_NATIVE ($$).user_type = $6;
+	assign_props (IDL_NATIVE ($$).ident, $1);
 }
 	;
 
@@ -554,29 +570,33 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
-struct_type:		TOK_STRUCT new_scope '{'	{
-	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
-	$$ = IDL_type_struct_new ($2, NULL);
+struct_type:		z_props TOK_STRUCT
+			new_scope '{'			{
+	g_hash_table_insert (__IDL_structunion_ht, $3, $3);
+	$$ = IDL_type_struct_new ($3, NULL);
 }				member_list
 			'}' pop_scope			{
-	g_hash_table_remove (__IDL_structunion_ht, $2);
-	$$ = $<tree>4;
-	IDL_TYPE_STRUCT ($$).member_list = $5;
-	IDL_NODE_UP (IDL_TYPE_STRUCT ($$).member_list) = $$;
+	g_hash_table_remove (__IDL_structunion_ht, $3);
+	$$ = $<tree>5;
+	__IDL_assign_up_node ($$, $6);
+	IDL_TYPE_STRUCT ($$).member_list = $6;
+	assign_props (IDL_TYPE_STRUCT ($$).ident, $1);
 }
 	;
 
-union_type:		TOK_UNION new_scope TOK_SWITCH '('
+union_type:		z_props TOK_UNION
+			new_scope TOK_SWITCH '('
 				switch_type_spec
 			')' '{'				{
-	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
-	$$ = IDL_type_union_new ($2, $5, NULL);
+	g_hash_table_insert (__IDL_structunion_ht, $3, $3);
+	$$ = IDL_type_union_new ($3, $6, NULL);
 }				switch_body
 			'}' pop_scope			{
-	g_hash_table_remove (__IDL_structunion_ht, $2);
-	$$ = $<tree>8;
-	IDL_TYPE_UNION ($$).switch_body = $9;
-	IDL_NODE_UP (IDL_TYPE_UNION ($$).switch_body) = $$;
+	g_hash_table_remove (__IDL_structunion_ht, $3);
+	$$ = $<tree>9;
+	__IDL_assign_up_node ($$, $10);
+	IDL_TYPE_UNION ($$).switch_body = $10;
+	assign_props (IDL_TYPE_UNION ($$).ident, $1);
 }
 	;
 
@@ -656,7 +676,15 @@ is_readonly:		/* empty */			{ $$ = FALSE; }
 |			TOK_READONLY			{ $$ = TRUE; }
 	;
 
-attr_dcl:		z_props
+attr_dcl:		z_declspec attr_dcl_def		{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
+	;
+
+attr_dcl_def:		z_props
 			is_readonly
 			TOK_ATTRIBUTE
 			param_type_spec
@@ -671,6 +699,8 @@ attr_dcl:		z_props
 		IDL_tree_properties_copy (&node, dcl);
 	}
 	__IDL_free_properties (node.properties);
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 }
 	;
 
@@ -689,7 +719,15 @@ is_oneway:		/* empty */			{ $$ = FALSE; }
 |			TOK_ONEWAY			{ $$ = TRUE; }
 	;
 
-op_dcl:			z_props
+op_dcl:		z_declspec op_dcl_def		{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
+	;
+
+op_dcl_def:		z_props
 			is_noscript
 			is_oneway
 			op_type_spec
@@ -846,9 +884,13 @@ literal:		integer_lit
 |			boolean_lit
 	;
 
-enum_type:		TOK_ENUM new_ident '{'
+enum_type:		z_props TOK_ENUM
+			new_ident '{'
 				enumerator_list
-			'}'				{ $$ = IDL_type_enum_new ($2, $4); }
+			'}'				{
+	$$ = IDL_type_enum_new ($3, $5);
+	assign_props (IDL_TYPE_ENUM ($$).ident, $1);
+}
 	;
 
 scoped_name:		ns_scoped_name			{
@@ -1308,7 +1350,12 @@ boolean_lit:		TOK_TRUE			{ $$ = IDL_boolean_new (TRUE); }
 |			TOK_FALSE			{ $$ = IDL_boolean_new (FALSE); }
 	;
 
-codefrag:		TOK_CODEFRAG
+codefrag:		z_declspec TOK_CODEFRAG		{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;	
+	if (__IDL_inhibits > 0)
+		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
 	;
 
 dqstring_cat:		dqstring
@@ -1682,7 +1729,6 @@ static IDL_tree list_chain (IDL_tree a, IDL_tree b, gboolean filter_null)
 	if (filter_null) {
 		if (!b)
 			return a;
-		
 		if (!a)
 			return list_start (b, filter_null);
 	}

@@ -1,4 +1,4 @@
-%define version 0.6.0
+%define version 0.6.3
 %define release SNAP
 
 Summary:   IDL parsing library

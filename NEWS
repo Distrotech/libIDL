@@ -1,4 +1,4 @@
-* Status as of 2/21/99
+* Status as of 2/22/99
 
 Version 0.6.0 Released
 
@@ -8,14 +8,15 @@ Version 0.6.0 Released
 with glib free routines, i.e. g_free.  For instance the value from
 IDL_ns_ident_to_qstring should be freed with g_free.
 
-- IDL_tree_func now includes a parent node between the root tree and
-the data pointer, since it can be different in the case of a
-predefined identifier referenced in a different place.  Be sure to
+- IDL_tree_func now passes an IDL_tree_func_data struct pointer
+instead of the just the tree node. This gives you the current node,
+the up path of the traversal, and the real up path (from the node's up
+pointer), which is useful since the paths can be different in the case
+of a predefined identifier referenced in a different place. Be sure to
 update your callbacks for 0.6.
 
 - Do not rely on IDLN_* enumeration ordering.  An alternative method
 for using jumptables is mentioned in the IDL header file.
-
 
 ** New Features for libIDL 0.6.0
 
@@ -34,6 +35,7 @@ flag).
 - Support for Win32.
 
 - Many bug fixes.
+
 
 * Status as of 8/17/98
 

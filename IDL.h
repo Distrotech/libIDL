@@ -33,9 +33,11 @@ extern "C" {
 #endif
 
 /* version */
+#define LIBIDL_VERSION(a,b,c)		(((a) << 16) + ((b) << 8) + (c))
 #define LIBIDL_MAJOR_VERSION		0
 #define LIBIDL_MINOR_VERSION		6
-#define LIBIDL_MICRO_VERSION		0
+#define LIBIDL_MICRO_VERSION		3
+#define LIBIDL_VERSION_CODE		LIBIDL_VERSION(0,6,3)
 
 /* miscellaneous constants */
 #define IDL_SUCCESS			0
@@ -50,6 +52,8 @@ extern "C" {
 #define IDLF_NO_EVAL_CONST		(1UL << 1)
 #define IDLF_COMBINE_REOPENED_MODULES	(1UL << 2)
 #define IDLF_PREFIX_FILENAME		(1UL << 3)
+#define IDLF_IGNORE_FORWARDS		(1UL << 4)
+#define IDLF_PEDANTIC			(1UL << 5)
 
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)
@@ -84,7 +88,11 @@ extern "C" {
 			    G_GNUC_PRETTY_FUNCTION)->u.name)
 
 #ifdef G_HAVE_GINT64
-#  define IDL_LL			"ll"
+#  if G_MAXLONG > 0xffffffffUL
+#    define IDL_LL			"l"
+#  else
+#    define IDL_LL			"ll"
+#  endif
 typedef gint64				IDL_longlong_t;
 typedef guint64				IDL_ulonglong_t;
 #else
@@ -566,7 +574,7 @@ struct _IDL_tree_node {
 	} u;
 };
 #define IDL_NODE_TYPE(a)		((a)->_type)
-#define IDL_NODE_TYPE_NAME(a)		(IDL_tree_type_names[IDL_NODE_TYPE(a)])
+#define IDL_NODE_TYPE_NAME(a)		((a)?IDL_tree_type_names[IDL_NODE_TYPE(a)]:"NULL")
 #define IDL_NODE_UP(a)			((a)->up)
 #define IDL_NODE_PROPERTIES(a)		((a)->properties)
 #define IDL_NODE_DECLSPEC(a)		((a)->declspec)
@@ -646,10 +654,28 @@ typedef int		(*IDL_msg_callback)		(int level,
 							 const char *filename,
 							 const char *message);
 
-typedef gboolean	(*IDL_tree_func)		(IDL_tree p,
-							 IDL_tree scope,
+typedef struct _IDL_tree_func_state	IDL_tree_func_state;
+typedef struct _IDL_tree_func_data	IDL_tree_func_data;
+
+/* Traversal state data.  Recursive walks chain states. */
+struct _IDL_tree_func_state {
+	IDL_tree_func_state *up;
+	IDL_tree start;
+	IDL_tree_func_data *bottom;
+};
+
+/* This holds a list of the up hierarchy traversed, beginning from traversal.  This is
+ * useful since nodes referenced after initial definition will have a different traversal
+ * path than the actual up path. */
+struct _IDL_tree_func_data {
+	IDL_tree_func_state *state;
+	IDL_tree_func_data *up;
+	IDL_tree tree;
+};
+
+typedef gboolean	(*IDL_tree_func)		(IDL_tree_func_data *tnfd,
 							 gpointer user_data);
-	
+
 extern IDL_tree		IDL_check_type_cast		(const IDL_tree var,
 							 IDL_tree_type type,
 							 const char *file,
@@ -729,7 +755,7 @@ extern void		IDL_tree_properties_copy	(IDL_tree from_tree,
 							 IDL_tree to_tree);
 
 extern void		IDL_tree_walk			(IDL_tree p,
-							 IDL_tree scope,
+							 IDL_tree_func_data *current,
 							 IDL_tree_func pre_tree_func,
 							 IDL_tree_func post_tree_func,
 							 gpointer user_data);

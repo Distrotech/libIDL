@@ -114,7 +114,7 @@ int IDL_ns_prefix (IDL_ns ns, const char *s)
 IDL_tree IDL_ns_resolve_this_scope_ident (IDL_ns ns, IDL_tree scope, IDL_tree ident)
 {
 	IDL_tree p, q;
-	
+
 	IDL_NS_ASSERTS;
 
 	p = scope;
@@ -137,7 +137,7 @@ IDL_tree IDL_ns_resolve_ident (IDL_ns ns, IDL_tree ident)
 IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gboolean *conflict)
 {
 	IDL_tree p, q;
-	
+
 	IDL_NS_ASSERTS;
 
 	if (conflict)
@@ -145,7 +145,7 @@ IDL_tree IDL_ns_lookup_this_scope (IDL_ns ns, IDL_tree scope, IDL_tree ident, gb
 
 	if (scope == NULL)
 		return NULL;
-	
+
 	assert (IDL_NODE_TYPE (scope) == IDLN_GENTREE);
 
 	/* Search this namespace */
@@ -344,70 +344,26 @@ int IDL_ns_scope_levels_from_here (IDL_ns ns, IDL_tree ident, IDL_tree parent)
 	g_return_val_if_fail (ns != NULL, 1);
 	g_return_val_if_fail (ident != NULL, 1);
 
-#ifdef DEBUGNS
+	while (parent && !IDL_NODE_IS_SCOPED (parent))
+		parent = IDL_NODE_UP (parent);
+
 	if (parent == NULL)
 		return 1;
 
-	debugf ("Start type: %s", IDL_NODE_TYPE_NAME (parent));
-#endif
-	while (parent && !IDL_NODE_IS_SCOPED (parent)) {
-		parent = IDL_NODE_UP (parent);
-#ifdef DEBUGNS
-		if (parent)
-			debugf ("Type up: %s", IDL_NODE_TYPE_NAME (parent));
-#endif
-	}
-	if (parent == NULL) {
-#ifdef DEBUGNS
-		debugf ("No end type");
-#endif
-		return 1;
-	}
-#ifdef DEBUGNS
-	debugf ("End type: %s", IDL_NODE_TYPE_NAME (parent));
-#endif
-
 	if ((scope_here = IDL_tree_get_scope (parent)) == NULL ||
-	    (scope_ident = IDL_tree_get_scope (ident)) == NULL) {
-#ifdef DEBUGNS
-		g_warning ("Failed");
-#endif
+	    (scope_ident = IDL_tree_get_scope (ident)) == NULL)
 		return 1;
-	}
 
 	assert (IDL_NODE_TYPE (scope_here) == IDLN_GENTREE);
 	assert (IDL_NODE_TYPE (scope_ident) == IDLN_GENTREE);
 
 	for (levels = 1; scope_ident;
 	     ++levels, scope_ident = IDL_NODE_UP (scope_ident)) {
-#ifdef DEBUGNS
-		IDL_tree scope;
-		char *s, *s3;
-
-		if (scope_ident == IDL_NS (ns).global)
-			break;
-		s = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_ident).data, "::", 0);
-		s3 = IDL_ns_ident_to_qstring (IDL_GENTREE (scope_here).data, "::", 0);
-		debugf ("Searching for ident %s from scope %s", s, s3);
-		g_free (s); g_free (s3);
-#endif
 		p = IDL_ns_resolve_this_scope_ident (
 			ns, scope_here, IDL_GENTREE (scope_ident).data);
 		if (p == scope_ident)
 			return levels;
-#ifdef DEBUGNS
-		if (p) {
-			char *s2 = IDL_ns_ident_to_qstring (IDL_GENTREE (p).data, "::",
-							    0);
-			debugf ("Rejected scope %s", s2);
-			g_free (s2);
-		}
-#endif
 	}
-
-#ifdef DEBUGNS
-	debugf ("Fall through");
-#endif
 
 	return 1;
 }
@@ -493,13 +449,13 @@ static int is_inheritance_conflict (IDL_tree p)
 	return TRUE;
 }
 
-struct insert_heap_cb_data {
+typedef struct {
 	IDL_tree interface_ident;
 	GTree *ident_heap;
 	int insert_conflict;
-};
+} InsertHeapData;
 
-static void insert_heap_cb (IDL_tree ident, IDL_tree p, struct insert_heap_cb_data *data)
+static void insert_heap_cb (IDL_tree ident, IDL_tree p, InsertHeapData *data)
 {
 	if (!is_inheritance_conflict (p))
 		return;
@@ -514,7 +470,7 @@ static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree iden
 					 GTree *ident_heap, GHashTable *visited_interfaces)
 {
 	IDL_tree q, scope;
-	struct insert_heap_cb_data data;
+	InsertHeapData data;
 
 	assert (ident_scope != NULL);
 	assert (IDL_NODE_TYPE (ident_scope) == IDLN_IDENT);
@@ -549,18 +505,18 @@ static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree iden
 	/* Add inherited namespace identifiers into heap */
 	for (; q != NULL; q = IDL_LIST (q).next) {
 		int r;
-		
+
 		assert (IDL_LIST (q).data != NULL);
 		assert (IDL_NODE_TYPE (IDL_LIST (q).data) == IDLN_IDENT);
 		assert (IDL_IDENT_TO_NS (IDL_LIST (q).data) != NULL);
 		assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS (IDL_LIST (q).data)) == IDLN_GENTREE);
 		assert (IDL_NODE_TYPE (IDL_NODE_UP (IDL_LIST (q).data)) == IDLN_INTERFACE);
-		
+
 		if (!(r = IDL_ns_load_idents_to_tables (interface_ident, IDL_LIST (q).data,
 							ident_heap, visited_interfaces)))
 			data.insert_conflict = 1;
 	}
-	
+
 	mark_visited_interface (visited_interfaces, scope);
 
 	return data.insert_conflict == 0;

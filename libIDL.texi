@@ -65,18 +65,15 @@ the Repository IDs of the interfaces in the IDL module.
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <glib.h>
 #include <libIDL/IDL.h>
 
 gboolean
-print_repo_id (IDL_tree p, IDL_tree parent, gpointer user_data)
+print_repo_id (IDL_tree_func_data *tfd, gpointer user_data)
 @{
 	char *repo_id = NULL;
 
-	assert (p != NULL);
-
-	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE)
-		repo_id = IDL_IDENT_REPO_ID (IDL_INTERFACE (p).ident);
+	if (IDL_NODE_TYPE (tfd->tree) == IDLN_INTERFACE)
+		repo_id = IDL_IDENT_REPO_ID (IDL_INTERFACE (tfd->tree).ident);
 
 	if (repo_id)
 		printf ("%s\n", repo_id);
@@ -150,11 +147,12 @@ warning or error occurs.
 @item
 IDL_tree_func
 
-Defined as typedef gboolean (*IDL_tree_func)(IDL_tree TREE, IDL_tree
-TREE_PARENT, gpointer DATA).  A function of this type is passed to
-IDL_tree_walk_in_order to traverse the tree.  TREE_PARENT is passed,
-since it may not be the same as IDL_NODE_UP (TREE), especially in the
-case of scoped idents.
+Defined as typedef gboolean (*IDL_tree_func) (IDL_tree_func_data
+*TREE_FUNC_DATA, gpointer DATA).  A function of this type is passed to
+IDL_tree_walk_in_order to traverse the tree.  TREE_FUNC_DATA contains an
+up traversal hierarchy of the current traversal, as well as some state
+information.  The current node being processed is given by
+TREE_FUNC_DATA->tree.
 
 @end itemize
 
