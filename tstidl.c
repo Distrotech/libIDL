@@ -19,7 +19,7 @@ struct walk_data {
 	IDL_ns ns;
 };
 
-gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data data)
+gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data *data)
 {
 	char *repo_id = NULL;
 
@@ -35,7 +35,7 @@ gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data data)
 	return TRUE;
 }
 
-gboolean print_xpidl_exts (IDL_tree p, IDL_tree parent, struct walk_data data)
+gboolean print_xpidl_exts (IDL_tree p, IDL_tree parent, struct walk_data *data)
 {
 	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE) {
 		const char *val;
@@ -59,7 +59,7 @@ gboolean print_xpidl_exts (IDL_tree p, IDL_tree parent, struct walk_data data)
 			ident = IDL_ident_new (g_strdup (val));
 
 			if ((q = IDL_ns_lookup_this_scope (
-				data.ns, IDL_IDENT_TO_NS (IDL_OP_DCL (op).ident),
+				data->ns, IDL_IDENT_TO_NS (IDL_OP_DCL (op).ident),
 				ident, NULL)) == NULL) {
 				IDL_tree_error (op,
 						"`%s' not found in parameter list",
@@ -83,7 +83,7 @@ gboolean print_xpidl_exts (IDL_tree p, IDL_tree parent, struct walk_data data)
 	return TRUE;
 }
 
-gboolean print_ident_comments (IDL_tree p, IDL_tree parent, struct walk_data data)
+gboolean print_ident_comments (IDL_tree p, IDL_tree parent, struct walk_data *data)
 {
 	GSList *list;
 
@@ -98,7 +98,7 @@ gboolean print_ident_comments (IDL_tree p, IDL_tree parent, struct walk_data dat
 	return TRUE;
 }
 
-gboolean print_const_dcls (IDL_tree p, IDL_tree parent, struct walk_data data)
+gboolean print_const_dcls (IDL_tree p, IDL_tree parent, struct walk_data *data)
 {
 	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL &&
 	    IDL_NODE_TYPE (IDL_CONST_DCL (p).const_exp) == IDLN_INTEGER) {
