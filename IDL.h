@@ -182,13 +182,15 @@ struct _IDL_IDENT {
 #define IDL_IDENT_TO_NS(a)		IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident._ns_ref)
 #define IDL_IDENT_REPO_ID(a)		IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident.repo_id)
 extern IDL_tree		IDL_ident_new			(char *str);
-
+	
+enum IDL_float_type {
+	IDL_FLOAT_TYPE_FLOAT,
+	IDL_FLOAT_TYPE_DOUBLE,
+	IDL_FLOAT_TYPE_LONGDOUBLE
+};
+	
 struct _IDL_TYPE_FLOAT {
-	enum IDL_float_type {
-		IDL_FLOAT_TYPE_FLOAT,
-		IDL_FLOAT_TYPE_DOUBLE,
-		IDL_FLOAT_TYPE_LONGDOUBLE
-	} f_type;
+	enum IDL_float_type f_type;
 };
 #define IDL_TYPE_FLOAT(a)		IDL_CHECK_CAST(a, IDLN_TYPE_FLOAT, idl_type_float)
 extern IDL_tree		IDL_type_float_new		(enum IDL_float_type f_type);
@@ -201,13 +203,15 @@ struct _IDL_TYPE_FIXED {
 extern IDL_tree		IDL_type_fixed_new		(IDL_tree positive_int_const,
 							 IDL_tree integer_lit);
 
+enum IDL_integer_type {
+	IDL_INTEGER_TYPE_SHORT,
+	IDL_INTEGER_TYPE_LONG,
+	IDL_INTEGER_TYPE_LONGLONG
+};
+
 struct _IDL_TYPE_INTEGER {
 	unsigned f_signed		: 1;
-	enum IDL_integer_type {
-		IDL_INTEGER_TYPE_SHORT,
-		IDL_INTEGER_TYPE_LONG,
-		IDL_INTEGER_TYPE_LONGLONG
-	} f_type;
+	enum IDL_integer_type f_type;
 };
 #define IDL_TYPE_INTEGER(a)		IDL_CHECK_CAST(a, IDLN_TYPE_INTEGER, idl_type_integer)
 extern IDL_tree		IDL_type_integer_new		(unsigned f_signed,
@@ -340,12 +344,14 @@ extern IDL_tree		IDL_op_dcl_new			(unsigned f_oneway,
 							 IDL_tree raises_expr,
 							 IDL_tree context_expr);
 
+enum IDL_param_attr {
+	IDL_PARAM_IN,
+	IDL_PARAM_OUT,
+	IDL_PARAM_INOUT
+};
+
 struct _IDL_PARAM_DCL {
-	enum IDL_param_attr {
-		IDL_PARAM_IN,
-		IDL_PARAM_OUT,
-		IDL_PARAM_INOUT
-	} attr;
+	enum IDL_param_attr attr;
 	IDL_tree param_type_spec;
 	IDL_tree simple_declarator;
 };
@@ -386,19 +392,21 @@ struct _IDL_MODULE {
 extern IDL_tree		IDL_module_new			(IDL_tree ident,
 							 IDL_tree definition_list);
 
+enum IDL_binop {
+	IDL_BINOP_OR,
+	IDL_BINOP_XOR,
+	IDL_BINOP_AND,
+	IDL_BINOP_SHR,
+	IDL_BINOP_SHL,
+	IDL_BINOP_ADD,
+	IDL_BINOP_SUB,
+	IDL_BINOP_MULT,
+	IDL_BINOP_DIV,
+	IDL_BINOP_MOD
+};
+
 struct _IDL_BINOP {
-	enum IDL_binop {
-		IDL_BINOP_OR,
-		IDL_BINOP_XOR,
-		IDL_BINOP_AND,
-		IDL_BINOP_SHR,
-		IDL_BINOP_SHL,
-		IDL_BINOP_ADD,
-		IDL_BINOP_SUB,
-		IDL_BINOP_MULT,
-		IDL_BINOP_DIV,
-		IDL_BINOP_MOD
-	} op;
+	enum IDL_binop op;
 	IDL_tree left, right;
 };
 #define IDL_BINOP(a)			IDL_CHECK_CAST(a, IDLN_BINOP, idl_binop)
@@ -406,12 +414,14 @@ extern IDL_tree		IDL_binop_new			(enum IDL_binop op,
 							 IDL_tree left,
 							 IDL_tree right);
 
+enum IDL_unaryop {
+	IDL_UNARYOP_PLUS,
+	IDL_UNARYOP_MINUS,
+	IDL_UNARYOP_COMPLEMENT
+};
+
 struct _IDL_UNARYOP {
-	enum IDL_unaryop {
-		IDL_UNARYOP_PLUS,
-		IDL_UNARYOP_MINUS,
-		IDL_UNARYOP_COMPLEMENT
-	} op;
+	enum IDL_unaryop op;
 	IDL_tree operand;
 };
 #define IDL_UNARYOP(a)			IDL_CHECK_CAST(a, IDLN_UNARYOP, idl_unaryop)
