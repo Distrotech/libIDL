@@ -220,7 +220,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		return -1;
 	}
 
-#ifndef _WIN32
+#ifndef NO_ACCESS
 	if (access (filename, R_OK))
 		return -1;
 #endif
@@ -276,11 +276,13 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 	strcpy (tmpfilename, s);
 	strcat (tmpfilename, ".c");
+#ifndef NO_SYMLINK
 	if (symlink (linkto, tmpfilename) < 0) {
 		g_free (linkto);
 		g_free (tmpfilename);
 		return -1;
 	}
+#endif
 	g_free (linkto);
 
 	cmd_len = (strlen (tmpfilename) + strlen (cwd) +
@@ -297,7 +299,11 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		    cwd, cpp_args ? cpp_args : "", tmpfilename);
 #endif
 
+#ifndef NO_POPEN
+	input = fopen (cmd, "r");
+#else
 	input = popen (cmd, "r");
+#endif
 	g_free (cmd);
 
 	if (input == NULL || ferror (input)) {
@@ -339,7 +345,11 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = NULL;
 #endif
+#ifndef NO_POPEN
+	fclose (input);
+#else
 	pclose (input);
+#endif
 #ifndef HAVE_CPP_PIPE_STDIN
 	unlink (tmpfilename);
 	g_free (tmpfilename);

@@ -37,6 +37,15 @@
 
 #ifdef _WIN32
 #  define alloca
+#  define NO_ACCESS
+#endif
+
+#ifdef XP_MAC
+#  include <alloca.h>
+#  define alloca
+#  define NO_ACCESS
+#  define NO_SYMLINK
+#  define NO_POPEN
 #endif
 
 /* Internal parse flags */

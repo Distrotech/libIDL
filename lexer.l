@@ -31,6 +31,11 @@
 #include "util.h"
 #include "parser.h"
 
+#ifdef XP_MAC
+#  include <unix.h>
+#  define YY_NEVER_INTERACTIVE 1
+#endif
+
 #define YY_INPUT(buf,result,the_max_size)	do {				\
 	if (__IDL_inputcb == NULL) {						\
 		if ((result = fread (buf, 1, the_max_size, yyin)) == YY_NULL &&	\

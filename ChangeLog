@@ -1,5 +1,8 @@
 1999-06-09  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* lexer.l:
+	* util.[ch]: Integrate Macintosh port changes from Netscape.
+
 	* IDL.h.new.in, parser.y, util.c: Deprecate noscript support.
 
 	* lexer.l (tokreturn): Remove deprecated ``noscript'' keyword.
