@@ -796,6 +796,12 @@ extern GString *	IDL_tree_to_IDL_string		(IDL_tree p,
 							 IDL_ns ns,
 							 unsigned long output_flags);
 
+extern gboolean		IDL_tree_contains_node		(IDL_tree p,
+							 IDL_tree searchNode);
+
+extern gboolean 	IDL_tree_is_recursive		(IDL_tree tree, 
+							IDL_tree *hasRecur);
+
 extern gchar *		IDL_do_escapes			(const char *s);
 
 extern IDL_tree		IDL_resolve_const_exp		(IDL_tree p,

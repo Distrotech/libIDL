@@ -3459,6 +3459,90 @@ GString *IDL_tree_to_IDL_string (IDL_tree p, IDL_ns ns, unsigned long output_fla
 	return data.u.s;
 }
 
+typedef struct {
+    IDL_tree	searchNode;
+    gboolean	found;
+} ContainsNodeWalkerInfo;
+
+static gboolean 
+contains_node_walker (IDL_tree_func_data *tfd, gpointer data) {
+	ContainsNodeWalkerInfo	*info = data;
+	/* skip root! */
+	if ( tfd->up!=0 && tfd->tree == info->searchNode ) {
+		info->found = TRUE;
+		return FALSE;
+	}
+ 	return TRUE;	/* continue walking */
+}
+
+gboolean IDL_tree_contains_node(IDL_tree tree, IDL_tree node) {
+	ContainsNodeWalkerInfo	info;
+	info.searchNode = node;
+	info.found = 0;
+	IDL_tree_walk (tree, /*curwalk*/NULL, /*pre*/contains_node_walker, 
+	  /*post*/NULL, &info);
+	return info.found;
+}
+
+/**************************************************************************
+ *		
+ *			IsRecursive
+ *
+ **************************************************************************/
+
+
+typedef struct {
+    IDL_tree	startDef;
+    gboolean	isRecur;
+    IDL_tree	hasRecur;
+} IsRecursiveWalkerInfo;
+
+static gboolean 
+is_recursive_walker (IDL_tree_func_data *tfd, gpointer data) {
+	IsRecursiveWalkerInfo	*info = data;
+
+	if ( IDL_NODE_TYPE(tfd->tree) == IDLN_IDENT ) {
+	    IDL_tree def = IDL_NODE_UP(tfd->tree);
+	    IDL_tree_func_data *past = tfd->up;
+	    if ( past->tree == def )
+	    	return FALSE;	/* IDENT that is name of this type */
+
+	    for ( ; past; past = past->up) {
+	    	if ( past->tree == def ) {
+		    if ( def==info->startDef ) {
+		        info->isRecur = 1;
+		    } else {
+		        info->hasRecur = def;
+		    }
+		    return FALSE;	/* IDENT that is typespec within type */
+		}
+	    }
+	    IDL_tree_walk (def, tfd, /*pre*/is_recursive_walker, 
+	      /*post*/NULL, info);
+	}
+ 	return TRUE;	/* continue walking */
+}
+
+/**
+    Returns TRUE if {tree} is a recursive type. As far as I know,
+    the only ways to construct a recursive type is:
+    1) Declare a struct X which contains a member with type sequence<X>.
+    2) Declare a union Y which contains a member Y (is this allowed)?
+**/
+gboolean IDL_tree_is_recursive(IDL_tree tree, IDL_tree *hasRecur) {
+	IsRecursiveWalkerInfo	info;
+	info.startDef = tree;
+	info.isRecur = 0;
+	info.hasRecur = 0;
+	IDL_tree_walk (tree, /*walk*/NULL, /*pre*/is_recursive_walker, 
+	  /*post*/NULL, &info);
+	if ( hasRecur ) {
+	    *hasRecur = info.hasRecur;
+	}
+	return info.isRecur;
+}
+
+
 /*
  * Local variables:
  * mode: C
