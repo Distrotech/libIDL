@@ -18,10 +18,9 @@ EXTRA_DIST		= BUGS
 #info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
 lib_LTLIBRARIES		= libIDL.la
-noinst_HEADERS		= rename.h util.h parser.h
 noinst_PROGRAMS		= tstidl
 
-libIDL_la_SOURCES	= parser.y lexer.l util.c ns.c
+libIDL_la_SOURCES	= parser.y lexer.l ns.c util.c util.h rename.h
 libIDL_la_LDFLAGS	= -version-info 3:0:3
 
 tstidl_SOURCES		= tstidl.c
