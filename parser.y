@@ -1475,7 +1475,7 @@ gchar *IDL_ns_ident_make_repo_id (IDL_ns ns, IDL_tree p,
 	prefix = p_prefix ? p_prefix : IDL_ns_get_cur_prefix (ns);
 
 	q = IDL_ns_ident_to_qstring (p, "/", 0);
-	g_string_sprintf (s, "IDL:%s%s%s:%d.%d",
+	g_string_printf (s, "IDL:%s%s%s:%d.%d",
 			  prefix ? prefix : "",
 			  prefix && *prefix ? "/" : "",
 			  q,
@@ -1630,7 +1630,7 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 
 			*v = 0;
 			s = g_string_new (NULL);
-			g_string_sprintf (s, "%s:%d.%d",
+			g_string_printf (s, "%s:%d.%d",
 					  IDL_IDENT_REPO_ID (ident), major, minor);
 			g_free (IDL_IDENT_REPO_ID (ident));
 			IDL_IDENT_REPO_ID (ident) = s->str;
@@ -1668,25 +1668,25 @@ void IDL_inhibit_pop (void)
 
 static void IDL_inhibit (IDL_ns ns, const char *s)
 {
-	if (g_strcasecmp ("push", s) == 0)
+	if (g_ascii_strcasecmp ("push", s) == 0)
 		IDL_inhibit_push ();
-	else if (g_strcasecmp ("pop", s) == 0)
+	else if (g_ascii_strcasecmp ("pop", s) == 0)
 		IDL_inhibit_pop ();
 }
 
 static void IDL_typecodes_as_tok (IDL_ns ns, const char *s)
 {
-	if (g_strcasecmp ("push", s) == 0)
+	if (g_ascii_strcasecmp ("push", s) == 0)
 		++(__IDL_typecodes_as_tok);
-	else if (g_strcasecmp ("pop", s) == 0)
+	else if (g_ascii_strcasecmp ("pop", s) == 0)
 		--(__IDL_typecodes_as_tok);
 }
 
 static void IDL_pidl (IDL_ns ns, const char *s)
 {
-	if (g_strcasecmp ("push", s) == 0)
+	if (g_ascii_strcasecmp ("push", s) == 0)
 		++(__IDL_pidl);
-	else if (g_strcasecmp ("pop", s) == 0)
+	else if (g_ascii_strcasecmp ("pop", s) == 0)
 		--(__IDL_pidl);
 }
 
@@ -1814,7 +1814,7 @@ static void illegal_context_type_error (IDL_tree p, const char *what)
 {
 	GString *s = g_string_new (NULL);
 
-	g_string_sprintf (s, "Illegal type `%%s' for %s", what);
+	g_string_printf (s, "Illegal type `%%s' for %s", what);
 	illegal_type_error (p, s->str);
 	g_string_free (s, TRUE);
 }

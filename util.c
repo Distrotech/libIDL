@@ -128,12 +128,12 @@ guint IDL_strcase_hash (gconstpointer v)
 
 gint IDL_strcase_equal (gconstpointer a, gconstpointer b)
 {
-	return g_strcasecmp (a, b) == 0;
+	return g_ascii_strcasecmp (a, b) == 0;
 }
 
 gint IDL_strcase_cmp (gconstpointer a, gconstpointer b)
 {
-	return g_strcasecmp (a, b);
+	return g_ascii_strcasecmp (a, b);
 }
 
 static int my_strcmp (IDL_tree p, IDL_tree q)

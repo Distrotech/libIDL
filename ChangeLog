@@ -1,3 +1,12 @@
+2002-02-04  Shivram U <shivaram.upadhyayula@wipro.com>
+
+	reviewed by: Mark McLoughlin  <mark@skynet.ie>
+
+	* parser.y:
+	* util.c: remove deprecated glib functions.
+	s/g_string_sprintf/g_string_printf/ and
+	s/g_strcasecmp/g_ascii_strcasecmp/.
+
 2002-01-28  Mark McLoughlin  <mark@skynet.ie>
 
 	* configure.in: Version 0.7.3.
