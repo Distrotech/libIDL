@@ -30,7 +30,8 @@ AM_PROG_LIBTOOL
 dnl Checks for libraries.
 AC_CHECK_PROG(HAVE_GLIB_CONFIG, glib-config, yes, no)
 
-AM_PATH_GLIB
+# Make sure we have glib>=1.1.4
+AM_PATH_GLIB(1.1.4)
 
 AC_STDC_HEADERS
 AC_CHECK_HEADERS(stddef.h wchar.h wcstr.h)
