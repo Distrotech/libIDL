@@ -36,7 +36,8 @@ EXTRA_DIST		= BUGS parser.y lexer.l \
 			  libIDL.pc.in
 
 info_TEXINFOS		= libIDL.texi
-pkginclude_HEADERS	= IDL.h
+libidlincludedir        = $(includedir)/libIDL-1.0/libIDL
+libidlinclude_HEADERS	= IDL.h
 lib_LTLIBRARIES		= libIDL.la
 noinst_PROGRAMS		= tstidl
 
