@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <idl.h>
+#include <libIDL/IDL.h>
 
 void IDL_ns_print_idents(FILE *o, IDL_tree l)
 {

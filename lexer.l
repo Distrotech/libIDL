@@ -51,8 +51,6 @@ ident			[A-Za-z][A-Za-z0-9_]*
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
-%option noyywrap
-
 %%
 
 {cpp_pragma}		{
@@ -180,6 +178,11 @@ void __IDL_lex_cleanup(void)
 		free(__IDL_cur_filename);
 		__IDL_cur_filename = NULL;
 	}
+}
+
+int yywrap(void)
+{
+	return 1;
 }
 
 /*
