@@ -7,16 +7,16 @@
 This file documents the GNOME Interface Definition Language parsing
 library, libIDL.
 
-Copyright 1998 Andrew Veliath
+Copyright 1998 Andrew T. Veliath
 @end ifinfo
 
 @titlepage
 @title libIDL
-@author Andrew Veliath
+@author Andrew T. Veliath
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1998 Andrew Veliath
+Copyright @copyright{} 1998 Andrew T. Veliath
 @end titlepage
 
 @node Top, , , (dir)
@@ -96,7 +96,7 @@ main (int argc, char *argv[])
 	@}
 	fn = argv[1];
 
-	rv = IDL_parse_filename (fn, NULL, NULL, &tree, &ns, IDLF_EVAL_CONST, IDL_WARNING1);
+	rv = IDL_parse_filename (fn, NULL, NULL, &tree, &ns, 0, IDL_WARNING1);
 
 	if (rv == IDL_ERROR || rv < 0) @{
 		if (rv < 0)
@@ -202,7 +202,7 @@ possible flags:
 
 @itemize @minus
 @item
-IDLF_EVAL_CONST: instructs the parser to evaluate constant expressions.
+IDLF_NO_EVAL_CONST: instructs the parser not to evaluate constant expressions.
 
 @item
 IDLF_COMBINE_REOPENED_MODULES: instructs the parser to combine modules

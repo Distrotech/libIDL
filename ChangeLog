@@ -1,3 +1,15 @@
+1998-10-08  Andrew Veliath  <andrewtv@usa.net>
+
+	* IDL.h (IDLF_NO_EVAL_CONST): New flag, obsoletes IDLF_EVAL_CONST,
+	which has been removed.  The default behavior is now to evaluate
+	constant expressions.
+
+	* IDL.h, parser.y (IDL_resolve_const_exp): New function.
+	positive_int_const changed to attempt resolution of expression to
+	an integral value.  primary_expr will attempt resolution of scoped
+	names, so constant evaluation is now much improved.  An
+	IDL_NODE_IS_LITERAL is also now in IDL.h.
+
 Thu Aug 27 10:52:41 1998  Andrew Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.5.0.

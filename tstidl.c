@@ -25,6 +25,18 @@ gboolean print_repo_id(IDL_tree p, gpointer user_data)
 	return TRUE;
 }
 
+gboolean print_const_dcls(IDL_tree p, gpointer user_data)
+{
+	if (IDL_NODE_TYPE(p) == IDLN_CONST_DCL &&
+	    IDL_NODE_TYPE(IDL_CONST_DCL(p).const_exp) == IDLN_INTEGER) {
+		printf("%s is " IDL_SB10_FMT "\n",
+		       IDL_IDENT(IDL_CONST_DCL(p).ident).str,
+		       IDL_INTEGER(IDL_CONST_DCL(p).const_exp).value);
+		return FALSE;
+	}
+	return TRUE;
+}
+
 int main(int argc, char *argv[])
 {
 	int rv;
@@ -37,7 +49,7 @@ int main(int argc, char *argv[])
 	__IDL_debug = FALSE;
 
 	if (argc < 2) {
-		fprintf(stderr, "usage: tstidl <filename> [fold constants, 0 or 1]\n");
+		fprintf(stderr, "usage: tstidl <filename> [inhibit constant folding (0 or 1)]\n");
 		exit(1);
 	}
 
@@ -47,7 +59,10 @@ int main(int argc, char *argv[])
 				argc == 3 ? atoi(argv[2]) : 0, IDL_WARNING1);
 
 	if (rv == IDL_SUCCESS) {
+		printf("Repository IDs\n");
 		IDL_tree_walk_in_order(tree, print_repo_id, NULL);
+		printf("\nConstant Declarations\n");
+		IDL_tree_walk_in_order(tree, print_const_dcls, NULL);
 		IDL_ns_free(ns);
 		IDL_tree_free(tree);
 	}

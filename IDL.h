@@ -4,7 +4,7 @@
 
     Include wide character support before this, if necessary.
 
-    Copyright (C) 1998 Andrew Veliath
+    Copyright (C) 1998 Andrew T. Veliath
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ extern "C" {
 #define IDL_WARNINGMAX			IDL_WARNING3
 
 /* flags for IDL_parse_filename */
-#define IDLF_EVAL_CONST			(1UL << 0)
+#define IDLF_NO_EVAL_CONST		(1UL << 0)
 #define IDLF_COMBINE_REOPENED_MODULES	(1UL << 1)
 #define IDLF_PREFIX_FILENAME		(1UL << 2)
 
@@ -513,6 +513,15 @@ struct _IDL_tree_node {
 #define IDL_NODE_UP(a)			((a)->up)
 #define IDL_NODE_DECLSPEC(a)		((a)->declspec)
 #define IDL_NODE_REFS(a)		((a)->refs)
+#define IDL_NODE_IS_LITERAL(a)				\
+	(IDL_NODE_TYPE(a) == IDLN_INTEGER ||		\
+	 IDL_NODE_TYPE(a) == IDLN_STRING ||		\
+	 IDL_NODE_TYPE(a) == IDLN_WIDE_STRING ||	\
+	 IDL_NODE_TYPE(a) == IDLN_CHAR ||		\
+	 IDL_NODE_TYPE(a) == IDLN_WIDE_CHAR ||		\
+	 IDL_NODE_TYPE(a) == IDLN_FIXED ||		\
+	 IDL_NODE_TYPE(a) == IDLN_FLOAT ||		\
+	 IDL_NODE_TYPE(a) == IDLN_BOOLEAN)
 #define IDL_NODE_IS_SCOPED(a)				\
 	(IDL_NODE_TYPE(a) == IDLN_IDENT ||		\
 	 IDL_NODE_TYPE(a) == IDLN_INTERFACE ||		\
@@ -580,6 +589,9 @@ extern void				IDL_tree_free(IDL_tree root);
 
 extern char *				IDL_do_escapes(const char *s);
 
+extern IDL_tree				IDL_resolve_const_exp(IDL_tree p,
+							      IDL_tree_type type);
+	
 extern IDL_ns				IDL_ns_new(void);
 
 extern void				IDL_ns_free(IDL_ns ns);

@@ -13,8 +13,8 @@ lexer.c: $(srcdir)/lexer.l
 
 parser.c parser.h: $(srcdir)/parser.y
 	$(YACC) $(YFLAGS) $<
-	mv -f y.tab.c parser.c
-	mv -f y.tab.h parser.h
+	test -f y.tab.c && mv -f y.tab.c parser.c
+	test -f y.tab.h && mv -f y.tab.h parser.h
 
 MOSTLYCLEANFILES	= parser.output y.output
 DISTCLEANFILES		= parser.c parser.h lexer.c
@@ -27,7 +27,7 @@ noinst_PROGRAMS		= tstidl
 BUILT_SOURCES		= lexer.c parser.c parser.h
 
 libIDL_la_SOURCES	= parser.c parser.h lexer.c ns.c util.c util.h rename.h
-libIDL_la_LDFLAGS	= -version-info 5:0:5
+libIDL_la_LDFLAGS	= -version-info 5:1:5
 
 tstidl_SOURCES		= tstidl.c
 tstidl_LDADD		= libIDL.la

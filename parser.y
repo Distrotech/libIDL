@@ -2,7 +2,7 @@
 
     parser.y (IDL yacc parser and tree generation)
 
-    Copyright (C) 1998 Andrew Veliath
+    Copyright (C) 1998 Andrew T. Veliath
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,29 +34,29 @@
 #include "util.h"
 #include "IDL.h"
 
-#define do_binop(rv,op,a,b)	do {		\
-	if (IDL_binop_chktypes(op, a, b))	\
-		YYABORT;			\
-	if (__IDL_flags & IDLF_EVAL_CONST) {	\
-		rv = IDL_binop_eval(op, a, b);	\
-		IDL_tree_free(a);		\
-		IDL_tree_free(b);		\
-		if (!rv) YYABORT;		\
-	} else {				\
-		rv = IDL_binop_new(op, a, b);	\
-	}					\
+#define do_binop(rv,op,a,b)	do {			\
+	if (IDL_binop_chktypes(op, a, b))		\
+		YYABORT;				\
+	if (!(__IDL_flags & IDLF_NO_EVAL_CONST)) {	\
+		rv = IDL_binop_eval(op, a, b);		\
+		IDL_tree_free(a);			\
+		IDL_tree_free(b);			\
+		if (!rv) YYABORT;			\
+	} else {					\
+		rv = IDL_binop_new(op, a, b);		\
+	}						\
 } while (0)
 
-#define do_unaryop(rv,op,a)	do {		\
-	if (IDL_unaryop_chktypes(op, a))	\
-		YYABORT;			\
-	if (__IDL_flags & IDLF_EVAL_CONST) {	\
-		rv = IDL_unaryop_eval(op, a);	\
-		IDL_tree_free(a);		\
-		if (!rv) YYABORT;		\
-	} else {				\
-		rv = IDL_unaryop_new(op, a);	\
-	}					\
+#define do_unaryop(rv,op,a)	do {			\
+	if (IDL_unaryop_chktypes(op, a))		\
+		YYABORT;				\
+	if (!(__IDL_flags & IDLF_NO_EVAL_CONST)) {	\
+		rv = IDL_unaryop_eval(op, a);		\
+		IDL_tree_free(a);			\
+		if (!rv) YYABORT;			\
+	} else {					\
+		rv = IDL_unaryop_new(op, a);		\
+	}						\
 } while (0)
 
 extern int			yylex(void);
@@ -656,7 +656,18 @@ unary_op:		'-'				{ $$ = IDL_UNARYOP_MINUS; }
 |			'~'				{ $$ = IDL_UNARYOP_COMPLEMENT; }
 	;
 
-primary_expr:		scoped_name
+primary_expr:		scoped_name			{
+	IDL_tree literal;
+	
+	assert(IDL_NODE_TYPE($1) == IDLN_IDENT);
+	
+	if ((literal = IDL_resolve_const_exp($1, IDLN_ANY))) {
+		++IDL_NODE_REFS(literal);
+		$$ = literal;
+		IDL_tree_free($1);
+	} else
+		$$ = $1;
+}
 |			literal
 |			'(' const_exp ')'		{ $$ = $2; }
 	;
@@ -992,14 +1003,27 @@ string_lit_list:	string_lit			{ $$ = list_start($1, TRUE); }
 			check_comma string_lit		{ $$ = list_chain($1, $3, TRUE); }
 	;
 
-positive_int_const:	TOK_INTEGER			{
-	if ($1 < 0) {
+positive_int_const:	const_exp			{
+	IDL_tree literal;
+	IDL_longlong_t value = 0;
+
+	if ((literal = IDL_resolve_const_exp($1, IDLN_INTEGER))) {
+		assert(IDL_NODE_TYPE(literal) == IDLN_INTEGER);
+		value = IDL_INTEGER(literal).value;
+		IDL_tree_free($1);
+	}
+	
+	if (!literal) {
+		if (!(__IDL_flags & IDLF_NO_EVAL_CONST))
+			yyerror("Could not resolve constant expression");
+		$$ = $1;
+	} else if (value < 0) {
 		yywarningv(IDL_WARNING1, "Cannot use negative value " 
-			   IDL_SB10_FMT ", using " IDL_SB10_FMT, $1, -$1);
-		$$ = IDL_integer_new(-$1);
+			   IDL_SB10_FMT ", using " IDL_SB10_FMT, value, -value);
+		$$ = IDL_integer_new(-value);
 	}
 	else
-		$$ = IDL_integer_new($1);
+		$$ = IDL_integer_new(value);
 }
 	;
 
@@ -1574,6 +1598,48 @@ static IDL_tree IDL_unaryop_eval(enum IDL_unaryop op, IDL_tree a)
 	case IDLN_FLOAT: return IDL_unaryop_eval_float(op, a);
 	default: return NULL;
 	}
+}
+
+IDL_tree IDL_resolve_const_exp(IDL_tree p, IDL_tree_type type)
+{
+	gboolean resolved_value = FALSE, die = FALSE;
+	gboolean wrong_type = FALSE;
+
+	while (!resolved_value && !die) {
+		if (IDL_NODE_TYPE(p) == IDLN_IDENT) {
+			IDL_tree q = IDL_NODE_UP(p);
+			
+			assert(q != NULL);
+			if (IDL_NODE_TYPE(q) != IDLN_CONST_DCL) {
+				p = q;
+				wrong_type = TRUE;
+				die = TRUE;
+			} else
+ 				p = IDL_CONST_DCL(q).const_exp;
+		}
+		
+		if (p == NULL ||
+		    IDL_NODE_TYPE(p) == IDLN_BINOP ||
+		    IDL_NODE_TYPE(p) == IDLN_UNARYOP) {
+			die = TRUE;
+			continue;
+		}
+		
+		resolved_value = IDL_NODE_IS_LITERAL(p);
+	}
+
+	if (resolved_value &&
+	    type != IDLN_ANY &&
+	    IDL_NODE_TYPE(p) != type)
+		wrong_type = TRUE;
+	
+	if (wrong_type) {
+		yyerror("Invalid type for constant");
+		yyerrornv(p, "Previous resolved type declaration");
+		return NULL;
+	}
+
+	return resolved_value ? p : NULL;
 }
 
 /*
