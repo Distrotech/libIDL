@@ -21,7 +21,7 @@ lib_LTLIBRARIES		= libIDL.la
 noinst_PROGRAMS		= tstidl
 
 libIDL_la_SOURCES	= parser.y lexer.l ns.c util.c util.h rename.h
-libIDL_la_LDFLAGS	= -version-info 3:0:3
+libIDL_la_LDFLAGS	= -version-info 3:1:3
 
 tstidl_SOURCES		= tstidl.c
 tstidl_LDADD		= libIDL.la
