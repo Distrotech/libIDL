@@ -30,15 +30,16 @@ DISTCLEANFILES		= IDL.h
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
-			  libIDL.def libIDLConf.sh.in \
+			  libIDL.def \
 			  stamp-parser
 
-info_TEXINFOS		= libIDL.texi
-pkginclude_HEADERS	= IDL.h
+info_TEXINFOS		= libIDL2.texi
+libIDLincludedir        = $(includedir)/libIDL-2.0/libIDL
+libIDLinclude_HEADERS   = IDL.h
 lib_LTLIBRARIES		= libIDL-2.la
 noinst_PROGRAMS		= tstidl
 
-bin_SCRIPTS		= libIDL-config
+bin_SCRIPTS		= libIDL-config-2
 
 BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h stamp-parser
 
@@ -50,23 +51,8 @@ libIDL_2_la_LDFLAGS	= -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)	\
 tstidl_SOURCES		= tstidl.c
 tstidl_LDADD		= libIDL-2.la @GLIB_LIBS@
 
-confexecdir		= $(libdir)
-confexec_DATA		= libIDLConf.sh
-
-## We create libIDLConf.sh here and not from configure because we want
-## to get the paths expanded correctly.  Macros like srcdir are given
-## the value NONE in configure if the user doesn't specify them (this
-## is an autoconf feature, not a bug).
-
-libIDLConf.sh: libIDLConf.sh.in Makefile
-## Use sed and then mv to avoid problems if the user interrupts.
-	sed -e 's?\@LIBIDL_LIBDIR\@?$(LIBIDL_LIBDIR)?g' \
-		-e 's?\@LIBIDL_INCLUDEDIR\@?$(LIBIDL_INCLUDEDIR)?g' \
-		-e 's?\@LIBIDL_LIBS\@?$(LIBIDL_LIBS)?g' \
-		-e 's?\@VERSION\@?$(VERSION)?g' \
-		< $(srcdir)/libIDLConf.sh.in > libIDLConf.tmp \
-		&& mv libIDLConf.tmp libIDLConf.sh
-
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= libIDL-2.0.pc
 
+libIDL-config-2: libIDL-config
+	cp -f libIDL-config libIDL-config-2

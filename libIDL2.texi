@@ -1,19 +1,19 @@
 \input texinfo @c -*- mode: texinfo -*-
-@setfilename libIDL.info
-@settitle libIDL
+@setfilename libIDL2.info
+@settitle libIDL2
 @setchapternewpage odd
 
 @ifinfo
 @dircategory Libraries
 @direntry
-* libIDL: (libIDL).     Interface Definition Language parsing library.
+* libIDL2: (libIDL2).     Interface Definition Language parsing library.
 @end direntry
 
 Copyright 1998 Andrew T. Veliath
 @end ifinfo
 
 @titlepage
-@title libIDL
+@title libIDL2
 @author Andrew T. Veliath
 
 @page
