@@ -23,6 +23,7 @@ lexer.c: lexer.l
 
 EXTRA_DIST = BUGS
 #info_TEXINFOS = libIDL.texi
+noinst_TEXINFOS = libIDL.texi
 pkginclude_HEADERS = IDL.h
 noinst_HEADERS = rename.h util.h parser.h
 lib_LIBRARIES = libIDL.a

@@ -1,9 +1,7 @@
 \input texinfo   @c -*-texinfo-*-
-@c %**start of header
 @setfilename libIDL.info
 @settitle libIDL
 @setchapternewpage odd
-@c %**end of header
 
 @ifinfo
 This file documents the GNOME Interface Definition Language parsing
@@ -12,22 +10,16 @@ library, libIDL.
 Copyright 1998 Andrew Veliath
 @end ifinfo
 
-@c  This title page illustrates only one of the
-@c  two methods of forming a title page.
-
 @titlepage
 @title libIDL
 @author Andrew Veliath
 
-@c  The following two commands
-@c  start the copyright page.
 @page
 @vskip 0pt plus 1filll
 Copyright @copyright{} 1998 Andrew Veliath
 @end titlepage
 
 @node Top, , , (dir)
-
 @ifinfo
 This file documents the Interface Definition Language parsing library,
 libIDL.
@@ -36,11 +28,19 @@ This document applies to version 0.1 of libIDL.
 @end ifinfo
 
 @menu
-* First Chapter::             test
-
+* Overview::                  General overview
+* First Chapter::             Test
 @end menu
 
-@node    First Chapter, , top,      top
-@comment node-name,     next,           previous, up
+@node    Overview, First Chapter, top,      top
+@chapter Overview
+This is is the libIDL parsing library.
+
+@node    First Chapter, , Overview,      top
 @chapter First Chapter
 @cindex Index entry for First Chapter
+
+@itemize @bullet
+@item
+hi
+@end itemize
