@@ -1,5 +1,13 @@
 1998-08-25  Andrew Veliath  <andrewtv@usa.net>
 
+	* Update libIDL version to 0.4.0.
+	
+	* Update font lock keywords in README, added support for
+	  __declspec.
+	
+	* Implementation of IDL_tree_free for IDLN_GENTREE hashes in
+	  place.
+
 	* Makefile.am: Change libtool version to 3:2:3.
 	
 	* parser.y, IDL.h: Changes for global ref counting.

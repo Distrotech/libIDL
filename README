@@ -34,18 +34,21 @@ in your IDL mode, you can use the following Emacs lisp to add
 IDL-specific highlighting using font-lock mode:
 
 (font-lock-add-keywords 'idl-mode
-			`(("^#[ 	]*error[ 	]+\\(.+\\)" 1 font-lock-warning-face prepend)
-			  ("^#[ 	]*\\(include\\)[ 	]+\\(<[^>\"\n]*>?\\)" 2 font-lock-string-face)
-			  ("^#[ 	]*define[ 	]+\\(\\sw+\\)(" 1 font-lock-function-name-face)
+			`(("^#[ 	]*error[ 	]+\\(.+\\)" 1 'font-lock-warning-face prepend)
+			  ("^#[ 	]*\\(include\\)[ 	]+\\(<[^>\"\n]*>?\\)" 2 'font-lock-string-face)
+			  ("^#[ 	]*define[ 	]+\\(\\sw+\\)(" 1 'font-lock-function-name-face)
 			  ("^#[ 	]*\\(elif\\|if\\)\\>"
 			   ("\\<\\(defined\\)\\>[ 	]*(?\\(\\sw+\\)?" nil nil
-			    (1 font-lock-reference-face)
-			    (2 font-lock-variable-name-face nil t)))
+			    (1 'font-lock-reference-face)
+			    (2 'font-lock-variable-name-face nil t)))
+			  ("\\(__declspec\\)[ 	]*(\\([^)]+\\))"
+			   (1 'font-lock-reference-face)
+			   (2 'font-lock-variable-name-face))
 			  ("^#[ 	]*\\(\\sw+\\)\\>[ 	]*\\(\\sw+\\)?"
-			   (1 font-lock-reference-face)
-			   (2 font-lock-variable-name-face nil t))
-			  ("\\<\\(raises\\)\\>" 1 font-lock-keyword-face)
-			  ("[ 	]*\\([A-Za-z][A-Za-z0-9_]*\\)[ 	]*(" 1 font-lock-function-name-face)
-			  ("\\<\\(any\\|boolean\\|char\\|const\\|double\\|enum\\|fixed\\|float\\|interface\\|long\\|module\\|native\\|octet\\|Object\\|sequence\\|short\\|string\\|struct\\|unsigned\\|union\\|void\\|wchar\\|wstring\\)\\>" 1 font-lock-type-face)
-			  ("\\<\\(attribute\\|case\\|context\\|default\\|exception\\|FALSE\\|in\\|inout\\|oneway\\|out\\|readonly\\|switch\\|TRUE\\|typedef\\)\\>" 1 font-lock-keyword-face)) 'set)
+			   (1 'font-lock-reference-face)
+			   (2 'font-lock-variable-name-face nil t))
+			  ("\\<\\(raises\\)\\>" 1 'font-lock-keyword-face)
+			  ("[ 	]*\\([A-Za-z][A-Za-z0-9_]*\\)[ 	]*(" 1 'font-lock-function-name-face)
+			  ("\\<\\(any\\|boolean\\|char\\|const\\|double\\|enum\\|fixed\\|float\\|interface\\|long\\|module\\|native\\|octet\\|Object\\|sequence\\|short\\|string\\|struct\\|unsigned\\|union\\|void\\|wchar\\|wstring\\)\\>" 1 'font-lock-type-face)
+			  ("\\<\\(attribute\\|case\\|context\\|default\\|exception\\|FALSE\\|in\\|inout\\|oneway\\|out\\|readonly\\|switch\\|TRUE\\|typedef\\)\\>" 1 'font-lock-keyword-face)) 'set)
 (add-hook 'idl-mode-hook '(lambda () (font-lock-mode 1)))
