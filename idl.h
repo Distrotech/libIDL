@@ -39,10 +39,19 @@ extern "C" {
 #define IDL_WARNING			2
 
 /* parse flags for IDL_parse_filename */
+#if 0
 #define IDLF_EVAL_CONST			(1UL << 0)
 #define IDLF_ROOT_APPEND		(1UL << 1)
 #define IDLF_NS_APPEND			(1UL << 2)
 #define IDLF_PREFIX_FILENAME		(1UL << 3)
+#else
+/* not working yet */
+#define IDLF_EVAL_CONST			0 
+#define IDLF_ROOT_APPEND		0
+#define IDLF_NS_APPEND			0
+
+#define IDLF_PREFIX_FILENAME		(1UL << 3)
+#endif
 
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
@@ -458,7 +467,8 @@ extern int				IDL_ns_prefix(IDL_ns ns, const char *s);
 
 extern IDL_tree				IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident);
 
-extern IDL_tree				IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident);
+extern IDL_tree				IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope,
+								 IDL_tree ident);
 
 extern IDL_tree				IDL_ns_lookup_cur_scope(IDL_ns ns, IDL_tree ident);
 

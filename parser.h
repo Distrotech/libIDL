@@ -4,7 +4,6 @@ typedef union {
 	long integer;
 	double floatp;
 	double fixedp;
-	int boolean;
 	enum IDL_unaryop unaryop;
 	enum IDL_param_attr paramattr;
 } YYSTYPE;

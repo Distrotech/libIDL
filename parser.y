@@ -95,29 +95,31 @@ extern int			yylex(void);
 	long integer;
 	double floatp;
 	double fixedp;
-	int boolean;
 	enum IDL_unaryop unaryop;
 	enum IDL_param_attr paramattr;
 }
 
+/* token aliases which are C reserved words are prefixed with an
+   underscore */
+
 %token TOK_ANY			"any"
 %token TOK_ATTRIBUTE		"attribute"
 %token TOK_BOOLEAN		"boolean"
-%token TOK_CASE			"case"
-%token TOK_CHAR			"char"
-%token TOK_CONST		"const"
+%token TOK_CASE			"_case"
+%token TOK_CHAR			"_char"
+%token TOK_CONST		"_const"
 %token TOK_CONTEXT		"context"
-%token TOK_DEFAULT		"default"
-%token TOK_DOUBLE		"double"
-%token TOK_ENUM			"enum"
+%token TOK_DEFAULT		"_default"
+%token TOK_DOUBLE		"_double"
+%token TOK_ENUM			"_enum"
 %token TOK_EXCEPTION		"exception"
 %token TOK_FALSE		"FALSE"
 %token TOK_FIXED		"fixed"
-%token TOK_FLOAT		"float"
+%token TOK_FLOAT		"_float"
 %token TOK_IN			"in"
 %token TOK_INOUT		"inout"
 %token TOK_INTERFACE		"interface"
-%token TOK_LONG			"long"
+%token TOK_LONG			"_long"
 %token TOK_MODULE		"module"
 %token TOK_OBJECT		"Object"
 %token TOK_OCTET		"octet"
@@ -126,15 +128,15 @@ extern int			yylex(void);
 %token TOK_RAISES		"raises"
 %token TOK_READONLY		"readonly"
 %token TOK_SEQUENCE		"sequence"
-%token TOK_SHORT		"short"
+%token TOK_SHORT		"_short"
 %token TOK_STRING		"string"
-%token TOK_STRUCT		"struct"
-%token TOK_SWITCH		"switch"
+%token TOK_STRUCT		"_struct"
+%token TOK_SWITCH		"_switch"
 %token TOK_TRUE			"TRUE"
-%token TOK_TYPEDEF		"typedef"
-%token TOK_UNSIGNED		"unsigned"
-%token TOK_UNION		"union"
-%token TOK_VOID			"void"
+%token TOK_TYPEDEF		"_typedef"
+%token TOK_UNSIGNED		"_unsigned"
+%token TOK_UNION		"_union"
+%token TOK_VOID			"_void"
 %token TOK_WCHAR		"wchar"
 %token TOK_WSTRING		"wstring"
 
@@ -188,15 +190,7 @@ extern int			yylex(void);
 
 %type <integer>			signed_int unsigned_int is_readonly is_oneway
 
-%start start
-
 %%
-
-idl_init:						{
-	okay = 1;
-	idl_nerrors = idl_nwarnings = 0;
-}
-	;
 
 start:			idl_init
 			specification
@@ -204,6 +198,12 @@ start:			idl_init
 	idl_root = NULL;
 	if (okay)
 		idl_root = $2;
+}
+	;
+
+idl_init:						{
+	okay = 1;
+	idl_nerrors = idl_nwarnings = 0;
 }
 	;
 
@@ -234,7 +234,10 @@ new_scope:		/* empty */			{
 	assert($<tree>0 != NULL);
 	assert(IDL_NODE_TYPE($<tree>0) == IDLN_IDENT);
 	if (IDL_ns_push_scope_new(idl_ns, $<tree>0) == NULL) {
-		printf("ident: %s\n", IDL_IDENT($<tree>0).str);
+#ifdef YYDEBUG
+		if (yydebug)
+			printf("ident: %s\n", IDL_IDENT($<tree>0).str);
+#endif
 		IDL_tree_free($<tree>0);
 		yyerror("redeclared scoping identifier");
 		YYABORT;
@@ -310,7 +313,7 @@ export:			type_dcl ';'
 |			op_dcl ';'
 	;
 
-type_dcl:		"typedef" type_declarator	{ $$ = $2; }
+type_dcl:		"_typedef" type_declarator	{ $$ = $2; }
 |			struct_type
 |			union_type
 |			enum_type
@@ -334,12 +337,12 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
-struct_type:		"struct" ident new_scope '{'
+struct_type:		"_struct" ident new_scope '{'
 				member_list
 			'}' pop_scope			{ $$ = IDL_type_struct_new($2, $5); }
 	;
 
-union_type:		"union" ident new_scope "switch" '('
+union_type:		"_union" ident new_scope "_switch" '('
 				switch_type_spec
 			')' '{'
 				switch_body
@@ -360,11 +363,11 @@ case_list:		case_label			{ $$ = list_start($1); }
 |			case_list case_label		{ $$ = list_chain($1, $2); }
 	;
 
-case_label:		"case" const_exp ':'		{ $$ = IDL_case_label_new($2); }
-|			"default" ':'			{ $$ = IDL_case_label_new(NULL); }
+case_label:		"_case" const_exp ':'		{ $$ = IDL_case_label_new($2); }
+|			"_default" ':'			{ $$ = IDL_case_label_new(NULL); }
 	;
 
-const_dcl:		"const" const_type new_ident
+const_dcl:		"_const" const_type new_ident
 			'=' const_exp			{ $$ = IDL_const_dcl_new($2, $3, $5); }
 	;
 
@@ -404,7 +407,7 @@ op_dcl:			is_oneway op_type_spec
 	;
 
 op_type_spec:		param_type_spec
-|			"void"				{ $$ = NULL; }
+|			"_void"				{ $$ = NULL; }
 	;
 
 parameter_dcls:		'(' param_dcl_list ')'		{ $$ = $2; }
@@ -525,7 +528,7 @@ literal:		integer_lit
 |			boolean_lit
 	;
 
-enum_type:		"enum" ident new_scope '{'
+enum_type:		"_enum" ident new_scope '{'
 				enumerator_list
 			'}' pop_scope			{ $$ = IDL_type_enum_new($2, $5); }
 	;
@@ -602,9 +605,9 @@ sequence_type:		"sequence" '<'
 			'>'				{ $$ = IDL_type_sequence_new($3, NULL); }
 	;
 
-floating_pt_type:	"float"				{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_FLOAT); }
-|			"double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_DOUBLE); }
-|			"long" "double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_LONGDOUBLE); }
+floating_pt_type:	"_float"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_FLOAT); }
+|			"_double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_DOUBLE); }
+|			"_long" "_double"		{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_LONGDOUBLE); }
 	;
 
 fixed_pt_type:		"fixed" '<'
@@ -624,13 +627,13 @@ signed_int:		signed_short_int		{ $$ = IDL_INTEGER_TYPE_SHORT; }
 |			signed_longlong_int		{ $$ = IDL_INTEGER_TYPE_LONGLONG; }
 	;
 
-signed_short_int:	"short"
+signed_short_int:	"_short"
 	;
 
-signed_long_int:	"long"
+signed_long_int:	"_long"
 	;
 
-signed_longlong_int:	"long" "long"
+signed_longlong_int:	"_long" "_long"
 	;
 
 unsigned_int:		unsigned_short_int		{ $$ = IDL_INTEGER_TYPE_SHORT; }
@@ -638,16 +641,16 @@ unsigned_int:		unsigned_short_int		{ $$ = IDL_INTEGER_TYPE_SHORT; }
 |			unsigned_longlong_int		{ $$ = IDL_INTEGER_TYPE_LONGLONG; }
 	;
 
-unsigned_short_int:	"unsigned" "short"
+unsigned_short_int:	"_unsigned" "_short"
 	;
 
-unsigned_long_int:	"unsigned" "long"
+unsigned_long_int:	"_unsigned" "_long"
 	;
 
-unsigned_longlong_int:	"unsigned" "long" "long"
+unsigned_longlong_int:	"_unsigned" "_long" "_long"
 	;
 
-char_type:		"char"				{ $$ = IDL_type_char_new(); }
+char_type:		"_char"				{ $$ = IDL_type_char_new(); }
 	;
 
 wide_char_type:		"wchar"				{ $$ = IDL_type_wide_char_new(); }
@@ -1408,8 +1411,10 @@ IDL_ns IDL_ns_new(void)
 
 	ns = (IDL_ns)malloc(sizeof(struct _IDL_ns));
 
-	if (ns == NULL) 
+	if (ns == NULL) {
+		yyerror("cannot allocate memory");
 		return NULL;
+	}
 
 	memset(ns, 0, sizeof(struct _IDL_ns));
 
@@ -1655,7 +1660,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 {
 	extern void __IDL_lex_init(void);
 	extern void __IDL_lex_cleanup(void);
-	extern FILE *yyin;
+	extern FILE *__IDL_in;
 	FILE *input;
 	char *fmt = CPP_PROGRAM " %s %s";
 	char *cmd;
@@ -1679,7 +1684,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	if (parse_flags & IDLF_NS_APPEND && !ns)
 		parse_flags &= ~IDLF_NS_APPEND;
 
-	yyin = input;
+	__IDL_in = input;
 	idl_msgcb = cb;
 	flags = parse_flags;
 	idl_ns = IDL_ns_new();
