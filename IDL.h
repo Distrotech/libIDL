@@ -84,19 +84,26 @@ extern IDL_tree				IDL_gentree_chain_sibling(IDL_tree from,
 extern IDL_tree				IDL_gentree_chain_child(IDL_tree from,
 								IDL_tree data);
 
-#ifdef __GNUC__
-typedef long long			IDL_long_t;
-#define IDL_B8_FMT			"%llo"
-#define IDL_UB10_FMT			"%llu"
-#define IDL_SB10_FMT			"%lld"
-#define IDL_B16_FMT			"%llx"
+#ifdef HAVE_GINT64
+typedef gint64				IDL_long_t;
+typedef guint64				IDL_ulong_t;
 #else
 typedef long				IDL_long_t;
-#define IDL_B8_FMT			"%lo"
-#define IDL_UB10_FMT			"%lu"
-#define IDL_SB10_FMT			"%ld"
-#define IDL_B16_FMT			"%lx"
-#endif /* __GNUC__ */
+typedef unsigned long			IDL_ulong_t;
+#  warning 64-bit integer type not available, using 32-bit instead
+#endif /* HAVE_GINT64 */
+
+#if (SIZEOF_LONG < 8) && defined(__GNUC__)
+#  define IDL_B8_FMT			"%llo"
+#  define IDL_UB10_FMT			"%llu"
+#  define IDL_SB10_FMT			"%lld"
+#  define IDL_B16_FMT			"%llx"
+#else
+#  define IDL_B8_FMT			"%lo"
+#  define IDL_UB10_FMT			"%lu"
+#  define IDL_SB10_FMT			"%ld"
+#  define IDL_B16_FMT			"%lx"
+#endif
 
 struct _IDL_INTEGER {
 	IDL_long_t value;
