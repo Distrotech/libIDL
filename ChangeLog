@@ -1,3 +1,7 @@
+1999-02-11  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.5.9.
+
 1999-02-09  Tom Tromey  <tromey@cygnus.com>
 
 	* libIDL.texi: Use @pxref and not @xref in parentheses.
