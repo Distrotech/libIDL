@@ -36,12 +36,4 @@ echo
 echo libIDL configuration successful
 echo
 echo "  cpp: \"$CPP\""
-echo "lexer: \"$LEX\""
-echo " yacc: \"$YACC\""
-echo
-if [[ "$LEX" = "flex" ]]; then
-    echo Creating 8-bit safe lexer using flex.
-else
-    echo Creating standard lexer.
-fi
 echo
