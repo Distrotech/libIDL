@@ -410,16 +410,22 @@ int IDL_parse_filename_with_input (const char *filename,
 	__IDL_inputcb_user_data = input_cb_user_data;
 	__IDL_new_ident_comments = NULL;
 
-	data.init.filename = filename;
-	__IDL_filename_hash = IDL_NS (__IDL_root_ns).filename_hash;
-	if ((*__IDL_inputcb) (
-		IDL_INPUT_REASON_INIT, &data, __IDL_inputcb_user_data))
-		return -1;
-	
 	__IDL_real_filename = filename;
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = tmpfilename;
 #endif
+	__IDL_filename_hash = IDL_NS (__IDL_root_ns).filename_hash;
+	data.init.filename = filename;
+	if ((*__IDL_inputcb) (
+		IDL_INPUT_REASON_INIT, &data, __IDL_inputcb_user_data)) {
+		IDL_ns_free (__IDL_root_ns);
+		__IDL_lex_cleanup ();
+		__IDL_real_filename = NULL;
+#ifndef HAVE_CPP_PIPE_STDIN
+		__IDL_tmp_filename = NULL;
+#endif
+		return -1;
+	}
 	rv = yyparse ();
 	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup ();
