@@ -61,6 +61,9 @@ extern int				yydebug;
 int					__IDL_prev_token_line;
 int					__IDL_cur_token_line;
 static int				warn_underscores;
+static char *				codefrag_desc;
+static GSList *				codefrag_list;
+static GSList *				codefrag_list_tail;
 %}
 
 whitespace		[ \t\f\r]*
@@ -83,24 +86,48 @@ native_type		[^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
-%s TYPECODES
 %s XPIDL
-%x XPIDLPROP
-%x XPIDLNATIVE
+%x XPIDLPROP XPIDLNATIVE XPIDLCODEFRAGX
 
 %%
-	if (__IDL_flags & IDLF_TYPECODES)
-		BEGIN(TYPECODES);
-
+	/* Global syntax */
 	if (__IDL_flags & IDLF_XPIDL)
-		BEGIN(XPIDL);
+		BEGIN (XPIDL);
 
+	/* Exclusive parser driven conditions */
 	if (__IDL_flagsi & IDLFP_XPIDL_PROPERTY)
-		BEGIN(XPIDLPROP);
+		BEGIN (XPIDLPROP);
+	else if (__IDL_flagsi & IDLFP_XPIDL_NATIVE)
+		BEGIN (XPIDLNATIVE);
 
-	if (__IDL_flagsi & IDLFP_XPIDL_NATIVE)
-		BEGIN(XPIDLNATIVE);
+<XPIDL>^%\{.*						{
+	char *s = yytext + 2;
+	
+	while (isspace (*s)) ++s;
+	codefrag_desc = g_strdup (s);
+	codefrag_list = codefrag_list_tail = NULL;
+	BEGIN (XPIDLCODEFRAGX);
+}
+<XPIDLCODEFRAGX>^%\}{whitespace}			{
+	yylval.tree = IDL_codefrag_new (codefrag_desc, codefrag_list);
+	tokreturn (TOK_CODEFRAG);
+}
+<XPIDLCODEFRAGX>.*					{
+	char *s;
+	GSList *slist;
+	
+	s = g_strdup (yytext);
+	slist = g_slist_alloc ();
+	slist->data = s;
 
+	if (codefrag_list == NULL) {
+		codefrag_list = slist;
+		codefrag_list_tail = slist;
+	} else {
+		codefrag_list_tail->next = slist;
+		codefrag_list_tail = slist;
+	}
+}
 <*>{cpp_pragma}						{
 	int n;
 	char *p = yytext;
@@ -158,7 +185,6 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 FALSE			tokreturn (TOK_FALSE);
 Object			tokreturn (TOK_OBJECT);
-<TYPECODES>TypeCode	tokreturn (TOK_TYPECODE);
 TRUE			tokreturn (TOK_TRUE);
 any			tokreturn (TOK_ANY);
 attribute		tokreturn (TOK_ATTRIBUTE);
@@ -207,6 +233,8 @@ wstring			tokreturn (TOK_WSTRING);
 	tokreturn (TOK_DECLSPEC);
 }
 {happy_ident}						{
+	if (__IDL_flags & IDLF_TYPECODES && strcmp (yytext, "TypeCode") == 0)
+		tokreturn (TOK_TYPECODE);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }

@@ -84,8 +84,13 @@ static int		do_token_error			(IDL_tree p,
 
 %union {
 	IDL_tree tree;
+	struct {
+		IDL_tree tree;
+		gpointer data;
+	} treedata;
 	GHashTable *hash_table;
 	char *str;
+	gboolean boolean;
 	IDL_declspec_t declspec;
 	IDL_longlong_t integer;
 	double floatp;
@@ -143,6 +148,7 @@ static int		do_token_error			(IDL_tree p,
 %token <str>		TOK_DECLSPEC TOK_PROP_KEY
 %token <str>		TOK_PROP_VALUE TOK_NATIVE_TYPE
 %token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
+%token <tree>		TOK_CODEFRAG
 
 /* Non-Terminals */
 %type <tree>		add_expr
@@ -159,6 +165,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		case_stmt_list
 %type <tree>		char_lit
 %type <tree>		char_type
+%type <tree>		codefrag
 %type <tree>		complex_declarator
 %type <tree>		const_dcl
 %type <tree>		const_exp
@@ -213,7 +220,6 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		param_dcl
 %type <tree>		param_dcl_list
 %type <tree>		param_type_spec
-%type <tree>		parameter_dcls
 %type <tree>		pop_scope
 %type <tree>		positive_int_const
 %type <tree>		primary_expr
@@ -245,10 +251,12 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		z_inheritance
 %type <tree>		typecode_type
 
+%type <treedata>	parameter_dcls
 %type <declspec>	z_declspec module_declspec
 %type <hash_table>	z_props prop_hash
+%type <boolean>		is_readonly is_oneway is_noscript
+%type <boolean>		is_varargs is_cvarargs
 %type <integer>		signed_int unsigned_int
-%type <integer>		is_readonly is_oneway is_noscript
 %type <paramattr>	param_attribute
 %type <str>		sqstring dqstring dqstring_cat
 %type <unaryop>		unary_op
@@ -294,6 +302,7 @@ definition:		type_dcl check_semicolon
 |			except_dcl check_semicolon
 |			interface check_semicolon
 |			module check_semicolon
+|			codefrag
 |			illegal_ident
 |			useless_semicolon
 	;
@@ -620,8 +629,9 @@ op_dcl:			is_noscript
 			new_scope parameter_dcls pop_scope
 			is_raises_expr
 			is_context_expr			{
-	$$ = IDL_op_dcl_new ($2, $3, $4, $5, $7, $8);
+	$$ = IDL_op_dcl_new ($2, $3, $4, $5.tree, $7, $8);
 	IDL_OP_DCL ($$).f_noscript = $1;
+	IDL_OP_DCL ($$).f_varargs = (gboolean) $5.data;
 }
 	;
 
@@ -629,8 +639,25 @@ op_type_spec:		param_type_spec
 |			TOK_VOID			{ $$ = NULL; }
 	;
 
-parameter_dcls:		'(' param_dcl_list ')'		{ $$ = $2; }
-|			'(' ')'				{ $$ = NULL; }
+is_varargs:		/* empty */			{ $$ = FALSE; }
+|			TOK_VARARGS			{ $$ = TRUE; }
+	;
+
+is_cvarargs:		/* empty */			{ $$ = FALSE; }
+|			',' TOK_VARARGS			{ $$ = TRUE; }
+	;
+
+parameter_dcls:		'('
+			param_dcl_list
+			is_cvarargs
+			')'				{
+	$$.tree = $2;
+	$$.data = (gpointer) $3;
+}
+|			'(' is_varargs ')'		{
+	$$.tree = NULL;
+	$$.data = (gpointer) $2;
+}
 	;
 
 param_dcl_list:		param_dcl			{ $$ = list_start ($1, TRUE); }
@@ -1185,6 +1212,9 @@ floating_pt_lit:	TOK_FLOATP			{ $$ = IDL_float_new ($1); }
 
 boolean_lit:		TOK_TRUE			{ $$ = IDL_boolean_new (TRUE); }
 |			TOK_FALSE			{ $$ = IDL_boolean_new (FALSE); }
+	;
+
+codefrag:		TOK_CODEFRAG
 	;
 
 dqstring_cat:		dqstring

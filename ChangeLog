@@ -1,3 +1,9 @@
+1998-12-04  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* lexer.l, IDL.h, util.c: Add IDL_CODEFRAG type, for XPIDL.
+
+	* parser.y: Integrate XPIDL varargs support into parameter_dcls.
+
 1998-12-03  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* parser.y: Add IDL_inhibit_push, IDL_inhibit_pop,

@@ -80,6 +80,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_MODULE",
 	"IDLN_BINOP",
 	"IDLN_UNARYOP",
+	"IDLN_CODEFRAG",
 	/* IDLN_LAST */
 };
 
@@ -1235,6 +1236,16 @@ IDL_tree IDL_unaryop_new (enum IDL_unaryop op, IDL_tree operand)
 	return p;
 }
 
+IDL_tree IDL_codefrag_new (char *desc, GSList *lines)
+{
+	IDL_tree p = IDL_node_new (IDLN_CODEFRAG);
+	
+	IDL_CODEFRAG (p).desc = desc;
+	IDL_CODEFRAG (p).lines = lines;
+
+	return p;
+}
+
 IDL_tree IDL_const_dcl_new (IDL_tree const_type, IDL_tree ident, IDL_tree const_exp)
 {
 	IDL_tree p = IDL_node_new (IDLN_CONST_DCL);
@@ -1427,6 +1438,7 @@ void IDL_tree_walk_in_order (IDL_tree p, IDL_tree_func tree_func, gpointer user_
 	case IDLN_TYPE_FLOAT:
 	case IDLN_TYPE_INTEGER:
 	case IDLN_TYPE_CHAR:
+	case IDLN_CODEFRAG:
 		break;
 		
 	case IDLN_LIST:
@@ -1622,6 +1634,13 @@ static void IDL_tree_free_real (IDL_tree p)
 			__IDL_free_properties (IDL_INTERFACE (p).properties);
 		break;
 
+	case IDLN_CODEFRAG:
+		free (IDL_CODEFRAG (p).desc);
+		for (slist = IDL_CODEFRAG (p).lines; slist; slist = slist->next)
+			free (slist->data);
+		g_slist_free (IDL_CODEFRAG (p).lines);
+		break;
+		
 	default:
 		break;
 	}
@@ -1665,6 +1684,7 @@ void IDL_tree_free (IDL_tree p)
 	case IDLN_STRING:
 	case IDLN_CHAR:
 	case IDLN_IDENT:
+	case IDLN_CODEFRAG:
 		__IDL_tree_free (p);
 		break;
 

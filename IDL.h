@@ -339,6 +339,8 @@ extern IDL_tree		IDL_attr_dcl_new		(unsigned f_readonly,
 struct _IDL_OP_DCL {
 	unsigned f_noscript		: 1;
 	unsigned f_oneway		: 1;
+	/* XPIDL extension (varags) */
+	unsigned f_varargs		: 1;
 	IDL_tree op_type_spec;
 	IDL_tree ident;
 	IDL_tree parameter_dcls;
@@ -442,6 +444,15 @@ struct _IDL_UNARYOP {
 extern IDL_tree		IDL_unaryop_new			(enum IDL_unaryop op,
 							 IDL_tree operand);
 
+/* XPIDL code fragments extension. */
+struct _IDL_CODEFRAG {
+	char *desc;
+	GSList *lines;
+};
+#define IDL_CODEFRAG(a)			IDL_CHECK_CAST(a, IDLN_CODEFRAG, idl_codefrag)
+extern IDL_tree		IDL_codefrag_new		(char *desc,
+							 GSList *lines);
+
 /*
  * IDL_tree_type - Enumerations of node types
  *
@@ -497,6 +508,7 @@ typedef enum {
 	IDLN_MODULE,
 	IDLN_BINOP,
 	IDLN_UNARYOP,
+	IDLN_CODEFRAG,
 	
 	IDLN_LAST
 } IDL_tree_type;
@@ -545,6 +557,7 @@ struct _IDL_tree_node {
 		struct _IDL_MODULE idl_module;
 		struct _IDL_BINOP idl_binop;
 		struct _IDL_UNARYOP idl_unaryop;
+		struct _IDL_CODEFRAG idl_codefrag;
 	} u;
 };
 #define IDL_NODE_TYPE(a)		((a)->_type)

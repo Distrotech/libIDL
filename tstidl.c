@@ -40,6 +40,13 @@ gboolean print_repo_id (IDL_tree p, gpointer user_data)
 		if (IDL_NATIVE (p).user_type)
 			g_message ("XPIDL native type: \"%s\"", IDL_NATIVE (p).user_type);
 	}
+
+	if (IDL_NODE_TYPE (p) == IDLN_CODEFRAG) {
+		GSList *slist = IDL_CODEFRAG (p).lines;
+		g_message ("XPIDL code fragment desc.: \"%s\"", IDL_CODEFRAG (p).desc);
+		for (; slist; slist = slist->next)
+			g_message ("XPIDL code fragment line.: \"%s\"", (char *) slist->data);
+	}
 	
 	return TRUE;
 }
@@ -136,7 +143,7 @@ int main (int argc, char *argv[])
 
 #ifndef _WIN32
 	{ extern int __IDL_debug;
-	__IDL_debug = FALSE; }
+	__IDL_debug = argc >= 4 ? TRUE : FALSE; }
 #endif
 	
 	IDL_check_cast_enable (TRUE);
