@@ -364,6 +364,8 @@ static gboolean heap_insert_ident(IDL_tree interface_ident, GTree *heap, IDL_tre
 
 		yyerrorv("Ambiguous inheritance in interface `%s' from %s `%s' and %s `%s'",
 			 newi, what1, i1, what2, i2);
+		yyerrornv(p, "%s `%s' conflicts with", what1, i1);
+		yyerrornv(any, "%s `%s'", what2, i2);
 
 		free(newi); free(i1); free(i2);
 

@@ -46,6 +46,9 @@ extern void			yyerrorv(const char *fmt, ...);
 extern void			yyerrorlv(const char *fmt, int ofs, ...);
 extern void			yywarningv(int level, const char *fmt, ...);
 extern void			yywarninglv(int level, const char *fmt, int ofs, ...);
+extern void			yyerrornv(struct _IDL_tree_node *p, const char *fmt, ...);
+extern void			yywarningnv(struct _IDL_tree_node *p, int level, const char *fmt, ...);
+
 
 /* Functions not yet deemed public */
 extern guint			IDL_strcase_hash(gconstpointer v);
@@ -68,6 +71,7 @@ extern char *			__IDL_tmp_filename;
 extern const char *		__IDL_real_filename;
 extern char *			__IDL_cur_filename;
 extern int			__IDL_cur_line;
+extern GHashTable *		__IDL_filename_hash;
 extern int			__IDL_prev_token_line;
 extern int			__IDL_cur_token_line;
 extern struct _IDL_tree_node *	__IDL_root;

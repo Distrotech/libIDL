@@ -471,6 +471,8 @@ struct _IDL_tree_node {
 	IDL_tree_type _type;
 	IDL_tree up;			/* Do not recurse */
 	IDL_declspec_t declspec;
+	char *_file;			/* Internal use */
+	int _line;			/* Internal use */
 	union {
 		struct _IDL_LIST idl_list;
 		struct _IDL_GENTREE idl_gentree;

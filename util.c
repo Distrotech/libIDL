@@ -86,6 +86,7 @@ char *				__IDL_tmp_filename = NULL;
 const char *			__IDL_real_filename = NULL;
 char *				__IDL_cur_filename = NULL;
 int				__IDL_cur_line;
+GHashTable *			__IDL_filename_hash;
 IDL_tree			__IDL_root;
 IDL_ns				__IDL_root_ns;
 int				__IDL_is_okay;
@@ -281,14 +282,16 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	__IDL_msgcb = cb;
 	__IDL_flags = parse_flags;
 	__IDL_root_ns = IDL_ns_new();
+
 	__IDL_is_parsing = IDL_TRUE;
 	__IDL_is_okay = IDL_TRUE;
 	__IDL_lex_init();
+
 	__IDL_real_filename = filename;
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = tmpfilename;
 #endif
-	__IDL_cur_filename = g_strdup(filename);
+	__IDL_filename_hash = g_hash_table_new(g_str_hash, g_str_equal);
 	rv = yyparse();
 	__IDL_is_parsing = IDL_FALSE;
 	__IDL_lex_cleanup();
@@ -308,6 +311,9 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		yyerror("File does not generate any useful information");
 
 	__IDL_msgcb = NULL;
+
+	g_hash_table_foreach(__IDL_filename_hash, (GHFunc)g_free, NULL);
+	g_hash_table_destroy(__IDL_filename_hash);
 
 	if (rv != 0 || !__IDL_is_okay) {
 		if (tree)
@@ -438,6 +444,48 @@ void yywarningv(int level, const char *fmt, ...)
 	free(msg);
 }
 
+void yyerrornv(IDL_tree p, const char *fmt, ...)
+{
+	char *file_save = __IDL_cur_filename;
+	int line_save = __IDL_cur_line;
+	char *msg = (char *)malloc(strlen(fmt) + 2048);
+	va_list args;
+
+	if (p == NULL)
+		return;
+	
+	__IDL_cur_filename = p->_file;
+	__IDL_cur_line = p->_line;
+	va_start(args, fmt);
+	vsprintf(msg, fmt, args);
+	yyerror(msg);
+	va_end(args);
+	free(msg);
+	__IDL_cur_filename = file_save;
+	__IDL_cur_line = line_save;
+}
+
+void yywarningnv(IDL_tree p, int level, const char *fmt, ...)
+{
+	char *file_save = __IDL_cur_filename;
+	int line_save = __IDL_cur_line;
+	char *msg = (char *)malloc(strlen(fmt) + 2048);
+	va_list args;
+
+	if (p == NULL)
+		return;
+	
+	__IDL_cur_filename = p->_file;
+	__IDL_cur_line = p->_line;
+	va_start(args, fmt);
+	vsprintf(msg, fmt, args);
+	yywarning(level, msg);
+	va_end(args);
+	free(msg);
+	__IDL_cur_filename = file_save;
+	__IDL_cur_line = line_save;
+}
+
 int IDL_tree_get_node_info(IDL_tree p, char **what, char **who)
 {
 	int dienow = 0;
@@ -551,6 +599,8 @@ static IDL_tree IDL_node_new(IDL_tree_type type)
 	memset(p, 0, sizeof(IDL_tree_node));
 
 	IDL_NODE_TYPE(p) = type;
+	p->_file = __IDL_cur_filename;
+	p->_line = __IDL_cur_line;
 
 	return p;
 }
@@ -1650,7 +1700,7 @@ static int load_forward_dcls(IDL_tree p, GHashTable *table)
 		char *s = IDL_ns_ident_to_qstring(IDL_FORWARD_DCL(p).ident, "::", 0);
 
 		if (!g_hash_table_lookup_extended(table, s, NULL, NULL))
-			g_hash_table_insert(table, s, NULL);
+			g_hash_table_insert(table, s, p);
 		else
 			free(s);
 	}
@@ -1673,9 +1723,9 @@ static int resolve_forward_dcls(IDL_tree p, GHashTable *table)
 	return IDL_TRUE;
 }
 
-static int print_unresolved_forward_dcls(char *s)
+static int print_unresolved_forward_dcls(char *s, IDL_tree p)
 {
-	yywarningv(IDL_WARNING1, "Unresolved forward declaration `%s'", s);
+	yywarningnv(p, IDL_WARNING1, "Unresolved forward declaration `%s'", s);
 	free(s);
 
 	return TRUE;

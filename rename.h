@@ -46,5 +46,7 @@
 #define yywarningv		__IDL_warningv
 #define	yyerrorlv		__IDL_errorlv
 #define yywarninglv		__IDL_warninglv
+#define	yyerrornv		__IDL_errornv
+#define yywarningnv		__IDL_warningnv
 
 #endif /* __RENAME_H */

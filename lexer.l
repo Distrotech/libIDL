@@ -80,13 +80,18 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 {cpp_status}		{
 	char *filename = (char *)malloc(strlen(yytext) + 1);
+	char *orig;
 
 	sscanf(yytext, "# %d %s", &__IDL_cur_line, filename);
+
 	if (__IDL_cur_filename)
 		free(__IDL_cur_filename);
+
 	__IDL_cur_filename = g_strdup(filename + 1);
 	__IDL_cur_filename[strlen(filename) - 2] = 0;
+
 	free(filename);
+
 	if (
 #ifdef HAVE_CPP_PIPE_STDIN
 	!strlen(__IDL_cur_filename)
@@ -96,6 +101,14 @@ dqstring		\"[^\"\n]*[\"\n]
 	) {
 		free(__IDL_cur_filename);
 		__IDL_cur_filename = g_strdup(__IDL_real_filename);
+	}
+
+	if (g_hash_table_lookup_extended(__IDL_filename_hash, __IDL_cur_filename,
+					 (gpointer)&orig, NULL)) {
+		free(__IDL_cur_filename);
+		__IDL_cur_filename = orig;
+	} else {
+		g_hash_table_insert(__IDL_filename_hash, __IDL_cur_filename, NULL);
 	}
 }
 {whitespace}
@@ -218,10 +231,7 @@ void __IDL_lex_init(void)
 
 void __IDL_lex_cleanup(void)
 {
-	if (__IDL_cur_filename) {
-		free(__IDL_cur_filename);
-		__IDL_cur_filename = NULL;
-	}
+	__IDL_cur_filename = NULL;
 }
 
 int yywrap(void)

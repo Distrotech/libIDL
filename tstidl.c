@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	extern int __IDL_debug;
 
 	IDL_check_cast_enable(IDL_TRUE);
-	__IDL_debug = IDL_TRUE;
+	__IDL_debug = IDL_FALSE;
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: tstidl <filename> [fold constants, 0 or 1]\n");
