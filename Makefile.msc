@@ -6,26 +6,26 @@
 # should be in your PATH.
 BIN = C:\Bin
 
-################################################################
+# Location of GLib.  GLIB_INCLUDES must contain glib.h + dependencies,
+# while GLIB_LIB must be in a linkable location.
+GLIB_INCLUDES = -I/Devel/glib
+GLIB_LIB = glib-1.1.lib
 
+################################################################
 # Nothing much configurable below
-GLIB_INCLUDES=-I/Devel/glib
-GLIB_LIB=glib-1.1.lib
+
+LIBIDL_VER = 0.5
 
 # cl -? described the options
 CC = cl -G5 -GF -Ox -W3 -D_DLL -nologo
 
 LDFLAGS = /link /nodefaultlib:libc msvcrt.lib # /debug:full /debugtype:cv 
 INSTALL = copy
-TOUCH = copy makefile.msc+nul
-
-LIBIDL_VER = 0.5.5
+TOUCH = copy Makefile.msc+nul
 
 CFLAGS = -I. $(GLIB_INCLUDES)
 
-all :						\
-	libIDL-$(LIBIDL_VER).dll		\
-	tstidl.exe
+all :	libIDL-$(LIBIDL_VER).dll tstidl.exe
 
 install : all
 	$(INSTALL) libIDL-$(LIBIDL_VER).dll $(BIN)
@@ -44,9 +44,6 @@ libIDL-$(LIBIDL_VER).dll : $(libIDL_OBJECTS)
 
 tstidl.exe : libIDL-$(LIBIDL_VER).dll tstidl.obj
 	$(CC) $(CFLAGS) -MD -Fetstidl.exe tstidl.obj libIDL-$(LIBIDL_VER).lib $(GLIB_LIB) $(LDFLAGS) /map
-
-tstidl.obj : tstidl.c
-	$(CC) -c $(CFLAGS) tstidl.c
 
 clean:
 	del config.h
