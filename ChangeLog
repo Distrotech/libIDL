@@ -1,3 +1,7 @@
+2002-03-28  Mark McLoughlin  <mark@skynet.ie>
+
+	* Makefile.am: link against glib. (75701)
+
 2002-03-01  jacob berkman  <jacob@ximian.com>
 
 	* Makefile.am (EXTRA_DIST): remove stamp-parser as this is broken
