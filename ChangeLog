@@ -7,8 +7,6 @@
 
 	* lexer.l (tokreturn): Remove deprecated ``noscript'' keyword.
 
-	* parser.y: Don't ref idents here.
-
 1999-05-30  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* lexer.l: Use wildcard start condition extension, since we

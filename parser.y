@@ -32,6 +32,8 @@
 #include "rename.h"
 #include "util.h"
 
+#define REF_IDENTS
+
 #define do_binop(rv,op,a,b)		do {		\
 	if (IDL_binop_chktypes (op, a, b))		\
 		YYABORT;				\
