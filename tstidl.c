@@ -224,6 +224,8 @@ int main (int argc, char *argv[])
 	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_const_dcls, &data);
 	printf ("\nIdentifiers\n");
 	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_ident_comments, &data);
+	printf ("\nIDL tree to IDL\n");
+	IDL_tree_to_IDL (tree, stdout, IDLF_OUTPUT_NEWLINES);
 	IDL_ns_free (ns);
 	IDL_tree_free (tree);
 	

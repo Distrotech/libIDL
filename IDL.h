@@ -56,6 +56,9 @@ extern "C" {
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
 #define IDLF_DECLSPEC_INHIBIT		(1UL << 1)
 
+/* output flags */
+#define IDLF_OUTPUT_NEWLINES		(1UL << 0)
+
 #ifdef _WIN32
 #  define IDL_EXPORT			__declspec (dllexport)
 #  define IDL_IMPORT			__declspec (dllimport)
@@ -713,11 +716,20 @@ extern void		IDL_tree_property_set		(IDL_tree tree,
 extern gboolean		IDL_tree_property_remove	(IDL_tree tree,
 							 const char *key);
 
+extern void		IDL_tree_walk			(IDL_tree p,
+							 IDL_tree_func pre_tree_func,
+							 IDL_tree_func post_tree_func,
+							 gpointer user_data);
+
 extern void		IDL_tree_walk_in_order		(IDL_tree p,
 							 IDL_tree_func tree_func,
 							 gpointer user_data);
 
 extern void		IDL_tree_free			(IDL_tree root);
+
+extern void		IDL_tree_to_IDL			(IDL_tree p,
+							 FILE *output,
+							 unsigned long output_flags);
 
 extern char *		IDL_do_escapes			(const char *s);
 

@@ -1057,10 +1057,13 @@ ns_new_ident:		ident				{
 			if (IDL_NODE_UP (q))
 				q = IDL_NODE_UP (q);
 		
+#if 0
+		/* FIXME: work with lists better */
 		if (q) {
-			do_token_error (q, "Duplicate identifier conflicts with", FALSE);
-			IDL_tree_error (q, "Previous declaration");
+			IDL_tree_error ($1, "Identifier `%s' conflicts", IDL_IDENT ($1).str);
+			do_token_error (q, "with", FALSE);
 		} else
+#endif
 			yyerrorv ("`%s' duplicate identifier", IDL_IDENT ($1).str);
 
 		IDL_tree_free ($1);
