@@ -300,12 +300,12 @@ IDL_tree				IDL_param_dcl_new(enum IDL_param_attr attr,
 							  IDL_tree param_type_spec,
 							  IDL_tree simple_declarator);
 
-struct _IDL_CASE_LABEL {
-	unsigned f_default		: 1;
-	IDL_tree const_exp;
+struct _IDL_CASE_STMT {
+	IDL_tree labels;
+	IDL_tree element_spec;
 };
-#define IDL_CASE_LABEL(a)		((a)->u.idl_case_label)
-IDL_tree				IDL_case_label_new(IDL_tree const_exp);
+#define IDL_CASE_STMT(a)		((a)->u.idl_case_stmt)
+IDL_tree				IDL_case_stmt_new(IDL_tree labels, IDL_tree element_spec);
 
 struct _IDL_INTERFACE {
 	IDL_tree ident;
@@ -400,14 +400,14 @@ typedef enum {
 	IDLN_TYPE_STRUCT,
 	IDLN_TYPE_UNION,
 	IDLN_MEMBER,
-	IDLN_CASE_LABEL,
+	IDLN_CASE_STMT,
 	IDLN_INTERFACE,
 	IDLN_MODULE,
 	IDLN_BINOP,
 	IDLN_UNARYOP
 } IDL_tree_type;
 
-extern const char *IDL_tree_type_names[];
+extern const char *			IDL_tree_type_names[];
 
 struct _IDL_tree_node {
 	IDL_tree_type _type;
@@ -441,7 +441,7 @@ struct _IDL_tree_node {
 		struct _IDL_TYPE_STRUCT idl_type_struct;
 		struct _IDL_TYPE_UNION idl_type_union;
 		struct _IDL_MEMBER idl_member;
-		struct _IDL_CASE_LABEL idl_case_label;
+		struct _IDL_CASE_STMT idl_case_stmt;
 		struct _IDL_INTERFACE idl_interface;
 		struct _IDL_MODULE idl_module;
 		struct _IDL_BINOP idl_binop;

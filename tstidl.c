@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 	char *fn;
 	extern int __IDL_debug;
 
-	__IDL_debug = 0;
+	__IDL_debug = 1;
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: tstidl <filename> [fold constants, 0 or 1]\n");

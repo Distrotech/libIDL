@@ -126,13 +126,13 @@ static int			idl_is_parsing = IDL_FALSE;
 %type <tree>			char_type wide_char_type boolean_type octet_type
 %type <tree>			string_type wide_string_type fixed_pt_type fixed_pt_const_type
 %type <tree>			any_type object_type enum_type scoped_name
-%type <tree>			case_list case_label fixed_array_size_list
-%type <tree>			fixed_array_size positive_int_const ns_global_ident
-%type <tree>			ns_scoped_name ns_prev_ident ns_new_ident
+%type <tree>			case_stmt case_label case_label_list fixed_array_size_list
+%type <tree>			case_stmt_list fixed_array_size positive_int_const
+%type <tree>			ns_scoped_name ns_prev_ident ns_new_ident ns_global_ident
 %type <tree>			ns_new_or_prev_ident cur_ns_new_or_prev_ident
 %type <tree>			param_type_spec op_type_spec parameter_dcls
 %type <tree>			is_raises_expr is_context_expr param_dcl_list
-%type <tree>			param_dcl raises_expr context_expr
+%type <tree>			param_dcl raises_expr context_expr element_spec
 %type <tree>			const_exp or_expr xor_expr and_expr shift_expr
 %type <tree>			add_expr mult_expr unary_expr primary_expr literal
 %type <tree>			integer_lit
@@ -262,15 +262,26 @@ switch_type_spec:	integer_type
 |			scoped_name
 	;
 
-switch_body:		case_list
+switch_body:		case_stmt_list
 	;
 
-case_list:		case_label			{ $$ = list_start($1); }
-|			case_list case_label		{ $$ = list_chain($1, $2); }
+case_stmt_list:		case_stmt			{ $$ = list_start($1); }
+|			case_stmt_list case_stmt	{ $$ = list_chain($1, $2); }
 	;
 
-case_label:		TOK_CASE const_exp ':'		{ $$ = IDL_case_label_new($2); }
-|			TOK_DEFAULT ':'			{ $$ = IDL_case_label_new(NULL); }
+case_stmt:		case_label_list
+			element_spec ';'		{ $$ = IDL_case_stmt_new($1, $2); }
+	;
+
+element_spec:		type_spec declarator		{ $$ = IDL_type_dcl_new($1, list_start($2)); }
+	;
+
+case_label_list:	case_label			{ $$ = list_start($1); }
+|			case_label_list case_label	{ $$ = list_chain($1, $2); }
+	;
+
+case_label:		TOK_CASE const_exp ':'		{ $$ = $2; }
+|			TOK_DEFAULT ':'			{ $$ = NULL; }
 	;
 
 const_dcl:		TOK_CONST const_type new_ident
@@ -409,6 +420,8 @@ primary_expr:		scoped_name
 	case IDLN_INTEGER:
 	case IDLN_FLOAT:
 	case IDLN_FIXED:
+	case IDLN_CHAR:
+	case IDLN_WIDE_CHAR:
 		break;
 	default:
 		yyerror("illegal type in constant expression");
@@ -1146,8 +1159,9 @@ void __IDL_tree_print(IDL_tree p)
 		__IDL_tree_print(IDL_TYPE_UNION(p).switch_body);
 		break;
 
-	case IDLN_CASE_LABEL:
-		__IDL_tree_print(IDL_CASE_LABEL(p).const_exp);
+	case IDLN_CASE_STMT:
+		__IDL_tree_print(IDL_CASE_STMT(p).labels);
+		__IDL_tree_print(IDL_CASE_STMT(p).element_spec);
 		break;
 
 	case IDLN_INTERFACE:
@@ -1228,17 +1242,7 @@ static void __IDL_tree_free(IDL_tree p)
 		break;
 
 	case IDLN_IDENT:
-#if 0
-		if (IDL_IDENT(p)._refs > 0)
-			printf("Ident %s %d\n",
-			       IDL_IDENT(p).str,
-			       IDL_IDENT(p)._refs);
-#endif
 		if (--IDL_IDENT(p)._refs <= 0) {
-#if 0
-			printf("  freeing %s\n",
-			       IDL_IDENT(p).str);
-#endif
 			free(IDL_IDENT(p).str);
 			free(p);
 		}
@@ -1353,8 +1357,9 @@ static void __IDL_tree_free(IDL_tree p)
 		free(p);
 		break;
 
-	case IDLN_CASE_LABEL:
-		__IDL_tree_free(IDL_CASE_LABEL(p).const_exp);
+	case IDLN_CASE_STMT:
+		__IDL_tree_free(IDL_CASE_STMT(p).labels);
+		__IDL_tree_free(IDL_CASE_STMT(p).element_spec);
 		free(p);
 		break;
 		
@@ -2049,12 +2054,12 @@ IDL_tree IDL_type_enum_new(IDL_tree ident, IDL_tree enumerator_list)
 	return p;
 }
 
-IDL_tree IDL_case_label_new(IDL_tree const_exp)
+IDL_tree IDL_case_stmt_new(IDL_tree labels, IDL_tree element_spec)
 {
-	IDL_tree p = IDL_node_new(IDLN_CASE_LABEL);
+	IDL_tree p = IDL_node_new(IDLN_CASE_STMT);
 	
-	IDL_CASE_LABEL(p).f_default = const_exp ? IDL_FALSE : IDL_TRUE;
-	IDL_CASE_LABEL(p).const_exp = const_exp;
+	IDL_CASE_STMT(p).labels = labels;
+	IDL_CASE_STMT(p).element_spec = element_spec;
 
 	return p;
 }
