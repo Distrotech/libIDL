@@ -31,7 +31,7 @@ BUILT_SOURCES		= lexer.c parser.c parser.h
 
 libIDL_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h
-libIDL_la_LDFLAGS	= -version-info 5:9:5
+libIDL_la_LDFLAGS	= -version-info 5:10:5
 
 tstidl_SOURCES		= tstidl.c
 tstidl_LDFLAGS		= -static

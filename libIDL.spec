@@ -1,4 +1,4 @@
-%define version 0.5.9
+%define version 0.5.10
 %define release SNAP
 
 Summary:   IDL parsing library
@@ -11,7 +11,7 @@ URL:       http://www.rpi.edu/~veliaa/libIDL
 Copyright: GPL
 Group:     Libraries
 Prereq:    /sbin/install-info
-Requires:  gcc, glib >= 1.1.4
+Requires:  gcc, glib >= 1.1.14
 Prefix:    /usr
 Docdir:    %prefix/doc
 BuildRoot: /var/tmp/libIDL-%{version}-root

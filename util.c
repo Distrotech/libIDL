@@ -412,7 +412,7 @@ int IDL_parse_filename_with_input (const char *filename,
 
 	__IDL_real_filename = filename;
 #ifndef HAVE_CPP_PIPE_STDIN
-	__IDL_tmp_filename = tmpfilename;
+	__IDL_tmp_filename = NULL;
 #endif
 	__IDL_filename_hash = IDL_NS (__IDL_root_ns).filename_hash;
 	data.init.filename = filename;
@@ -421,18 +421,12 @@ int IDL_parse_filename_with_input (const char *filename,
 		IDL_ns_free (__IDL_root_ns);
 		__IDL_lex_cleanup ();
 		__IDL_real_filename = NULL;
-#ifndef HAVE_CPP_PIPE_STDIN
-		__IDL_tmp_filename = NULL;
-#endif
 		return -1;
 	}
 	rv = yyparse ();
 	__IDL_is_parsing = FALSE;
 	__IDL_lex_cleanup ();
 	__IDL_real_filename = NULL;
-#ifndef HAVE_CPP_PIPE_STDIN
-	__IDL_tmp_filename = NULL;
-#endif
 	for (slist = __IDL_new_ident_comments; slist; slist = slist->next)
 		free (slist->data);
 	g_slist_free (__IDL_new_ident_comments);
@@ -2069,6 +2063,7 @@ void IDL_tree_property_set (IDL_tree tree, const char *key, const char *value)
 gboolean IDL_tree_property_remove (IDL_tree tree, const char *key)
 {
 	gboolean removed = FALSE;
+	char *val;
 	
 	g_return_val_if_fail (tree != NULL, FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
@@ -2076,12 +2071,28 @@ gboolean IDL_tree_property_remove (IDL_tree tree, const char *key)
 	if (!IDL_NODE_PROPERTIES (tree))
 		return FALSE;
 
-	if (g_hash_table_lookup (IDL_NODE_PROPERTIES (tree), key)) {
+	if ((val = g_hash_table_lookup (IDL_NODE_PROPERTIES (tree), key))) {
 		g_hash_table_remove (IDL_NODE_PROPERTIES (tree), key);
+		g_free (val);
 		removed = TRUE;
 	}
 	
 	return removed;
+}
+
+static void property_set (char *key, char *value, IDL_tree tree)
+{
+	IDL_tree_property_set (tree, key, value);
+}
+
+void IDL_tree_properties_copy (IDL_tree from_tree, IDL_tree to_tree)
+{
+	g_return_if_fail (from_tree != NULL);
+	g_return_if_fail (to_tree != NULL);
+
+	if (IDL_NODE_PROPERTIES (from_tree))
+		g_hash_table_foreach (IDL_NODE_PROPERTIES (from_tree),
+				      (GHFunc) property_set, to_tree);
 }
 
 struct remove_list_node_data {

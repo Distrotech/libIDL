@@ -433,7 +433,7 @@ interface:		z_declspec
 	IDL_NODE_DECLSPEC ($$) = $1;
 	if (__IDL_inhibits > 0)
 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
-	assign_props ($$, $2);
+	assign_props (IDL_INTERFACE ($$).ident, $2);
 }
 |			z_declspec
 			z_props
@@ -514,6 +514,7 @@ export:			type_dcl check_semicolon
 |			op_dcl check_semicolon
 |			attr_dcl check_semicolon
 |			const_dcl check_semicolon
+|			codefrag
 |			useless_semicolon
 	;
 
@@ -646,9 +647,20 @@ is_readonly:		/* empty */			{ $$ = FALSE; }
 |			TOK_READONLY			{ $$ = TRUE; }
 	;
 
-attr_dcl:		is_readonly TOK_ATTRIBUTE
+attr_dcl:		z_props is_readonly TOK_ATTRIBUTE
 			param_type_spec
-			simple_declarator_list		{ $$ = IDL_attr_dcl_new ($1, $3, $4); }
+			simple_declarator_list		{
+	IDL_tree_node node;
+	IDL_tree p, dcl;
+
+	$$ = IDL_attr_dcl_new ($2, $4, $5);
+	node.properties = $1;
+	for (p = $5; p; p = IDL_LIST (p).next) {
+		dcl = IDL_LIST (p).data;
+		IDL_tree_properties_copy (&node, p);
+	}
+	__IDL_free_properties (node.properties);
+}
 	;
 
 param_type_spec:	base_type_spec
@@ -669,12 +681,14 @@ is_oneway:		/* empty */			{ $$ = FALSE; }
 op_dcl:			is_noscript
 			is_oneway
 			op_type_spec
+			z_props
 			new_scope parameter_dcls pop_scope
 			is_raises_expr
 			is_context_expr			{
-	$$ = IDL_op_dcl_new ($2, $3, $4, $5.tree, $7, $8);
+	$$ = IDL_op_dcl_new ($2, $3, $5, $6.tree, $8, $9);
 	IDL_OP_DCL ($$).f_noscript = $1;
-	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($5.data);
+	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($6.data);
+	assign_props (IDL_OP_DCL ($$).ident, $4);
 }
 	;
 
@@ -713,7 +727,7 @@ param_dcl:		param_attribute
 			param_type_spec
 			simple_declarator		{
 	$$ = IDL_param_dcl_new ($1, $3, $4);
-	assign_props ($$, $2);
+	assign_props (IDL_PARAM_DCL ($$).simple_declarator, $2);
 }
 	;
 
@@ -1572,6 +1586,7 @@ void IDL_file_set (const char *filename, int line)
 #ifdef HAVE_CPP_PIPE_STDIN
 			!strlen (__IDL_cur_filename)
 #else
+			__IDL_tmp_filename &&
 			!strcmp (__IDL_cur_filename, __IDL_tmp_filename)
 #endif
 			) {

@@ -722,6 +722,9 @@ extern void		IDL_tree_property_set		(IDL_tree tree,
 extern gboolean		IDL_tree_property_remove	(IDL_tree tree,
 							 const char *key);
 
+extern void		IDL_tree_properties_copy	(IDL_tree from_tree,
+							 IDL_tree to_tree);
+
 extern void		IDL_tree_walk			(IDL_tree p,
 							 IDL_tree parent,
 							 IDL_tree_func pre_tree_func,

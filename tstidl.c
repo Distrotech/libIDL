@@ -37,18 +37,26 @@ gboolean print_repo_id (IDL_tree p, IDL_tree parent, struct walk_data *data)
 
 gboolean print_xpidl_exts (IDL_tree p, IDL_tree parent, struct walk_data *data)
 {
-	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE) {
+	if (IDL_NODE_TYPE (p) == IDLN_IDENT &&
+	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_INTERFACE) {
 		const char *val;
 
 		val = IDL_tree_property_get (p, "IID");
-		if (val) printf ("\tXPIDL IID:\"%s\"\n", val);
+		if (val) printf ("\tinterface `%s' XPIDL IID:\"%s\"\n",
+				 IDL_IDENT (IDL_INTERFACE (IDL_NODE_UP (p)).ident).str,
+				 val);
 	}
 
-	if (IDL_NODE_TYPE (p) == IDLN_PARAM_DCL) {
-		IDL_tree op = IDL_NODE_UP (IDL_NODE_UP (p));
+	if (IDL_NODE_TYPE (p) == IDLN_IDENT &&
+	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_PARAM_DCL) {
+		IDL_tree op;
 		IDL_tree ident;
 		IDL_tree q;
 		const char *val;
+		int i;
+
+		for (op = p, i = 0; i < 3; ++i)
+			op = IDL_NODE_UP (op);
 
 		assert (IDL_NODE_TYPE (op) == IDLN_OP_DCL);
 
@@ -132,6 +140,7 @@ int my_input_cb (IDL_input_reason reason, union IDL_input_data *cb_data, gpointe
 {
 	struct my_input_cb_data *my_data = user_data;
 	int rv;
+	static int linecount;
 	
 	switch (reason) {
 	case IDL_INPUT_REASON_INIT:
@@ -140,6 +149,8 @@ int my_input_cb (IDL_input_reason reason, union IDL_input_data *cb_data, gpointe
 		/* If failed, should know that it is implied to libIDL that errno is set
 		 * appropriately by a C library function or otherwise. Return 0 upon
 		 * success. */
+		linecount = 1;
+		IDL_file_set (cb_data->init.filename, 1);
 		return my_data->in ? 0 : -1;
 
 	case IDL_INPUT_REASON_FILL:
@@ -151,6 +162,7 @@ int my_input_cb (IDL_input_reason reason, union IDL_input_data *cb_data, gpointe
 			   cb_data->fill.max_size, rv);
 		if (rv == 0 && ferror (my_data->in))
 			return -1;
+		IDL_file_set (NULL, ++linecount);
 		return rv;
 
 	case IDL_INPUT_REASON_ABORT:
