@@ -44,6 +44,7 @@ extern int		yydebug;
 #endif
 int			__IDL_prev_token_line;
 int			__IDL_cur_token_line;
+static int		warn_underscores;
 %}
 
 whitespace		[ \t]*
@@ -172,9 +173,12 @@ wstring			tokreturn(TOK_WSTRING);
 	tokreturn(TOK_IDENT);
 }
 {warn1_ident}		{
-	yywarningv(IDL_WARNING2,
-		   "`%s' underscores within identifiers are discouraged for use "
-		   "with C-language IDL mappings", yytext);
+	if (!warn_underscores) {
+		yywarningv(IDL_WARNING2,
+			   "`%s' underscores within identifiers are discouraged for use "
+			   "with C-language IDL mappings", yytext);
+		warn_underscores = 1;
+	}
 	yylval.str = g_strdup(yytext);
 	tokreturn(TOK_IDENT);
 }
@@ -199,6 +203,7 @@ void __IDL_lex_init(void)
 	__IDL_cur_token_line = 0;
 	__IDL_prev_token_line = 0;
 	__IDL_cur_filename = NULL;
+	warn_underscores = 0;
 }
 
 void __IDL_lex_cleanup(void)
