@@ -1,3 +1,7 @@
+1998-07-27  Andrew Veliath  <andrewtv@usa.net>
+
+	* parser.y (IDL_parse_filename): g_getcwd returns a static buffer
+
 1998-07-25  Neil Vachharajani  <nvachhar@pluto.njcc.com>
 
 	* parser.y: Add one more byte for / in the allocation of linkto in 
