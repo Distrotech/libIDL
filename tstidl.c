@@ -9,9 +9,9 @@
 #include <ctype.h>
 #include <glib.h>
 #ifdef IDL_LIBRARY
-#include "IDL.h"
+#  include "IDL.h"
 #else
-#include <libIDL/IDL.h>
+#  include <libIDL/IDL.h>
 #endif
 
 gboolean print_repo_id (IDL_tree p, gpointer user_data)
@@ -33,7 +33,7 @@ gboolean print_repo_id (IDL_tree p, gpointer user_data)
 		const char *val;
 
 		val = IDL_interface_get_property (p, "IID");
-		if (val) printf("IID: %s\n", val);
+		if (val) printf("\tIID:\"%s\"\n", val);
 	}
 	
 	return TRUE;

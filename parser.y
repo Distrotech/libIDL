@@ -919,8 +919,17 @@ prop_hash:		TOK_PROP_KEY
 |			prop_hash ','
 			TOK_PROP_KEY
 			TOK_PROP_VALUE			{
-	g_hash_table_insert ($1, $3, $4);
 	$$ = $1;
+	g_hash_table_insert ($$, $3, $4);
+}
+|			TOK_PROP_KEY			{
+	$$ = g_hash_table_new (IDL_strcase_hash, IDL_strcase_equal);
+	g_hash_table_insert ($$, $1, g_strdup (""));
+}
+|			prop_hash ','
+			TOK_PROP_KEY			{
+	$$ = $1;
+	g_hash_table_insert ($$, $3, g_strdup (""));
 }
 	;
 

@@ -1,3 +1,8 @@
+1998-12-01  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* parser.y: Allow boolean XPIDL properties, which are inserted
+	with an empty string.
+
 1998-11-30  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Interface infotag list turned into a case-insensitive property
