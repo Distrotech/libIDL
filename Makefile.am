@@ -7,7 +7,6 @@ INCLUDES		= -DYYDEBUG=1 -DYYERROR_VERBOSE=1 \
 			  -DG_LOG_DOMAIN=\"libIDL\"
 YFLAGS			= -d -v 2>/dev/null
 LFLAGS			= @LFLAGS@
-LIBS			= @GLIB_LIBS@
 
 lexer.c: $(srcdir)/lexer.l parser.h
 	@rm -f $@
@@ -52,7 +51,7 @@ m4datadir		= $(datadir)/aclocal
 m4data_DATA		= libIDL.m4
 
 tstidl_SOURCES		= tstidl.c
-tstidl_LDADD		= libIDL.la
+tstidl_LDADD		= libIDL.la @GLIB_LIBS@
 
 confexecdir		= $(libdir)
 confexec_DATA		= libIDLConf.sh
