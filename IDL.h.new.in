@@ -573,6 +573,10 @@ struct _IDL_tree_node {
 		struct _IDL_UNARYOP idl_unaryop;
 		struct _IDL_CODEFRAG idl_codefrag;
 	} u;
+
+	/* Fields for application use */
+	guint32 flags;
+	gpointer data;
 };
 #define IDL_NODE_TYPE(a)		((a)->_type)
 #define IDL_NODE_TYPE_NAME(a)		((a)?IDL_tree_type_names[IDL_NODE_TYPE(a)]:"NULL")
@@ -772,7 +776,11 @@ extern void		IDL_tree_to_IDL			(IDL_tree p,
 							 FILE *output,
 							 unsigned long output_flags);
 
-extern char *		IDL_do_escapes			(const char *s);
+extern GString *	IDL_tree_to_IDL_string		(IDL_tree p,
+							 IDL_ns ns,
+							 unsigned long output_flags);
+
+extern gchar *		IDL_do_escapes			(const char *s);
 
 extern IDL_tree		IDL_resolve_const_exp		(IDL_tree p,
 							 IDL_tree_type type);
@@ -807,7 +815,7 @@ extern void		IDL_ns_pop_scope		(IDL_ns ns);
 
 extern IDL_tree		IDL_ns_qualified_ident_new	(IDL_tree nsid);
 
-extern char *		IDL_ns_ident_to_qstring		(IDL_tree ns_ident,
+extern gchar *		IDL_ns_ident_to_qstring		(IDL_tree ns_ident,
 							 const char *join,
 							 int scope_levels);
 
@@ -815,7 +823,7 @@ extern int		IDL_ns_scope_levels_from_here	(IDL_ns ns,
 							 IDL_tree ident,
 							 IDL_tree parent);
 
-extern char *		IDL_ns_ident_make_repo_id	(IDL_ns ns,
+extern gchar *		IDL_ns_ident_make_repo_id	(IDL_ns ns,
 							 IDL_tree p,
 							 const char *p_prefix,
 							 int *major,

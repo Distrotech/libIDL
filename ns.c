@@ -271,7 +271,7 @@ IDL_tree IDL_ns_qualified_ident_new (IDL_tree nsid)
 	return l;
 }
 
-char *IDL_ns_ident_to_qstring (IDL_tree ns_ident, const char *join, int levels)
+gchar *IDL_ns_ident_to_qstring (IDL_tree ns_ident, const char *join, int levels)
 {
 	IDL_tree l, q;
 	int len, joinlen;

@@ -2,6 +2,21 @@
 
 	* Update version to 0.6.4.
 
+	* IDL.h.new.in: Added a flags and data field to the end of the
+	IDL_tree node type, for application use. The application can
+	assume these will be initialized to zero. Should be backward
+	compatible with apps that don't touch it.
+
+	* util.c (IDL_emit_IDL_type_pre): For sequences output proper
+	typespec.
+
+	* IDL.h.new.in, util.c (IDL_tree_to_IDL_string): New function;
+	just like IDL_tree_to_IDL but returns a GString instead of writing
+	to a file.  Useful for IDL_tree_{error,warning}.
+
+	* IDL.h.new.in: Change functions that return glib heap strings to
+	return gchar instead of char.
+
 	* Makefile.am: Add stamp-parser to EXTRA_DIST so one isn't forced
 	to regenerate parser files. Tweak stamp rule to handle a time
 	change.

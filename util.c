@@ -2023,7 +2023,7 @@ void IDL_tree_free (IDL_tree p)
 }
 
 #define C_ESC(a,b)				case a: *p++ = b; ++s; break
-char *IDL_do_escapes (const char *s)
+gchar *IDL_do_escapes (const char *s)
 {
 	char *p, *q;
 
@@ -2357,22 +2357,53 @@ void IDL_tree_remove_empty_modules (IDL_tree *p, IDL_ns ns)
 
 #define indent()		++data->ilev
 #define unindent()		--data->ilev
-#define doindent()		do {			\
-	int i;						\
-	if (!(data->flags & IDLF_OUTPUT_NO_NEWLINES))	\
-		for (i = 0; i < data->ilev; ++i)	\
-			fputc ('\t', data->o);		\
-	else if (data->ilev > 0)			\
-		dataf (data, DELIM_SPACE);		\
+#define doindent()		do {					\
+	int i;								\
+	if (!(data->flags & IDLF_OUTPUT_NO_NEWLINES))			\
+		for (i = 0; i < data->ilev; ++i) {			\
+			switch (data->mode) {				\
+			case OUTPUT_FILE:				\
+				fputc ('\t', data->u.o);		\
+				break;					\
+									\
+			case OUTPUT_STRING:				\
+				g_string_append_c (data->u.s, '\t');	\
+				break;					\
+									\
+			default:					\
+				break;					\
+			}						\
+		}							\
+	else if (data->ilev > 0)					\
+		dataf (data, DELIM_SPACE);				\
 } while (0)
-#define nl()			do {			\
-	if (!(data->flags & IDLF_OUTPUT_NO_NEWLINES))	\
-		fputc ('\n', data->o);			\
+#define nl()			do {				\
+	if (!(data->flags & IDLF_OUTPUT_NO_NEWLINES)) {		\
+		switch (data->mode) {				\
+		case OUTPUT_FILE:				\
+			fputc ('\n', data->u.o);		\
+			break;					\
+								\
+		case OUTPUT_STRING:				\
+			g_string_append_c (data->u.s, '\n');	\
+			break;					\
+								\
+		default:					\
+			break;					\
+		}						\
+	}							\
 } while (0)
 
 typedef struct {
 	IDL_ns ns;
-	FILE *o;
+	enum {
+		OUTPUT_FILE,
+		OUTPUT_STRING
+	} mode;
+	union {
+		FILE *o;
+		GString *s;
+	} u;
 	int ilev;
 	unsigned long flags;
 	guint idents : 1;
@@ -2381,35 +2412,57 @@ typedef struct {
 	guint su_def : 1;
 } IDL_output_data;
 
-static int dataf (IDL_output_data *data, const char *fmt, ...)
+static void dataf (IDL_output_data *data, const char *fmt, ...)
 G_GNUC_PRINTF (2, 3);
 
-static int idataf (IDL_output_data *data, const char *fmt, ...)
+static void idataf (IDL_output_data *data, const char *fmt, ...)
 G_GNUC_PRINTF (2, 3);
 
-static int dataf (IDL_output_data *data, const char *fmt, ...)
+static void dataf (IDL_output_data *data, const char *fmt, ...)
 {
-	int rv;
+	gchar *buffer;
 	va_list args;
 
 	va_start (args, fmt);
-	rv = vfprintf (data->o, fmt, args);
-	va_end (args);
+	switch (data->mode) {
+	case OUTPUT_FILE:
+		vfprintf (data->u.o, fmt, args);
+		break;
 
-	return rv;
+	case OUTPUT_STRING:
+		buffer = g_strdup_vprintf (fmt, args);
+		g_string_append (data->u.s, buffer);
+		g_free (buffer);
+		break;
+
+	default:
+		break;
+	}
+	va_end (args);
 }
 
-static int idataf (IDL_output_data *data, const char *fmt, ...)
+static void idataf (IDL_output_data *data, const char *fmt, ...)
 {
-	int rv;
+	gchar *buffer;
 	va_list args;
 
 	va_start (args, fmt);
 	doindent ();
-	rv = vfprintf (data->o, fmt, args);
-	va_end (args);
+	switch (data->mode) {
+	case OUTPUT_FILE:
+		vfprintf (data->u.o, fmt, args);
+		break;
 
-	return rv;
+	case OUTPUT_STRING:
+		buffer = g_strdup_vprintf (fmt, args);
+		g_string_append (data->u.s, buffer);
+		g_free (buffer);
+		break;
+
+	default:
+		break;
+	}
+	va_end (args);
 }
 
 static gboolean IDL_emit_node_pre_func (IDL_tree_func_data *tfd, IDL_output_data *data);
@@ -2808,7 +2861,20 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 
 	case IDLN_TYPE_SEQUENCE:
 		dataf (data, "sequence<");
-		break;
+		idents = data->idents;
+		data->idents = TRUE;
+		IDL_tree_walk (IDL_TYPE_SEQUENCE (tfd->tree).simple_type_spec, tfd,
+			       (IDL_tree_func) IDL_emit_node_pre_func,
+			       (IDL_tree_func) IDL_emit_node_post_func,
+			       data);
+		data->idents = idents;
+		if (IDL_TYPE_SEQUENCE (tfd->tree).positive_int_const) {
+			dataf (data, DELIM_COMMA);
+			IDL_emit_IDL_literal (
+				IDL_TYPE_SEQUENCE (tfd->tree).positive_int_const, data);
+		}
+		dataf (data, ">");
+		return FALSE;
 
 	case IDLN_TYPE_STRUCT:
 		su_def = data->su_def;
@@ -2863,25 +2929,6 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 			nl ();
 		}
 		return FALSE;
-
-	default:
-		break;
-	}
-
-	return TRUE;
-}
-
-static gboolean IDL_emit_IDL_type_post (IDL_tree_func_data *tfd, IDL_output_data *data)
-{
-	switch (IDL_NODE_TYPE (tfd->tree)) {
-	case IDLN_TYPE_SEQUENCE:
-		if (IDL_TYPE_SEQUENCE (tfd->tree).positive_int_const) {
-			dataf (data, DELIM_COMMA);
-			IDL_emit_IDL_literal (
-				IDL_TYPE_SEQUENCE (tfd->tree).positive_int_const, data);
-		}
-		dataf (data, ">");
-		break;
 
 	default:
 		break;
@@ -3284,25 +3331,6 @@ static const struct IDL_emit_node * const IDL_get_IDL_emission_table (void)
 			table[IDLN_TYPE_STRUCT].pre =
 			table[IDLN_TYPE_UNION].pre = (IDL_tree_func) IDL_emit_IDL_type_pre;
 
-		table[IDLN_TYPE_FLOAT].post =
-			table[IDLN_TYPE_CHAR].post =
-			table[IDLN_TYPE_WIDE_CHAR].post =
-			table[IDLN_TYPE_BOOLEAN].post =
-			table[IDLN_TYPE_OCTET].post =
-			table[IDLN_TYPE_ANY].post =
-			table[IDLN_TYPE_OBJECT].post =
-			table[IDLN_TYPE_TYPECODE].post =
-			table[IDLN_TYPE_FLOAT].post =
-			table[IDLN_TYPE_FIXED].post =
-			table[IDLN_TYPE_INTEGER].post =
-			table[IDLN_TYPE_STRING].post =
-			table[IDLN_TYPE_WIDE_STRING].post =
-			table[IDLN_TYPE_ENUM].post =
-			table[IDLN_TYPE_ARRAY].post =
-			table[IDLN_TYPE_SEQUENCE].post =
-			table[IDLN_TYPE_STRUCT].post =
-			table[IDLN_TYPE_UNION].post = (IDL_tree_func) IDL_emit_IDL_type_post;
-
 		table[IDLN_FLOAT].pre =
 			table[IDLN_INTEGER].pre =
 			table[IDLN_FIXED].pre =
@@ -3340,15 +3368,16 @@ static gboolean IDL_emit_node_post_func (IDL_tree_func_data *tfd, IDL_output_dat
 	return TRUE;
 }
 
-void IDL_tree_to_IDL (IDL_tree p, IDL_ns ns, FILE *output, unsigned long flags)
+void IDL_tree_to_IDL (IDL_tree p, IDL_ns ns, FILE *output, unsigned long output_flags)
 {
 	IDL_output_data data;
 
 	g_return_if_fail (output != NULL);
 
 	data.ns = ns;
-	data.o = output;
-	data.flags = flags;
+	data.mode = OUTPUT_FILE;
+	data.u.o = output;
+	data.flags = output_flags;
 	data.ilev = 0;
 	data.idents = FALSE;
 	data.literals = FALSE;
@@ -3359,6 +3388,28 @@ void IDL_tree_to_IDL (IDL_tree p, IDL_ns ns, FILE *output, unsigned long flags)
 		       (IDL_tree_func) IDL_emit_node_pre_func,
 		       (IDL_tree_func) IDL_emit_node_post_func,
 		       &data);
+}
+
+GString *IDL_tree_to_IDL_string (IDL_tree p, IDL_ns ns, unsigned long output_flags)
+{
+	IDL_output_data data;
+
+	data.ns = ns;
+	data.mode = OUTPUT_STRING;
+	data.u.s = g_string_new (NULL);
+	data.flags = output_flags;
+	data.ilev = 0;
+	data.idents = FALSE;
+	data.literals = FALSE;
+	data.inline_props = TRUE;
+	data.su_def = FALSE;
+
+	IDL_tree_walk (p, NULL,
+		       (IDL_tree_func) IDL_emit_node_pre_func,
+		       (IDL_tree_func) IDL_emit_node_post_func,
+		       &data);
+
+	return data.u.s;
 }
 
 /*
