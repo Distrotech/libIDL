@@ -12,7 +12,6 @@ lexer.c: $(srcdir)/lexer.l
 	$(LEX) $(LFLAGS) -t $< | sed -e 's/yy/__IDL_/g' >$@
 
 parser.c parser.h: $(srcdir)/parser.y
-	@rm -f $@
 	$(YACC) $(YFLAGS) $<
 	mv -f y.tab.c parser.c
 	mv -f y.tab.h parser.h
