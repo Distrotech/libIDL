@@ -57,5 +57,7 @@ tstidl_LDADD		= libIDL-2.la $(LIBIDL_LIBS)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= libIDL-2.0.pc
 
-libIDL-config-2: libIDL-config
-	cp -f libIDL-config libIDL-config-2
+CLEANFILES = $(BUILT_SOURCES)
+
+dist-hook:
+	cd $(distdir) ; rm -f $(CLEANFILES)

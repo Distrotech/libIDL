@@ -1,3 +1,18 @@
+2002-10-17  Mark McLoughlin  <mark@skynet.ie>
+
+	* Makefile.am: don't distribute built sources.
+	Hopefully this fixes #88977, there's no point
+	in distributing these anymore since we now
+	require flex.
+
+	* configure.in: remove warning about not having
+	flex. We error out earlier if we don't have flex.
+
+	* libIDL-config.in: rename to libIDL-config-2.in
+	and only distribute libIDL-config-2.
+
+	* libIDLConf.sh.in: kill this cruft.
+
 2002-09-20  Mark McLoughlin  <mark@skynet.ie>
 
 	* libIDL-config.in: use pkg-config --(libs|cflags) glib-2.0.

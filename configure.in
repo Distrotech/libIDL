@@ -133,7 +133,7 @@ AC_SUBST(WARN_CFLAGS)
 AC_OUTPUT([
 Makefile
 Makefile.msc
-libIDL-config
+libIDL-config-2
 libIDL.m4
 libIDL.spec
 libIDL-2.0.pc
@@ -145,18 +145,6 @@ AC_UPDATE_IF_CHANGED(IDL.h, IDL.h.new)
 echo
 echo libIDL $LIBIDL_VERSION configuration complete
 echo
-if [[ "$LEX" != "flex" ]]; then
-	echo "  Flex installed: no"
-	echo
-	echo " -----------------------------------------------------------"
-	echo "    WARNING: flex was not found.  Either use the lexer.c"
-	echo "    that comes with the official distribution or install"
-	echo "    flex if you want to regenerate lexer.c from lexer.l."
-	echo " -----------------------------------------------------------"
-	echo
-else
-	echo "  Flex installed: yes"
-fi
 echo "  C Preprocessor: \"$CPP_PROGRAM\""
 if [[ "$ac_cv_cpp_pipe_stdin" = "yes" ]]; then
 	echo "  Standard input supported."
