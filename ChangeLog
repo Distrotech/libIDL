@@ -1,3 +1,11 @@
+2002-09-20  Mark McLoughlin  <mark@skynet.ie>
+
+	* libIDL-config.in: use pkg-config --(libs|cflags) glib-2.0.
+	instead of glib-config. The script is still going to go
+	away at soe stage though :-)
+	Patch from john.sun@sun.com and Jay Yan <jay.yan@sun.com>,
+	Fixes #93496.
+
 2002-09-09  Mark McLoughlin  <mark@skynet.ie>
 
 	* libIDL-config.in: s/-lIDL/-lIDL-2/. This script
