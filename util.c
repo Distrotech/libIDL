@@ -2789,7 +2789,7 @@ static gboolean IDL_emit_IDL_literal_force_pre (IDL_tree_func_data *tfd, IDL_out
 
 static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data *data)
 {
-	IDL_tree p;
+	IDL_tree p, q;
 
 	p = tfd->tree;
 
@@ -2835,12 +2835,12 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 		break;
 
 	case IDLN_TYPE_FIXED:
-		dataf (data, "fixed <");
+		dataf (data, "fixed<");
 		IDL_emit_IDL_literal (IDL_TYPE_FIXED (p).positive_int_const, data);
 		dataf (data, DELIM_COMMA);
 		IDL_emit_IDL_literal (IDL_TYPE_FIXED (p).integer_lit, data);
 		dataf (data, ">");
-		break;
+		return FALSE;
 
 	case IDLN_TYPE_INTEGER:
 		if (!IDL_TYPE_INTEGER (p).f_signed)
@@ -2853,8 +2853,7 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 		break;
 
 	case IDLN_TYPE_STRING:
-	case IDLN_TYPE_WIDE_STRING: {
-		IDL_tree q;
+	case IDLN_TYPE_WIDE_STRING:
 		if (IDL_NODE_TYPE (p) == IDLN_TYPE_STRING) {
 			dataf (data, "string");
 			q = IDL_TYPE_STRING (p).positive_int_const;
@@ -2864,11 +2863,15 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 		}
 		if (q) {
 			dataf (data, "<");
-			IDL_emit_IDL_literal (IDL_TYPE_FIXED (p).integer_lit, data);
+			if (IDL_NODE_TYPE (p) == IDLN_TYPE_STRING)
+				IDL_emit_IDL_literal (
+					IDL_TYPE_STRING (p).positive_int_const, data);
+			else
+				IDL_emit_IDL_literal (
+					IDL_TYPE_WIDE_STRING (p).positive_int_const, data);
 			dataf (data, ">");
 		}
-		break;
-	}
+		return FALSE;
 
 	case IDLN_TYPE_ENUM:
 		IDL_emit_IDL_indent (tfd, data);
