@@ -1,6 +1,6 @@
 /***************************************************************************
 
-    lexer.l (IDL flex scanner)
+    lexer.l (IDL lex scanner)
 
     Copyright (C) 1998, 1999 Andrew T. Veliath
 
