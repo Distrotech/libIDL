@@ -91,6 +91,8 @@ const char *				__IDL_real_filename = NULL;
 char *					__IDL_cur_filename = NULL;
 int					__IDL_cur_line;
 GHashTable *				__IDL_filename_hash;
+IDL_fileinfo *				__IDL_cur_fileinfo;
+int					__IDL_inhibits;
 IDL_tree				__IDL_root;
 IDL_ns					__IDL_root_ns;
 int					__IDL_is_okay;
@@ -183,6 +185,12 @@ static void IDL_tree_optimize (IDL_tree *p, IDL_ns ns)
 	IDL_tree_process_forward_dcls (p, ns);
 	IDL_tree_remove_inhibits (p, ns);
 	IDL_tree_remove_empty_modules (p, ns);
+}
+
+static void filename_hash_free (char *filename, IDL_fileinfo *fi)
+{
+	g_free (filename);
+	g_free (fi);
 }
 
 int IDL_parse_filename (const char *filename, const char *cpp_args,
@@ -304,6 +312,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	__IDL_nerrors = __IDL_nwarnings = 0;
 	__IDL_in = input;
 	__IDL_msgcb = msg_cb;
+	__IDL_inhibits = 0;
 	__IDL_flags = parse_flags;
 	__IDL_flagsi = 0;
 	__IDL_root_ns = IDL_ns_new ();
@@ -343,7 +352,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 
 	__IDL_msgcb = NULL;
 
-	g_hash_table_foreach (__IDL_filename_hash, (GHFunc) g_free, NULL);
+	g_hash_table_foreach (__IDL_filename_hash, (GHFunc) filename_hash_free, NULL);
 	g_hash_table_destroy (__IDL_filename_hash);
 
 	if (rv != 0 || !__IDL_is_okay) {
@@ -396,6 +405,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	__IDL_max_msg_level = max_msg_level;
 	__IDL_nerrors = __IDL_nwarnings = 0;
 	__IDL_msgcb = msg_cb;
+	__IDL_inhibits = 0;
 	__IDL_flags = parse_flags;
 	__IDL_flagsi = 0;
 	__IDL_root_ns = IDL_ns_new ();
@@ -437,7 +447,7 @@ int IDL_parse_filename_with_input (const char *filename,
 
 	__IDL_msgcb = NULL;
 
-	g_hash_table_foreach (__IDL_filename_hash, (GHFunc) g_free, NULL);
+	g_hash_table_foreach (__IDL_filename_hash, (GHFunc) filename_hash_free, NULL);
 	g_hash_table_destroy (__IDL_filename_hash);
 
 	if (rv != 0 || !__IDL_is_okay) {

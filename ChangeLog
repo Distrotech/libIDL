@@ -1,6 +1,11 @@
 1998-11-30  Andrew T. Veliath  <andrewtv@usa.net>
 
-	* #pragma inhibit on/off added.
+	* Add per-filename state information.
+
+	* #pragma inhibit push/pop added.  The push operation will
+	increment a counter, while the pop operation decrements it.  If
+	the counter is greater than zero, any module or interface declared
+	during that time will be inhibited.
 
 	* Made XPIDL interface properties a list, and moved before the
 	interface keyword.

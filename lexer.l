@@ -106,6 +106,7 @@ dqstring		\"[^\"\n]*[\"\n]
 <*>{cpp_status}		{
 	char *filename = (char *) malloc (strlen (yytext) + 1);
 	char *orig;
+	IDL_fileinfo *fi;
 
 	sscanf (yytext, "# %d %s", &__IDL_cur_line, filename);
 
@@ -126,11 +127,15 @@ dqstring		\"[^\"\n]*[\"\n]
 	}
 
 	if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
-					 (gpointer)&orig, NULL)) {
+					  (gpointer) &orig, (gpointer) &fi)) {
 		free (__IDL_cur_filename);
 		__IDL_cur_filename = orig;
-	} else
-		g_hash_table_insert (__IDL_filename_hash, __IDL_cur_filename, NULL);
+		__IDL_cur_fileinfo = fi;
+	} else {
+		fi = g_new0 (IDL_fileinfo, 1);
+		__IDL_cur_fileinfo = fi;
+		g_hash_table_insert (__IDL_filename_hash, __IDL_cur_filename, fi);
+	}
 }
 <*>{whitespace}
 {b8_int}		{
@@ -255,6 +260,7 @@ void __IDL_lex_init (void)
 	__IDL_cur_token_line = 0;
 	__IDL_prev_token_line = 0;
 	__IDL_cur_filename = NULL;
+	__IDL_cur_fileinfo = NULL;
 	warn_underscores = 0;
 }
 

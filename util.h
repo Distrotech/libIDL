@@ -40,8 +40,11 @@
 #endif
 
 /* internal parse flags */
-#define IDLFP_INHIBIT		(1UL << 0)
-#define IDLFP_XPIDL_PROPERTY	(1UL << 1)
+#define IDLFP_XPIDL_PROPERTY	(1UL << 0)
+
+typedef struct {
+	unsigned long flags;
+} IDL_fileinfo;
 
 extern void		yyerror				(const char *s);
 extern void		yyerrorl			(const char *s, int ofs);
@@ -76,8 +79,10 @@ extern const char *			__IDL_real_filename;
 extern char *				__IDL_cur_filename;
 extern int				__IDL_cur_line;
 extern GHashTable *			__IDL_filename_hash;
+extern IDL_fileinfo *			__IDL_cur_fileinfo;
 extern int				__IDL_prev_token_line;
 extern int				__IDL_cur_token_line;
+extern int				__IDL_inhibits;
 extern IDL_tree				__IDL_root;
 extern IDL_ns				__IDL_root_ns;
 extern int				__IDL_is_okay;

@@ -327,7 +327,7 @@ module:			module_declspec new_or_prev_scope '{'
 
 	$$ = module;
 	IDL_NODE_DECLSPEC ($$) = $1;	
-	if (__IDL_flagsi & IDLFP_INHIBIT)
+	if (__IDL_inhibits > 0)
 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 }
 |			module_declspec new_or_prev_scope '{'
@@ -345,7 +345,7 @@ module:			module_declspec new_or_prev_scope '{'
 	$$ = IDL_NODE_UP ($2) ? NULL : IDL_module_new ($2, NULL);
 	if ($$) {
 		IDL_NODE_DECLSPEC ($$) = $1;
-		if (__IDL_flagsi & IDLFP_INHIBIT)
+		if (__IDL_inhibits > 0)
 			IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 	}
 }
@@ -398,7 +398,7 @@ interface:		z_declspec
 			'}' pop_scope			{
  	$$ = IDL_interface_new ($4, $6, $9);
 	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_flagsi & IDLFP_INHIBIT)
+	if (__IDL_inhibits > 0)
 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 
 	/* Check for XPIDL interface properties */
@@ -1363,10 +1363,12 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 
 static void IDL_inhibit (IDL_ns ns, const char *s)
 {
-	if (g_strcasecmp ("on", s) == 0)
-		__IDL_flagsi |= IDLFP_INHIBIT;
-	else if (g_strcasecmp ("off", s) == 0)
-		__IDL_flagsi &= ~IDLFP_INHIBIT;
+	if (g_strcasecmp ("push", s) == 0)
+		++__IDL_inhibits;
+	else if (g_strcasecmp ("pop", s) == 0) {
+		if (--__IDL_inhibits < 0)
+			__IDL_inhibits = 0;
+	}
 }
 
 void __IDL_do_pragma (const char *s)
