@@ -169,11 +169,12 @@ const char *IDL_get_IDLver_string(void)
 static void IDL_tree_check_semantics(IDL_tree *p)
 {
 	IDL_tree_resolve_forward_dcls(*p);
+}
+
+static void IDL_tree_optimize(IDL_tree *p)
+{
 	IDL_tree_remove_inhibits(p);
 	IDL_tree_remove_empty_modules(p);
-	
-	if (*p == NULL)
-		yyerror("File does not generate any useful information");
 }
 
 int IDL_parse_filename(const char *filename, const char *cpp_args,
@@ -302,6 +303,10 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 #endif
 
 	IDL_tree_check_semantics(&__IDL_root);
+	IDL_tree_optimize(&__IDL_root);
+	if (__IDL_root == NULL)
+		yyerror("File does not generate any useful information");
+
 	__IDL_msgcb = NULL;
 
 	if (rv != 0 || !__IDL_is_okay) {
@@ -613,6 +618,10 @@ IDL_tree IDL_list_remove(IDL_tree list, IDL_tree p)
 		if (next)
 			IDL_LIST(next).prev = prev;
 	}
+
+	IDL_LIST(p).prev = NULL;
+	IDL_LIST(p).next = NULL;
+	IDL_LIST(p)._tail = p;
 
 	return new_list;
 }
@@ -1720,6 +1729,8 @@ static int remove_inhibits(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
 	else
 		*root = IDL_list_remove(*root, p);
 	
+	IDL_tree_free(p);
+	
 	return TRUE;
 }
 
@@ -1729,7 +1740,7 @@ void IDL_tree_remove_inhibits(struct _IDL_tree_node **p)
 
 	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_inhibits, table);
 	g_hash_table_foreach(table, (GHFunc)remove_inhibits, p);
-	g_message("IDL_tree_remove_inhibits: %d node(s) removed", g_hash_table_size(table));
+	g_message("IDL_tree_remove_inhibits: %d subtree(s) removed", g_hash_table_size(table));
 	g_hash_table_destroy(table);
 }
 
@@ -1765,6 +1776,8 @@ static int remove_empty_modules(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
 		*list_head = IDL_list_remove(*list_head, p);
 	else
 		*root = IDL_list_remove(*root, p);
+
+	IDL_tree_free(p);
 	
 	return TRUE;
 }
