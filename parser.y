@@ -76,9 +76,9 @@ static IDL_tree			IDL_binop_eval(enum IDL_binop op,
 static IDL_tree			IDL_unaryop_eval(enum IDL_unaryop op,
 						 IDL_tree a);
 static void			assign_up_node(IDL_tree up, IDL_tree node);
-static IDL_tree			list_start(IDL_tree a);
-static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
-static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
+static IDL_tree			list_start(IDL_tree a, int filter_null);
+static IDL_tree			list_chain(IDL_tree a, IDL_tree b, int filter_null);
+static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b, int filter_null);
 static int			do_token_error(IDL_tree p, const char *message, int prev);
 static int			get_node_info(IDL_tree p, char **who, char **what);
 
@@ -181,8 +181,8 @@ specification:		/* empty */			{ yyerror("Empty file"); YYABORT; }
 |			definition_list
 	;
 
-definition_list:	definition			{ $$ = list_start($1); }
-|			definition_list definition	{ $$ = list_chain($1, $2); }
+definition_list:	definition			{ $$ = list_start($1, IDL_TRUE); }
+|			definition_list definition	{ $$ = list_chain($1, $2, IDL_TRUE); }
 	;
 
 check_semicolon:	';'
@@ -295,16 +295,16 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 }
 	;
 
-scoped_name_list:	scoped_name			{ $$ = list_start($1); }
+scoped_name_list:	scoped_name			{ $$ = list_start($1, IDL_TRUE); }
 |			scoped_name_list
-			check_comma scoped_name		{ $$ = list_chain($1, $3); }
+			check_comma scoped_name		{ $$ = list_chain($1, $3, IDL_TRUE); }
 	;
 
 interface_body:		export_list
 	;
 
 export_list:		/* empty */			{ $$ = NULL; }
-|			export_list export		{ $$ = zlist_chain($1, $2); }
+|			export_list export		{ $$ = zlist_chain($1, $2, IDL_TRUE); }
 	;
 
 export:			type_dcl check_semicolon
@@ -361,19 +361,19 @@ switch_type_spec:	integer_type
 switch_body:		case_stmt_list
 	;
 
-case_stmt_list:		case_stmt			{ $$ = list_start($1); }
-|			case_stmt_list case_stmt	{ $$ = list_chain($1, $2); }
+case_stmt_list:		case_stmt			{ $$ = list_start($1, IDL_TRUE); }
+|			case_stmt_list case_stmt	{ $$ = list_chain($1, $2, IDL_TRUE); }
 	;
 
 case_stmt:		case_label_list
 			element_spec check_semicolon	{ $$ = IDL_case_stmt_new($1, $2); }
 	;
 
-element_spec:		type_spec declarator		{ $$ = IDL_member_new($1, list_start($2)); }
+element_spec:		type_spec declarator		{ $$ = IDL_member_new($1, list_start($2, IDL_TRUE)); }
 	;
 
-case_label_list:	case_label			{ $$ = list_start($1); }
-|			case_label_list case_label	{ $$ = list_chain($1, $2); }
+case_label_list:	case_label			{ $$ = list_start($1, IDL_FALSE); }
+|			case_label_list case_label	{ $$ = list_chain($1, $2, IDL_FALSE); }
 	;
 
 case_label:		TOK_CASE const_exp ':'		{ $$ = $2; }
@@ -390,7 +390,7 @@ except_dcl:		TOK_EXCEPTION new_scope '{'
 	;
 
 member_zlist:		/* empty */			{ $$ = NULL; }
-|			member_zlist member		{ $$ = zlist_chain($1, $2); }
+|			member_zlist member		{ $$ = zlist_chain($1, $2, IDL_TRUE); }
 	;
 
 is_readonly:		/* empty */			{ $$ = IDL_FALSE; }
@@ -427,9 +427,9 @@ parameter_dcls:		'(' param_dcl_list ')'		{ $$ = $2; }
 |			'(' ')'				{ $$ = NULL; }
 	;
 
-param_dcl_list:		param_dcl			{ $$ = list_start($1); }
+param_dcl_list:		param_dcl			{ $$ = list_start($1, IDL_TRUE); }
 |			param_dcl_list
-			check_comma param_dcl		{ $$ = list_chain($1, $3); }
+			check_comma param_dcl		{ $$ = list_chain($1, $3, IDL_TRUE); }
 	;
 
 param_dcl:		param_attribute
@@ -590,13 +590,13 @@ ns_scoped_name:		ns_prev_ident
 }
 	;
 
-enumerator_list:	new_ident			{ $$ = list_start($1); }
+enumerator_list:	new_ident			{ $$ = list_start($1, IDL_TRUE); }
 |			enumerator_list
-			check_comma new_ident		{ $$ = list_chain($1, $3); }
+			check_comma new_ident		{ $$ = list_chain($1, $3, IDL_TRUE); }
 	;
 
-member_list:		member				{ $$ = list_start($1); }
-|			member_list member		{ $$ = list_chain($1, $2); }
+member_list:		member				{ $$ = list_start($1, IDL_TRUE); }
+|			member_list member		{ $$ = list_chain($1, $2, IDL_TRUE); }
 	;
 
 member:			type_spec declarator_list
@@ -702,9 +702,9 @@ wide_string_type:	TOK_WSTRING '<'
 |			TOK_WSTRING			{ $$ = IDL_type_wide_string_new(NULL); }
 	;
 
-declarator_list:	declarator			{ $$ = list_start($1); }
+declarator_list:	declarator			{ $$ = list_start($1, IDL_TRUE); }
 |			declarator_list 
-			check_comma declarator		{ $$ = list_chain($1, $3); }
+			check_comma declarator		{ $$ = list_chain($1, $3, IDL_TRUE); }
 	;
 
 declarator:		simple_declarator
@@ -717,18 +717,18 @@ simple_declarator:	new_ident
 complex_declarator:	array_declarator
 	;
 
-simple_declarator_list:	simple_declarator		{ $$ = list_start($1); }
+simple_declarator_list:	simple_declarator		{ $$ = list_start($1, IDL_TRUE); }
 |			simple_declarator_list
-			check_comma simple_declarator	{ $$ = list_chain($1, $3); }
+			check_comma simple_declarator	{ $$ = list_chain($1, $3, IDL_TRUE); }
 	;
 
 array_declarator:	new_ident
 			fixed_array_size_list		{ $$ = IDL_type_array_new($1, $2); }
 	;
 
-fixed_array_size_list:	fixed_array_size		{ $$ = list_start($1); }
+fixed_array_size_list:	fixed_array_size		{ $$ = list_start($1, IDL_TRUE); }
 |			fixed_array_size_list
-			fixed_array_size		{ $$ = list_chain($1, $2); }
+			fixed_array_size		{ $$ = list_chain($1, $2, IDL_TRUE); }
 	;
 
 fixed_array_size:	'[' 
@@ -903,9 +903,9 @@ ns_global_ident:	ident				{
 }
 	;
 
-string_lit_list:	string_lit			{ $$ = list_start($1); }
+string_lit_list:	string_lit			{ $$ = list_start($1, IDL_TRUE); }
 |			string_lit_list
-			check_comma string_lit		{ $$ = list_chain($1, $3); }
+			check_comma string_lit		{ $$ = list_chain($1, $3, IDL_TRUE); }
 	;
 
 positive_int_const:	TOK_INTEGER			{
@@ -2573,44 +2573,44 @@ static void assign_up_node(IDL_tree up, IDL_tree node)
 	}
 }
 
-static IDL_tree list_start(IDL_tree a)
+static IDL_tree list_start(IDL_tree a, int filter_null)
 {
 	IDL_tree p;
 
-	if (!a)
+	if (!a && filter_null)
 		return NULL;
 
 	p = IDL_list_new(a);
-
 	IDL_LIST(p)._tail = p;
 
 	return p;
 }
 
-static IDL_tree list_chain(IDL_tree a, IDL_tree b)
+static IDL_tree list_chain(IDL_tree a, IDL_tree b, int filter_null)
 {
 	IDL_tree p;
 
-	if (!b)
-		return a;
-
-	if (!a)
-		return list_start(b);
+	if (filter_null) {
+		if (!b)
+			return a;
+		
+		if (!a)
+			return list_start(b, filter_null);
+	}
 
 	p = IDL_list_new(b);
-
 	IDL_LIST(IDL_LIST(a)._tail).next = p;
 	IDL_LIST(a)._tail = p;
 
 	return a;
 }
 
-static IDL_tree zlist_chain(IDL_tree a, IDL_tree b)
+static IDL_tree zlist_chain(IDL_tree a, IDL_tree b, int filter_null)
 {
 	if (a == NULL)
-		return list_start(b);
+		return list_start(b, filter_null);
 	else
-		return list_chain(a, b);
+		return list_chain(a, b, filter_null);
 }
 
 IDL_tree IDL_gentree_chain_sibling(IDL_tree from, IDL_tree data)
