@@ -75,7 +75,7 @@ if test "$echo_cflags" = "yes"; then
 	all_flags="$all_flags $includes $cflags `glib-config --cflags`"
 fi
 if test "$echo_libs" = "yes"; then
-	all_flags="$all_flags -L@libdir@ -lIDL `glib-config --libs`"
+	all_flags="$all_flags -L@libdir@ -lIDL-2 `glib-config --libs`"
 fi
 
 # Straight out any possible duplicates, but be careful to
