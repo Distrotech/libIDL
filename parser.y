@@ -358,66 +358,67 @@ interface_catch_ident:	new_or_prev_scope
 	;
 
 interface:		z_declspec
-			z_infotag
 			TOK_INTERFACE
 			interface_catch_ident
+			z_infotag
 			pop_scope
 			z_inheritance			{
-	assert ($4 != NULL);
-	assert (IDL_NODE_TYPE ($4) == IDLN_IDENT);
-	assert (IDL_IDENT_TO_NS ($4) != NULL);
-	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($4)) == IDLN_GENTREE);
-	if (IDL_NODE_UP ($4) != NULL &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_INTERFACE &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
-		do_token_error (IDL_NODE_UP ($4), "Interface definition conflicts with", FALSE);
-		yyerrornv ($4, "Previous declaration");
+	assert ($3 != NULL);
+	assert (IDL_NODE_TYPE ($3) == IDLN_IDENT);
+	assert (IDL_IDENT_TO_NS ($3) != NULL);
+	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($3)) == IDLN_GENTREE);
+	if (IDL_NODE_UP ($3) != NULL &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($3)) != IDLN_INTERFACE &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($3)) != IDLN_FORWARD_DCL) {
+		do_token_error (IDL_NODE_UP ($3), "Interface definition conflicts with", FALSE);
+		yyerrornv ($3, "Previous declaration");
 		YYABORT;
-	} else if (IDL_NODE_UP ($4) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
-		yyerrorv ("Cannot redeclare interface `%s'", IDL_IDENT ($4).str);
-		yyerrornv ($4, "Previous declaration of interface `%s'", IDL_IDENT ($4).str);
+	} else if (IDL_NODE_UP ($3) != NULL &&
+		   IDL_NODE_TYPE (IDL_NODE_UP ($3)) != IDLN_FORWARD_DCL) {
+		yyerrorv ("Cannot redeclare interface `%s'", IDL_IDENT ($3).str);
+		yyerrornv ($3, "Previous declaration of interface `%s'", IDL_IDENT ($3).str);
 		YYABORT;
-	} else if (IDL_NODE_UP ($4) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL) {
-		$4->_file = __IDL_cur_filename;
-		$4->_line = __IDL_cur_line;
+	} else if (IDL_NODE_UP ($3) != NULL &&
+		   IDL_NODE_TYPE (IDL_NODE_UP ($3)) == IDLN_FORWARD_DCL) {
+		$3->_file = __IDL_cur_filename;
+		$3->_line = __IDL_cur_line;
 	}
-	IDL_GENTREE (IDL_IDENT_TO_NS ($4))._import = $6;
-	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($4));
-	if (IDL_ns_check_for_ambiguous_inheritance ($4, $6))
+	IDL_GENTREE (IDL_IDENT_TO_NS ($3))._import = $6;
+	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($3));
+	if (IDL_ns_check_for_ambiguous_inheritance ($3, $6))
 		__IDL_is_okay = FALSE;
 }
 			'{'
 				interface_body
 			'}' pop_scope			{
- 	$$ = IDL_interface_new ($4, $6, $9);
+ 	$$ = IDL_interface_new ($3, $6, $9);
 	IDL_NODE_DECLSPEC ($$) = $1;
 
 	/* Check for XPIDL interface tag */
-	if ($2 != NULL) {
+	if ($4 != NULL) {
 		if (__IDL_flags & IDLF_XPIDL)
-			IDL_INTERFACE ($$).infotag = $2;
+			IDL_INTERFACE ($$).infotag = $4;
 		else {
-			yyerrornv ($2,
+			yyerrornv ($4,
 				   "Cannot have interface tag %s when XPIDL syntax is not enabled",
-				   IDL_IDENT ($2).str);
-			IDL_tree_free ($2);
+				   IDL_IDENT ($4).str);
+			IDL_tree_free ($4);
 		}
 	}
 }
 |			z_declspec
-			z_infotag
 			TOK_INTERFACE
-			interface_catch_ident pop_scope	{
+			interface_catch_ident
+			z_infotag
+			pop_scope			{
 	if ($1) yywarningv (IDL_WARNING1,
 			    "Ignoring useless declspec for forward declaration `%s'",
-			    IDL_IDENT ($4));
-	if ($2) yywarningv (IDL_WARNING1,
+			    IDL_IDENT ($3));
+	if ($4) yywarningv (IDL_WARNING1,
 			    "Ignoring useless interface tag %s for forward declaration `%s'",
-			    IDL_IDENT ($2).str,
-			    IDL_IDENT ($4));
-	$$ = IDL_forward_dcl_new ($4);
+			    IDL_IDENT ($4).str,
+			    IDL_IDENT ($3));
+	$$ = IDL_forward_dcl_new ($3);
 }
 	;
 
