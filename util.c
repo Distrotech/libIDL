@@ -64,6 +64,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_TYPE_OCTET",
 	"IDLN_TYPE_ANY",
 	"IDLN_TYPE_OBJECT",
+	"IDLN_TYPE_TYPECODE",
 	"IDLN_TYPE_ENUM",
 	"IDLN_TYPE_SEQUENCE",
 	"IDLN_TYPE_ARRAY",
@@ -76,7 +77,6 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_MODULE",
 	"IDLN_BINOP",
 	"IDLN_UNARYOP",
-	"IDLN_TYPE_TYPECODE",
 };
 
 int					__IDL_check_type_casts = FALSE;

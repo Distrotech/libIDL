@@ -63,15 +63,15 @@ extern "C" {
 			    G_GNUC_PRETTY_FUNCTION)->u.name)
 
 #ifdef G_HAVE_GINT64
+#  define IDL_LL			"ll"
 typedef gint64				IDL_longlong_t;
 typedef guint64				IDL_ulonglong_t;
 #else
+#  define IDL_LL			"l"
 typedef long				IDL_longlong_t;
 typedef unsigned long			IDL_ulonglong_t;
 #  warning 64-bit integer type not available, using 32-bit instead
 #endif /* G_HAVE_GINT64 */
-
-#define IDL_LL				"ll"
 	
 typedef unsigned int			IDL_declspec_t;
 typedef struct _IDL_tree_node 		IDL_tree_node;
@@ -454,6 +454,7 @@ typedef enum {
 	IDLN_TYPE_OCTET,
 	IDLN_TYPE_ANY,
 	IDLN_TYPE_OBJECT,
+	IDLN_TYPE_TYPECODE,
 	IDLN_TYPE_ENUM,
 	IDLN_TYPE_SEQUENCE,
 	IDLN_TYPE_ARRAY,
@@ -465,8 +466,7 @@ typedef enum {
 	IDLN_INTERFACE,
 	IDLN_MODULE,
 	IDLN_BINOP,
-	IDLN_UNARYOP,
-	IDLN_TYPE_TYPECODE,
+	IDLN_UNARYOP
 } IDL_tree_type;
 extern const char *			IDL_tree_type_names[];
 
