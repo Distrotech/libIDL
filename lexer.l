@@ -83,11 +83,15 @@ native_type		[^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
+%s TYPECODES
 %s XPIDL
 %x XPIDLPROP
 %x XPIDLNATIVE
 
 %%
+	if (__IDL_flags & IDLF_TYPECODES)
+		BEGIN(TYPECODES);
+
 	if (__IDL_flags & IDLF_XPIDL)
 		BEGIN(XPIDL);
 
@@ -153,6 +157,8 @@ dqstring		\"[^\"\n]*[\"\n]
 	tokreturn (TOK_FLOATP);
 }
 FALSE			tokreturn (TOK_FALSE);
+Object			tokreturn (TOK_OBJECT);
+<TYPECODES>TypeCode	tokreturn (TOK_TYPECODE);
 TRUE			tokreturn (TOK_TRUE);
 any			tokreturn (TOK_ANY);
 attribute		tokreturn (TOK_ATTRIBUTE);
@@ -201,11 +207,6 @@ wstring			tokreturn (TOK_WSTRING);
 	tokreturn (TOK_DECLSPEC);
 }
 {happy_ident}						{
-	if (IDL_strcase_equal (yytext, "Object"))
-		tokreturn (TOK_OBJECT);
-	else if (__IDL_flags & IDLF_TYPECODES &&
-		 IDL_strcase_equal (yytext, "TypeCode"))
-		tokreturn (TOK_TYPECODE);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }

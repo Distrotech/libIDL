@@ -1668,7 +1668,7 @@ static IDL_tree IDL_binop_eval_integer (enum IDL_binop op, IDL_tree a, IDL_tree 
 
 	case IDL_BINOP_MOD:
 		if (IDL_INTEGER (b).value == 0) {
-			yyerror ("modulo by zero in constant expression");
+			yyerror ("Modulo by zero in constant expression");
 			return NULL;
 		}
 		p = IDL_integer_new (IDL_INTEGER (a).value % IDL_INTEGER (b).value);
@@ -1866,6 +1866,7 @@ IDL_tree IDL_resolve_const_exp (IDL_tree p, IDL_tree_type type)
 void IDL_queue_new_ident_comment (const char *str)
 {
 	g_return_if_fail (str != NULL);
+
 	__IDL_new_ident_comments = g_slist_append (__IDL_new_ident_comments, g_strdup (str));
 }
 
