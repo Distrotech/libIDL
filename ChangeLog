@@ -1,3 +1,7 @@
+2002-01-28  Mark McLoughlin  <mark@skynet.ie>
+
+	* configure.in: Version 0.7.3.
+
 2002-01-17  Mark McLoughlin  <mark@skynet.ie>
 
 	* Makefile.am: add spec file to EXTRA_DIST.
