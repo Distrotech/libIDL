@@ -20,3 +20,4 @@ libtool
 .libs
 *.lo
 *.la
+libIDLConf.sh
