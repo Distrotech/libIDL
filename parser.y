@@ -1755,7 +1755,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	if (tree)
 		*tree = idl_root;
 	else
-		free(idl_root);
+		IDL_tree_free(idl_root);
 
 	if (ns)
 		*ns = idl_ns;
