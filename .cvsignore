@@ -2,7 +2,7 @@ Makefile.in
 Makefile
 aclocal.m4
 .deps
-libIDL.info
+libIDL2.info
 y.output
 parser.h
 lexer.c
@@ -24,7 +24,7 @@ libIDLConf.sh
 IDL.h
 stamp-parser
 IDL.h.new
-libIDL-config
+libIDL-config-2
 libIDL.m4
 Makefile.msc
 libIDL.spec

@@ -1,3 +1,8 @@
+2001-09-20  Mark McLoughlin <mark@skynet.ie>
+
+	* .cvsignore: s/libIDL-config/libIDL-config-2/ and
+	s/libIDL.info/libIDL2.info/.
+
 2001-09-11  Havoc Pennington  <hp@redhat.com>
 
 	* Makefile.am (libIDLincludedir): move headers to a versioned
