@@ -7,12 +7,18 @@ YFLAGS			= -d -v 2>/dev/null
 LFLAGS			= @LFLAGS@
 LIBS			= @GLIB_LIBS@
 
+BUILT_SOURCES=lexer.c parser.c
+
 # rule to rename lex' yy prefix
 lexer.c: lexer.l
 	rm -f $@
 	$(LEX) $(LFLAGS) $<
 	sed -e 's/yy/__IDL_/g' $(LEX_OUTPUT_ROOT).c > $@
 	rm -f $(LEX_OUTPUT_ROOT).c
+
+parser.c: parser.y
+	rm -f $@
+	$(YACC) $(YFLAGS) $<
 
 EXTRA_DIST		= BUGS
 info_TEXINFOS		= libIDL.texi
