@@ -85,7 +85,7 @@ static GSList *				codefrag_list;
 static GSList *				codefrag_list_tail;
 %}
 
-whitespace		[ \t\v\f]*
+whitespace		[ \t\v\f\r]*
 whitespacenl		[ \t\v\f\r\n]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
