@@ -1,5 +1,7 @@
 1998-08-04  Andrew Veliath  <andrewtv@usa.net>
 
+	* Preliminary inheritance checks
+
 	* Implement pragmas for prefix, ID and version
 	
 	* First cut at Repository ID generation

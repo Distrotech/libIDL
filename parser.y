@@ -62,6 +62,8 @@
 extern int			yylex(void);
 
 void				__IDL_tree_print(IDL_tree p);
+static int			IDL_ns_check_for_ambiguous_inheritance(IDL_tree interface_ident,
+								       IDL_tree p);
 static int			IDL_binop_chktypes(enum IDL_binop op,
 						   IDL_tree a,
 						   IDL_tree b);
@@ -224,9 +226,21 @@ interface:		interface_dcl
 
 module:			TOK_MODULE new_or_prev_scope '{'
 				definition_list
-			'}' pop_scope			{ $$ = IDL_module_new($2, $4); }
+			'}' pop_scope			{
+	if (IDL_NODE_UP($2) != NULL
+	    && IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
+		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
+		YYABORT;
+	}
+	$$ = IDL_module_new($2, $4);
+}
 |			TOK_MODULE new_or_prev_scope '{'
 			'}' pop_scope			{
+	if (IDL_NODE_UP($2) != NULL
+	    && IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
+		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
+		YYABORT;
+	}
 	yyerrorv("Empty module declaration `%s' is not legal IDL", IDL_IDENT($2).str);
 	$$ = IDL_module_new($2, NULL);
 }
@@ -239,8 +253,18 @@ interface_dcl:		TOK_INTERFACE new_or_prev_scope
 	assert(IDL_NODE_TYPE($2) == IDLN_IDENT);
 	assert(IDL_IDENT_TO_NS($2) != NULL);
 	assert(IDL_NODE_TYPE(IDL_IDENT_TO_NS($2)) == IDLN_GENTREE);
+	if (IDL_NODE_UP($2) != NULL
+	    && IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_INTERFACE) {
+		do_token_error(IDL_NODE_UP($2), "Interface definition conflicts with", 0);
+		YYABORT;
+	} else if (IDL_NODE_UP($2) != NULL) {
+		yyerrorv("Cannot redeclare interface `%s'", IDL_IDENT($2).str);
+		YYABORT;
+	}
 	IDL_GENTREE(IDL_IDENT_TO_NS($2))._import = $4;
 	IDL_ns_push_scope(idl_ns, IDL_IDENT_TO_NS($2));
+	if (IDL_ns_check_for_ambiguous_inheritance($2, $4))
+		idl_is_okay = IDL_FALSE;
 }
 			'{'
 				interface_body
@@ -790,7 +814,14 @@ ns_new_ident:		ident				{
 	IDL_tree p;
 
 	if ((p = IDL_ns_place_new(idl_ns, $1)) == NULL) {
-		yyerrorv("`%s' duplicate identifier", IDL_IDENT($1).str);
+		p = IDL_ns_lookup_cur_scope(idl_ns, $1);
+		if (p && IDL_GENTREE(p).data &&
+		    IDL_NODE_UP(IDL_GENTREE(p).data) &&
+		    IDL_NODE_UP(IDL_NODE_UP(IDL_GENTREE(p).data)))
+			do_token_error(IDL_NODE_UP(IDL_NODE_UP(IDL_GENTREE(p).data)),
+				       "Duplicate identifier conflicts with", 0);
+		else
+			yyerrorv("`%s' duplicate identifier", IDL_IDENT($1).str);
 		IDL_tree_free($1);
 		YYABORT;
 	}
@@ -1424,6 +1455,7 @@ static int get_error_strings(IDL_tree p, char **what, char **who)
 		*who = IDL_IDENT(IDL_INTERFACE(p).ident).str;
 		break;
 	default:
+		g_warning("Node type: %s\n", IDL_NODE_TYPE_NAME(p));
 		*what = "unknown (internal error)";
 		break;
 	}
@@ -1869,6 +1901,166 @@ void IDL_tree_free(IDL_tree root)
 	__IDL_tree_free(root);
 }
 
+static int my_strcmp(const char *a, const char *b)
+{
+	int rv = strcasecmp(a, b);
+	
+	if (idl_is_parsing && rv == 0 && strcmp(a, b) != 0) {
+		yywarningv("Case mismatch between `%s' and `%s' ", a, b);
+		yywarning("(Identifiers should be case-consistent after initial declaration)");
+	}
+
+	return rv;
+}
+
+static int identcmp(IDL_tree a, IDL_tree b)
+{
+	assert(IDL_NODE_TYPE(a) == IDLN_IDENT);
+	assert(IDL_NODE_TYPE(b) == IDLN_IDENT);
+	return my_strcmp(IDL_IDENT(a).str, IDL_IDENT(b).str);
+}
+
+/* If insertion was made, return true, else there was a collision */
+static gboolean heap_insert_ident(IDL_tree interface_ident, GTree *heap, IDL_tree any)
+{
+	IDL_tree p;
+
+	assert(any != NULL);
+	assert(heap != NULL);
+
+	if ((p = g_tree_lookup(heap, any))) {
+		char *newi;
+		char *i1, *i2;
+
+		assert(IDL_NODE_TYPE(p) == IDLN_IDENT);
+
+		newi = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(interface_ident), "::", 0);
+		i1 = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(p), "::", 0);
+		i2 = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(any), "::", 0);
+		yyerrorv("Ambiguous inheritance in interface `%s' from `%s' and `%s'", newi, i1, i2);
+		free(newi); free(i1); free(i2);
+
+		return IDL_FALSE;
+	}
+
+	g_tree_insert(heap, any, any);
+
+	return IDL_TRUE;
+}
+
+static int is_visited_interface(GHashTable *visited_interfaces, IDL_tree scope)
+{
+	assert(scope != NULL);
+	assert(IDL_NODE_TYPE(scope) == IDLN_GENTREE);
+	/* If already visited, do not visit again */
+	if (g_hash_table_lookup_extended(visited_interfaces, scope, NULL, NULL))
+		return IDL_TRUE;
+	return IDL_FALSE;
+}
+
+static void mark_visited_interface(GHashTable *visited_interfaces, IDL_tree scope)
+{
+	assert(scope != NULL);
+	assert(IDL_NODE_TYPE(scope) == IDLN_GENTREE);
+	g_hash_table_insert(visited_interfaces, scope, scope);
+}
+
+/* Return true if adds went okay */
+static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident_scope, GTree *ident_heap, GHashTable *visited_interfaces)
+{
+	IDL_tree p, q, scope;
+	int insert_conflict = 0;
+
+	assert(ident_scope != NULL);
+	assert(IDL_NODE_TYPE(ident_scope) == IDLN_IDENT);
+
+	scope = IDL_IDENT_TO_NS(ident_scope);
+
+	if (!scope)
+		return IDL_TRUE;
+
+	assert(IDL_NODE_TYPE(scope) == IDLN_GENTREE);
+	assert(IDL_GENTREE(scope).data != NULL);
+	assert(IDL_NODE_TYPE(IDL_GENTREE(scope).data) == IDLN_IDENT);
+	assert(IDL_NODE_UP(IDL_GENTREE(scope).data) != NULL);
+	assert(IDL_NODE_TYPE(IDL_NODE_UP(IDL_GENTREE(scope).data)) == IDLN_INTERFACE);
+
+	if (is_visited_interface(visited_interfaces, scope))
+		return IDL_TRUE;
+
+	/* Search this namespace */
+	for (p = IDL_GENTREE(scope).children; p != NULL; p = IDL_GENTREE(p).siblings) {
+		if (IDL_GENTREE(p).data == NULL)
+			continue;
+		assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
+		if (!heap_insert_ident(interface_ident, ident_heap, IDL_GENTREE(p).data))
+			insert_conflict = 1;
+	}
+
+	/* If there are inherited namespaces, look in those before giving up */
+	q = IDL_GENTREE(scope)._import;
+	if (!q)
+		insert_conflict = 0;
+	else
+		assert(IDL_NODE_TYPE(q) == IDLN_LIST);
+
+	/* Add inherited namespace identifiers into heap */
+	for (; q != NULL; q = IDL_LIST(q).next) {
+		int r;
+		
+		assert(IDL_LIST(q).data != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(q).data) == IDLN_IDENT);
+		assert(IDL_IDENT_TO_NS(IDL_LIST(q).data) != NULL);
+		assert(IDL_NODE_TYPE(IDL_IDENT_TO_NS(IDL_LIST(q).data)) == IDLN_GENTREE);
+		assert(IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(q).data)) == IDLN_INTERFACE);
+		
+		if (!(r = IDL_ns_load_idents_to_tables(interface_ident, IDL_GENTREE(q).data,
+						       ident_heap, visited_interfaces)))
+			insert_conflict = 1;
+	}
+	
+	mark_visited_interface(visited_interfaces, scope);
+
+	return insert_conflict == 0;
+}
+
+static int IDL_ns_check_for_ambiguous_inheritance(IDL_tree interface_ident, IDL_tree p)
+{
+	/* We use a sorted heap to check for namespace collisions,
+	   since we must do case-insensitive collision checks.
+	   visited_interfaces is a hash of common ancestors, which we
+	   must check twice */
+	GTree *ident_heap;
+	GHashTable *visited_interfaces;
+	int is_ambiguous = 0;
+
+	if (!p)
+		return 0;
+
+	ident_heap = g_tree_new((GCompareFunc)identcmp);
+	visited_interfaces = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+	assert(IDL_NODE_TYPE(p) == IDLN_LIST);
+	while (p) {
+		char *s;
+
+		s = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(IDL_LIST(p).data), "::", 0);
+		if (!s)
+			break;
+
+		if (!IDL_ns_load_idents_to_tables(interface_ident, IDL_LIST(p).data, ident_heap, visited_interfaces))
+			is_ambiguous = 1;
+
+		free(s);
+		p = IDL_LIST(p).next;
+	}
+
+	g_tree_destroy(ident_heap);
+	g_hash_table_destroy(visited_interfaces);
+
+	return is_ambiguous;
+}
+
 IDL_ns IDL_ns_new(void)
 {
 	IDL_ns ns;
@@ -1905,25 +2097,6 @@ void IDL_ns_free(IDL_ns ns)
 	assert(IDL_NODE_TYPE(IDL_NS(ns).file) == IDLN_GENTREE);		\
 	assert(IDL_NODE_TYPE(IDL_NS(ns).current) == IDLN_GENTREE);	\
 } while (0)
-
-static int my_strcmp(const char *a, const char *b)
-{
-	int rv = strcasecmp(a, b);
-	
-	if (idl_is_parsing && rv == 0 && strcmp(a, b) != 0) {
-		yywarningv("Case mismatch between `%s' and `%s' ", a, b);
-		yywarning("(Identifiers should be case-consistent after initial declaration)");
-	}
-
-	return rv;
-}
-
-static int identcmp(IDL_tree a, IDL_tree b)
-{
-	assert(IDL_NODE_TYPE(a) == IDLN_IDENT);
-	assert(IDL_NODE_TYPE(b) == IDLN_IDENT);
-	return my_strcmp(IDL_IDENT(a).str, IDL_IDENT(b).str);
-}
 
 int IDL_ns_prefix(IDL_ns ns, const char *s)
 {
