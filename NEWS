@@ -5,25 +5,26 @@ Version 0.6.8 Released
 *** Important Changes in 0.6.8 from 0.6.4 which may affect code ***
 
 - Inhibited nodes are no longer recursively removed, to retain
-internal. Once a node is removed, it's insides are not touched (the
+substructure.  Once a node is removed, subnodes are not touched (the
 previous behavior I consider a bug, since if you pragma inhibit
 everything inside gets messed up, making traversal there impossible).
 
 ** New Features for libIDL 0.6.8 from 0.6.4
 
-- Added parse flag: IDLF_INHIBIT_INCLUDES: this causes libIDL to
-implicitly assume the following around every included file:
+- New parse flag: IDLF_INHIBIT_INCLUDES: this causes libIDL to
+implicitly assume the following #pragma inhibits around every included
+file:
 
 #pragma inhibit push
 #include "file.idl"
 #pragma inhibit pop
 
-With this parse flag enabled, the same inhibit effect is achieved by
-doing:
+With this parse flag enabled, the same inhibit effect is achieved
+without needing #pragmas:
 
 #include "file.idl"
 
-- Added parse flag: IDLF_INHIBIT_TAG_ONLY: you can opt not to have
+- New parse flag: IDLF_INHIBIT_TAG_ONLY: you can opt not to have
 inhibited nodes removed during parse time.  They can be removed later
 by calling IDL_tree_remove_inhibits, which is now a public function.
 

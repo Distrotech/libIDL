@@ -247,6 +247,14 @@ print messages for unresovled forward declarations.
 @item
 IDLF_PEDANTIC: instructs the parser to display stricter errors and
 warnings.
+
+@item
+IDLF_INHIBIT_TAG_ONLY: only tag inhibited nodes, do not remove them.
+Use IDL_tree_remove_inhibits to remove them at a later time.
+
+@item
+IDLF_INHIBIT_INCLUDES: causes libIDL to automatically inhibit IDL trees
+in included files.
 @end itemize
 
 @item
