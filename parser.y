@@ -2042,7 +2042,7 @@ static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident
 		assert(IDL_NODE_TYPE(IDL_IDENT_TO_NS(IDL_LIST(q).data)) == IDLN_GENTREE);
 		assert(IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(q).data)) == IDLN_INTERFACE);
 		
-		if (!(r = IDL_ns_load_idents_to_tables(interface_ident, IDL_GENTREE(q).data,
+		if (!(r = IDL_ns_load_idents_to_tables(interface_ident, IDL_LIST(q).data,
 						       ident_heap, visited_interfaces)))
 			insert_conflict = 1;
 	}
