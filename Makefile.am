@@ -34,7 +34,7 @@ DISTCLEANFILES		= IDL.h
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
-			  libIDL.def \
+			  libIDL.def libIDL.spec \
 			  stamp-parser
 
 info_TEXINFOS		= libIDL2.texi
