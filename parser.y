@@ -774,7 +774,7 @@ op_dcl_def:		z_props
 			is_context_expr			{
 	$$ = IDL_op_dcl_new ($3, $4, $5, $6.tree, $8, $9);
 	IDL_OP_DCL ($$).f_noscript = $2;
-	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($6.data);
+	IDL_OP_DCL ($$).f_varargs = (guint) (gulong) $6.data;
 	assign_props (IDL_OP_DCL ($$).ident, $1);
 }
 	;

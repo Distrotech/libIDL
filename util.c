@@ -2411,14 +2411,14 @@ void IDL_tree_remove_empty_modules (IDL_tree *p, IDL_ns ns)
 		}						\
 	}							\
 } while (0)
-#define save_flag(flagbit,val)	do {				\
-	GPOINTER_TO_UINT (tfd->data) |=				\
-		data->flagbit ? (1UL << flagbit##bit) : 0;	\
-	data->flagbit = val;					\
+#define save_flag(flagbit,val)	do {					\
+	tfd->data = (gpointer)						\
+		(((gulong)tfd->data)					\
+		 | (data->flagbit ? (1UL << flagbit##bit) : 0));	\
+	data->flagbit = val;						\
 } while (0)
-#define restore_flag(flagbit)	do {				\
-	data->flagbit = (GPOINTER_TO_UINT (tfd->data) >> 	\
-			 flagbit##bit) & 1;			\
+#define restore_flag(flagbit)	do {					\
+	data->flagbit = (((gulong)tfd->data) >> flagbit##bit) & 1UL;	\
 } while (0)
 
 typedef struct {
