@@ -122,15 +122,18 @@ static int			idl_is_parsing = IDL_FALSE;
 %type <tree>			switch_type_spec switch_body struct_type union_type
 %type <tree>			interface interface_dcl forward_dcl scoped_name_list
 %type <tree>			interface_body z_inheritance export_list export module
-%type <tree>			const_type new_ident prev_ident new_or_prev_ident 
-%type <tree>			global_ident ident floating_pt_type integer_type
+%type <tree>			const_type new_ident
+/*
+%type <tree>			prev_ident new_or_prev_ident global_ident ns_new_or_prev_ident 
+*/
+%type <tree>			ident floating_pt_type integer_type
 %type <tree>			char_type wide_char_type boolean_type octet_type
 %type <tree>			string_type wide_string_type fixed_pt_type fixed_pt_const_type
 %type <tree>			any_type object_type enum_type scoped_name
 %type <tree>			case_stmt case_label case_label_list fixed_array_size_list
 %type <tree>			case_stmt_list fixed_array_size positive_int_const
 %type <tree>			ns_scoped_name ns_prev_ident ns_new_ident ns_global_ident
-%type <tree>			ns_new_or_prev_ident cur_ns_new_or_prev_ident
+%type <tree>			cur_ns_new_or_prev_ident
 %type <tree>			param_type_spec op_type_spec parameter_dcls
 %type <tree>			is_raises_expr is_context_expr param_dcl_list
 %type <tree>			param_dcl raises_expr context_expr element_spec
@@ -669,6 +672,8 @@ new_ident:		ns_new_ident			{
 }
 	;
 
+/*
+
 prev_ident:		ns_prev_ident			{
 	assert($1 != NULL);
 	assert(IDL_NODE_TYPE($1) == IDLN_GENTREE);
@@ -692,6 +697,7 @@ global_ident:		ns_global_ident			{
 	$$ = IDL_GENTREE($1).data;
 }
 	;
+*/
 
 new_scope:		ns_new_ident			{
 	IDL_ns_push_scope(idl_ns, $1);
@@ -761,6 +767,8 @@ ns_prev_ident:		ident				{
 }
 	;
 
+/*
+
 ns_new_or_prev_ident:	ident				{
 	IDL_tree p;
 
@@ -777,6 +785,7 @@ ns_new_or_prev_ident:	ident				{
 	$$ = p;
 }
 	;
+*/
 
 cur_ns_new_or_prev_ident:
 			ident				{

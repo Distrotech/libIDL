@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef IDL_LIBRARY
+#include "IDL.h"
+#else
 #include <libIDL/IDL.h>
+#endif
 
 void IDL_ns_rcs_traverse(IDL_tree p)
 {

@@ -5,7 +5,7 @@
 CFLAGS			= -g -O2 -DYYDEBUG=1 -DIDL_LIBRARY @GLIB_INCLUDES@
 YFLAGS			= -d -v
 LFLAGS			= @LFLAGS@
-LIBS			= @GLIB_LIBS@
+LIBS			= -L. -lIDL @GLIB_LIBS@
 
 # rule to rename lex' yy prefix
 lexer.c: lexer.l
@@ -17,7 +17,9 @@ lexer.c: lexer.l
 EXTRA_DIST		= BUGS
 #info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
-noinst_HEADERS		= rename.h util.h parser.h
 lib_LIBRARIES		= libIDL.a
+noinst_HEADERS		= rename.h util.h parser.h
+noinst_PROGRAMS		= tstidl
 
 libIDL_a_SOURCES	= parser.y lexer.l util.c
+tstidl_SOURCES		= tstidl.c
