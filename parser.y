@@ -227,8 +227,8 @@ interface:		interface_dcl
 module:			TOK_MODULE new_or_prev_scope '{'
 				definition_list
 			'}' pop_scope			{
-	if (IDL_NODE_UP($2) != NULL
-	    && IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
+	if (IDL_NODE_UP($2) != NULL &&
+	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
 		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
 		YYABORT;
 	}
@@ -236,8 +236,8 @@ module:			TOK_MODULE new_or_prev_scope '{'
 }
 |			TOK_MODULE new_or_prev_scope '{'
 			'}' pop_scope			{
-	if (IDL_NODE_UP($2) != NULL
-	    && IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
+	if (IDL_NODE_UP($2) != NULL &&
+	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
 		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
 		YYABORT;
 	}
@@ -253,11 +253,13 @@ interface_dcl:		TOK_INTERFACE new_or_prev_scope
 	assert(IDL_NODE_TYPE($2) == IDLN_IDENT);
 	assert(IDL_IDENT_TO_NS($2) != NULL);
 	assert(IDL_NODE_TYPE(IDL_IDENT_TO_NS($2)) == IDLN_GENTREE);
-	if (IDL_NODE_UP($2) != NULL
-	    && IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_INTERFACE) {
+	if (IDL_NODE_UP($2) != NULL &&
+	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_INTERFACE &&
+	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_FORWARD_DCL) {
 		do_token_error(IDL_NODE_UP($2), "Interface definition conflicts with", 0);
 		YYABORT;
-	} else if (IDL_NODE_UP($2) != NULL) {
+	} else if (IDL_NODE_UP($2) != NULL &&
+		   IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_FORWARD_DCL) {
 		yyerrorv("Cannot redeclare interface `%s'", IDL_IDENT($2).str);
 		YYABORT;
 	}
