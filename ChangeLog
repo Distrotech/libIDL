@@ -1,3 +1,7 @@
+1999-02-21  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.0.
+
 1999-02-19  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* parser.y: Properties for parameters moved before direction

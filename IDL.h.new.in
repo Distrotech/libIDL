@@ -647,7 +647,7 @@ typedef int		(*IDL_msg_callback)		(int level,
 							 const char *message);
 
 typedef gboolean	(*IDL_tree_func)		(IDL_tree p,
-							 IDL_tree scope,
+							 IDL_tree parent,
 							 gpointer user_data);
 	
 extern IDL_tree		IDL_check_type_cast		(const IDL_tree var,
