@@ -9,7 +9,7 @@ YFLAGS			= -d -v 2>/dev/null
 LFLAGS			= @LFLAGS@
 LIBS			= @GLIB_LIBS@
 
-lexer.c: $(srcdir)/lexer.l
+lexer.c: $(srcdir)/lexer.l parser.h
 	@rm -f $@
 	$(LEX) $(LFLAGS) -t $(srcdir)/lexer.l | sed -e 's/yy/__IDL_/g' >$@
 
