@@ -3549,7 +3549,7 @@ struct IDL_recursive_walker_info {
 	};
 
 /*
- * IDL_tree_is_recursive_walker_post:
+ * IDL_tree_is_recursive_walker_pre:
  * @walk_frame: a #IDL_tree_func_data structure
  * @user_data: a #IDL_recursive_walker_info structure.
  *
