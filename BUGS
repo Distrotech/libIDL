@@ -1,5 +1,6 @@
 
-- wide strings not implemented
+- wide strings and long long not implemented (though long long could
+  use the gcc long long if __GNUC__ is defined)
 
 - if an parse error occurs, memory will be leaked
 
