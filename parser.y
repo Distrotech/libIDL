@@ -1651,8 +1651,10 @@ char *IDL_ns_ident_to_qstring(IDL_tree ns_ident, const char *join)
 
 	s = (char *)malloc(len + 1);
 	
-	if (!s)
+	if (s == NULL) {
+		IDL_tree_free(l);
 		return NULL;
+	}
 
 	s[0] = 0;
 
