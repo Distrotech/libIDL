@@ -165,6 +165,11 @@ const char *IDL_get_IDLver_string(void)
 	return "2.2";
 }
 
+static void IDL_tree_check_semantics(IDL_tree p)
+{
+	IDL_tree_resolve_forward_dcls(p);
+}
+
 int IDL_parse_filename(const char *filename, const char *cpp_args,
 		       IDL_callback cb, IDL_tree *tree, IDL_ns *ns,
 		       unsigned long parse_flags)
@@ -284,7 +289,6 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = NULL;
 #endif
-	__IDL_msgcb = NULL;
 	pclose(input);
 #ifndef HAVE_CPP_PIPE_STDIN
 	unlink(tmpfilename);
@@ -301,7 +305,8 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		return IDL_ERROR;
 	}
 
-	IDL_tree_resolve_forward_dcls(__IDL_root);
+	IDL_tree_check_semantics(__IDL_root);
+	__IDL_msgcb = NULL;
 
 	if (__IDL_flags & IDLF_PREFIX_FILENAME)
 		IDL_ns_prefix(__IDL_root_ns, filename);
