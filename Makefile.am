@@ -8,7 +8,6 @@
 # Copyright (C) 1998 Andrew Veliath <andrewtv@usa.net>
 # Licensed under the GNU General Public License version 2
 #
-AUTOMAKE_OPTIONS = foreign
 CFLAGS = -g -O2 -DYYDEBUG=1 -DIDL_LIBRARY
 YFLAGS = -d -v
 LFLAGS = @LFLAGS@
@@ -24,6 +23,7 @@ lexer.c: lexer.l
 
 #info_TEXINFOS = libIDL.texi
 pkginclude_HEADERS = IDL.h
+noinst_HEADERS = rename.h util.h parser.h
 lib_LIBRARIES = libIDL.a
 
 libIDL_a_SOURCES = parser.y lexer.l util.c
