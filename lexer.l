@@ -52,10 +52,10 @@ cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^#.*
 b8_int			0[0-9]*
 b10_int			[1-9][0-9]*
-b10_uint		\-?[1-9][0-9]*
+b10_uint		-[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
-float_lit		\-?[0-9]*\.[0-9]+([eE]\-?[0-9]+)?|\-?[0-9]+\.?([eE]\-?[0-9]+)?
-fixed_lit		(\-?[0-9]*\.[0-9]+|\-?[0-9]+\.?[0-9]*)[dD]
+float_lit		-?[0-9]*\.[0-9]+([eE]-?[0-9]+)?|-?[0-9]+\.?([eE]-?[0-9]+)?
+fixed_lit		(-?[0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
@@ -191,14 +191,7 @@ wstring			tokreturn(TOK_WSTRING);
 	yylval.str[strlen(yytext) - 2] = 0;
 	tokreturn(TOK_DQSTRING);
 }
-{newline}		{
-	++__IDL_cur_line;
-#ifdef YYDEBUG
-	if (yydebug)
-		printf("lexer.l: %s:%d:\n", 
-		       __IDL_cur_filename, __IDL_cur_line);
-#endif
-}
+{newline}		++__IDL_cur_line;
 .			tokreturn(yytext[0]);
 
 %%
