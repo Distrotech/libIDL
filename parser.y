@@ -61,16 +61,10 @@
 
 extern int			yylex(void);
 
-static int			IDL_binop_chktypes(enum IDL_binop op,
-						   IDL_tree a,
-						   IDL_tree b);
-static int			IDL_unaryop_chktypes(enum IDL_unaryop op,
-						     IDL_tree a);
-static IDL_tree			IDL_binop_eval(enum IDL_binop op,
-					       IDL_tree a,
-					       IDL_tree b);
-static IDL_tree			IDL_unaryop_eval(enum IDL_unaryop op,
-						 IDL_tree a);
+static int			IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b);
+static int			IDL_unaryop_chktypes(enum IDL_unaryop op, IDL_tree a);
+static IDL_tree			IDL_binop_eval(enum IDL_binop op, IDL_tree a, IDL_tree b);
+static IDL_tree			IDL_unaryop_eval(enum IDL_unaryop op, IDL_tree a);
 static IDL_tree			list_start(IDL_tree a, int filter_null);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b, int filter_null);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b, int filter_null);
@@ -346,7 +340,10 @@ case_label:		TOK_CASE const_exp ':'		{ $$ = $2; }
 	;
 
 const_dcl:		TOK_CONST const_type new_ident
-			'=' const_exp			{ $$ = IDL_const_dcl_new($2, $3, $5); }
+			'=' const_exp			{
+	$$ = IDL_const_dcl_new($2, $3, $5);
+	/* Should probably do some type checking here... */
+}
 	;
 
 except_dcl:		TOK_EXCEPTION new_scope '{'
@@ -526,7 +523,7 @@ ns_scoped_name:		ns_prev_ident
 		printf("looking in %s\n", IDL_IDENT(IDL_GENTREE($1).data).str);
 #endif
 
-	if ((p = IDL_ns_lookup_this_scope(__IDL_root_ns, $1, $3)) == NULL) {
+	if ((p = IDL_ns_lookup_this_scope(__IDL_root_ns, $1, $3, NULL)) == NULL) {
 #ifdef YYDEBUG
 		if (yydebug)
 			printf("'%s'\n", IDL_IDENT($3).str);
@@ -767,14 +764,23 @@ ns_new_ident:		ident				{
 	IDL_tree p;
 
 	if ((p = IDL_ns_place_new(__IDL_root_ns, $1)) == NULL) {
-		p = IDL_ns_lookup_cur_scope(__IDL_root_ns, $1);
-		if (p && IDL_GENTREE(p).data &&
-		    IDL_NODE_UP(IDL_GENTREE(p).data) &&
-		    IDL_NODE_UP(IDL_NODE_UP(IDL_GENTREE(p).data)))
-			do_token_error(IDL_NODE_UP(IDL_NODE_UP(IDL_GENTREE(p).data)),
-				       "Duplicate identifier conflicts with", 0);
+		IDL_tree q;
+		int i;
+
+		p = IDL_ns_lookup_cur_scope(__IDL_root_ns, $1, NULL);
+
+		for (i = 0, q = IDL_GENTREE(p).data;
+		     q && (IDL_NODE_TYPE(q) == IDLN_IDENT ||
+			   IDL_NODE_TYPE(q) == IDLN_LIST) && i < 4;
+		     ++i)
+			if (IDL_NODE_UP(q))
+				q = IDL_NODE_UP(q);
+		
+		if (q)
+			do_token_error(q, "Duplicate identifier conflicts with", 0);
 		else
 			yyerrorv("`%s' duplicate identifier", IDL_IDENT($1).str);
+
 		IDL_tree_free($1);
 		YYABORT;
 	}
@@ -824,7 +830,7 @@ cur_ns_new_or_prev_ident:
 			ident				{
 	IDL_tree p;
 
-	if ((p = IDL_ns_lookup_cur_scope(__IDL_root_ns, $1)) == NULL) {
+	if ((p = IDL_ns_lookup_cur_scope(__IDL_root_ns, $1, NULL)) == NULL) {
 		p = IDL_ns_place_new(__IDL_root_ns, $1);
 		assert(p != NULL);
 		assert(IDL_IDENT($1)._ns_ref == p);
@@ -841,7 +847,7 @@ cur_ns_new_or_prev_ident:
 ns_global_ident:	ident				{
 	IDL_tree p;
 
-	if ((p = IDL_ns_lookup_this_scope(__IDL_root_ns, IDL_NS(__IDL_root_ns).file, $1)) == NULL) {
+	if ((p = IDL_ns_lookup_this_scope(__IDL_root_ns, IDL_NS(__IDL_root_ns).file, $1, NULL)) == NULL) {
 		yyerrorv("`%s' undeclared identifier", IDL_IDENT($1).str);
 		IDL_tree_free($1);
 		YYABORT;
@@ -1020,7 +1026,7 @@ static IDL_tree IDL_ns_pragma_parse_name(IDL_ns ns, const char *s)
 			free(tok);
 		} else {
 			IDL_tree ident = IDL_ident_new(tok);
-			p = IDL_ns_lookup_this_scope(__IDL_root_ns, p, ident);
+			p = IDL_ns_lookup_this_scope(__IDL_root_ns, p, ident, NULL);
 			IDL_tree_free(ident);
 		}
 		start = 0;
@@ -1058,7 +1064,7 @@ void IDL_ns_ID(IDL_ns ns, const char *s)
 	if (IDL_IDENT_REPO_ID(ident) != NULL)
 		free(IDL_IDENT_REPO_ID(ident));
 
-	IDL_IDENT_REPO_ID(ident) = strdup(id);
+	IDL_IDENT_REPO_ID(ident) = g_strdup(id);
 }
 
 void IDL_ns_version(IDL_ns ns, const char *s)

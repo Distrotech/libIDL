@@ -33,19 +33,6 @@
 #include "util.h"
 #include "IDL.h"
 
-int				__IDL_check_type_casts = IDL_FALSE;
-
-#ifndef HAVE_STRDUP
-char *strdup(const char *s)
-{
-	char *p;
-	if (!s) return NULL;
-	p = (char *)malloc(strlen(s) + 1);
-	strcpy(p, s);
-	return p;
-}
-#endif
-
 const char *IDL_tree_type_names[] = {
 	"IDLN_NONE",
 	"IDLN_ANY",
@@ -91,6 +78,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_UNARYOP",
 };
 
+int				__IDL_check_type_casts = IDL_FALSE;
 #ifndef HAVE_CPP_PIPE_STDIN
 char *				__IDL_tmp_filename = NULL;
 #endif
@@ -105,6 +93,57 @@ unsigned long			__IDL_flags;
 static int			__IDL_nerrors, __IDL_nwarnings;
 static IDL_callback		__IDL_msgcb;
 
+/* Case-insensitive version of g_str_hash */
+static guint g_strcase_hash(gconstpointer v)
+{
+	const char *p;
+	guint h = 0, g;
+	
+	for (p = (char *)v; *p != '\0'; ++p) {
+		h = (h << 4) + isupper(*p) ? tolower(*p) : *p;
+		if ((g = h & 0xf0000000)) {
+			h = h ^ (g >> 24);
+			h = h ^ g;
+		}
+	}
+
+	return h /* % M */;
+}
+
+static int my_strcmp(IDL_tree p, IDL_tree q)
+{
+	const char *a = IDL_IDENT(p).str;
+	const char *b = IDL_IDENT(q).str;
+	int rv = strcasecmp(a, b);
+	
+	if (__IDL_is_parsing &&
+	    rv == 0 &&
+	    strcmp(a, b) != 0 &&
+	    !(IDL_IDENT(p)._flags & IDLF_IDENT_CASE_MISMATCH_HIT ||
+	      IDL_IDENT(q)._flags & IDLF_IDENT_CASE_MISMATCH_HIT)) {
+		yywarningv(IDL_WARNING1, "Case mismatch between `%s' and `%s' ", a, b);
+		yywarning(IDL_WARNING1, "(Identifiers should be case-consistent after initial declaration)");
+		IDL_IDENT(p)._flags |= IDLF_IDENT_CASE_MISMATCH_HIT;
+		IDL_IDENT(q)._flags |= IDLF_IDENT_CASE_MISMATCH_HIT;
+	}
+
+	return rv;
+}
+
+guint IDL_ident_hash(gconstpointer v)
+{
+	return g_strcase_hash(IDL_IDENT((IDL_tree)v).str);
+}
+
+gint IDL_ident_equal(gconstpointer a, gconstpointer b)
+{
+	return my_strcmp((IDL_tree)a, (IDL_tree)b) == 0;
+}
+
+gint IDL_ident_cmp(gconstpointer a, gconstpointer b)
+{
+	return my_strcmp((IDL_tree)a, (IDL_tree)b);
+}
 
 const char *IDL_get_libver_string(void)
 {
@@ -165,7 +204,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		return -1;
 
 	if (*filename == '/') {
-		linkto = strdup(filename);
+		linkto = g_strdup(filename);
 	} else {
 		linkto = (char *)malloc(strlen(cwd) + strlen(filename) + 2);
 		if (!linkto) {
@@ -227,7 +266,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 #ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = tmpfilename;
 #endif
-	__IDL_cur_filename = strdup(filename);
+	__IDL_cur_filename = g_strdup(filename);
 	rv = yyparse();
 	__IDL_is_parsing = IDL_FALSE;
 	__IDL_lex_cleanup();
@@ -396,9 +435,11 @@ int IDL_tree_get_node_info(IDL_tree p, char **what, char **who)
 	case IDLN_LIST:
 		if (!IDL_LIST(p).data)
 			break;
+#if 0
 		assert(IDL_LIST(p)._tail != NULL);
 		if (!IDL_LIST(IDL_LIST(p)._tail).data)
 			break;
+#endif
 		dienow = IDL_tree_get_node_info(IDL_LIST(IDL_LIST(p)._tail).data, what, who);
 		break;
 	case IDLN_ATTR_DCL:
@@ -464,8 +505,6 @@ static IDL_tree IDL_node_new(IDL_tree_type type)
 	return p;
 }
 
-/* note IDLN_GENTREE is deliberately avoided in assign_up_node, since
-   the gentree is primarily for the namespaces... */
 static void assign_up_node(IDL_tree up, IDL_tree node)
 {
 	if (node == NULL)
@@ -498,13 +537,34 @@ IDL_tree IDL_list_new(IDL_tree data)
 	return p;
 }
 
-IDL_tree IDL_gentree_new(IDL_tree data)
+IDL_tree IDL_gentree_new(GHashFunc hash_func, GCompareFunc key_compare_func, IDL_tree data)
 {
 	IDL_tree p = IDL_node_new(IDLN_GENTREE);
 	
 	assign_up_node(p, data);
 	IDL_GENTREE(p).data = data;
+	IDL_GENTREE(p).hash_func = hash_func;
+	IDL_GENTREE(p).key_compare_func = key_compare_func;
+	IDL_GENTREE(p).siblings = g_hash_table_new(hash_func, key_compare_func);
+	IDL_GENTREE(p).children = g_hash_table_new(hash_func, key_compare_func);
+
+	g_hash_table_insert(IDL_GENTREE(p).siblings, data, p);
 	
+	return p;
+}
+
+IDL_tree IDL_gentree_new_sibling(IDL_tree from, IDL_tree data)
+{
+	IDL_tree p = IDL_node_new(IDLN_GENTREE);
+	
+	assign_up_node(p, data);
+	IDL_GENTREE(p).data = data;
+	IDL_GENTREE(p).hash_func = IDL_GENTREE(from).hash_func;
+	IDL_GENTREE(p).key_compare_func = IDL_GENTREE(from).key_compare_func;
+	IDL_GENTREE(p).siblings = IDL_GENTREE(from).siblings;
+	IDL_GENTREE(p).children = g_hash_table_new(IDL_GENTREE(from).hash_func,
+						   IDL_GENTREE(from).key_compare_func);
+
 	return p;
 }
 
@@ -916,7 +976,7 @@ IDL_tree IDL_forward_dcl_new(IDL_tree ident)
 	return p;
 }
 
-IDL_tree IDL_check_type_cast(IDL_tree tree, IDL_tree_type type,
+IDL_tree IDL_check_type_cast(const IDL_tree tree, IDL_tree_type type,
 			     const char *file, int line, const char *function)
 {
 	if (__IDL_check_type_casts) {
@@ -942,21 +1002,8 @@ IDL_tree IDL_gentree_chain_sibling(IDL_tree from, IDL_tree data)
 	if (from == NULL)
 		return NULL;
 
-	p = IDL_gentree_new(data);
+	p = IDL_gentree_new_sibling(from, data);
 	IDL_NODE_UP(p) = IDL_NODE_UP(from);
-
-	if (IDL_NODE_UP(from) != NULL)
-		from = IDL_GENTREE(IDL_NODE_UP(from)).children;
-
-	assert(from != NULL);
-
-	if (IDL_GENTREE(from).siblings == NULL) {
-		IDL_GENTREE(from).siblings =
-			IDL_GENTREE(from)._siblings_tail = p;
-	} else {
-		IDL_GENTREE(IDL_GENTREE(from)._siblings_tail).siblings = p;
-		IDL_GENTREE(from)._siblings_tail = p;
-	}
 
 	return p;
 }
@@ -968,13 +1015,12 @@ IDL_tree IDL_gentree_chain_child(IDL_tree from, IDL_tree data)
 	if (from == NULL)
 		return NULL;
 
-	if (IDL_GENTREE(from).children == NULL) {
-		p = IDL_gentree_new(data);
-		IDL_NODE_UP(p) = from;
-		IDL_GENTREE(from).children = p;
-	} else {
-		p = IDL_gentree_chain_sibling(IDL_GENTREE(from).children, data);
-	}
+	p = IDL_gentree_new(IDL_GENTREE(from).hash_func,
+			    IDL_GENTREE(from).key_compare_func,
+			    data);
+	IDL_NODE_UP(p) = from;
+
+	g_hash_table_insert(IDL_GENTREE(from).children, data, p);
 
 	return p;
 }
@@ -1006,8 +1052,6 @@ IDL_tree IDL_get_parent_node(IDL_tree p, IDL_tree_type type, int *levels)
 
 void __IDL_tree_print(IDL_tree p)
 {
-	IDL_tree q, r;
-
 	if (p == NULL)
 		return;
 
@@ -1021,6 +1065,7 @@ void __IDL_tree_print(IDL_tree p)
 		break;
 
 	case IDLN_GENTREE:
+#if 0
 		__IDL_tree_print(IDL_GENTREE(p).data);
 		__IDL_tree_print(IDL_GENTREE(p).children);
 
@@ -1031,6 +1076,7 @@ void __IDL_tree_print(IDL_tree p)
 			__IDL_tree_print(IDL_GENTREE(q).children);
 			q = r;
 		}
+#endif
 		break;
 
 	case IDLN_INTEGER:
@@ -1229,9 +1275,21 @@ void __IDL_tree_print(IDL_tree p)
 	}
 }
 
+/* Hm.. might not be right.. I'll look later */
+static void gentree_free(IDL_tree data, IDL_tree p, gpointer user_data)
+{
+	GHashTable *hash;
+	hash = IDL_GENTREE(p).children;
+	if (hash) {
+		g_hash_table_foreach(IDL_GENTREE(p).children, (GHFunc)gentree_free, NULL);
+		g_hash_table_destroy(hash);
+	}
+}
+
 void IDL_tree_free(IDL_tree p)
 {
-	IDL_tree q, r;
+	GHashTable *hash;
+	IDL_tree q;
 
 	if (!p)
 		return;
@@ -1247,19 +1305,9 @@ void IDL_tree_free(IDL_tree p)
 		break;
 
 	case IDLN_GENTREE:
-		IDL_tree_free(IDL_GENTREE(p).data);
-		IDL_tree_free(IDL_GENTREE(p).children);
-
-		q = IDL_GENTREE(p).siblings;
-		free(p);
-		while (q != NULL) {
-			r = IDL_GENTREE(q).siblings;
-			IDL_tree_free(IDL_GENTREE(q).data);
-			IDL_tree_free(IDL_GENTREE(q).children);
-			free(IDL_GENTREE(q)._cur_prefix);
-			free(q);
-			q = r;
-		}
+		hash = IDL_GENTREE(p).siblings;
+		g_hash_table_foreach(IDL_GENTREE(p).siblings, (GHFunc)gentree_free, NULL);
+		g_hash_table_destroy(hash);
 		break;
 
 	case IDLN_FIXED:
@@ -1513,7 +1561,6 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 		/* */;
 	return curitem;
 }
-
 
 /*
  * Local variables:

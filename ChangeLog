@@ -1,5 +1,20 @@
 1998-08-06  Andrew Veliath  <andrewtv@usa.net>
 
+	* Allow for redefinition of certain items in inheritance
+	  (doesn't detect some invalid items, but still better than
+	  before).
+	
+	* Change the namespace data structure from a general tree using a
+	  linked list to case-insensitive string hashes for each tree
+	  level.  Used g_str_hash from glib modified for
+	  case-insensitivity (g_strcase_hash).
+
+	* Fix bug where some top-level redeclarations would cause a core
+	  dump.
+
+	* Change references to strdup to g_strdup, and update
+	  configure.in.
+	
 	* Begin major cutting for libIDL 0.3, which will have new
 	  namespace code.  Move lots of stuff around.
 

@@ -76,13 +76,19 @@ extern IDL_tree                         IDL_list_nth(IDL_tree list,
 
 struct _IDL_GENTREE {
 	IDL_tree data;
-	IDL_tree siblings, _siblings_tail;
-	IDL_tree children;
+	GHashTable *siblings;
+	GHashTable *children;
+	GHashFunc hash_func;
+	GCompareFunc key_compare_func;
 	IDL_tree _import;		/* Internal use, do not recurse */
 	char *_cur_prefix;		/* Internal use */
 };
 #define IDL_GENTREE(a)			IDL_CHECK_CAST(a, IDLN_GENTREE, idl_gentree)
-extern IDL_tree				IDL_gentree_new(IDL_tree data);
+extern IDL_tree				IDL_gentree_new(GHashFunc hash_func,
+							GCompareFunc key_compare_func,
+							IDL_tree data);
+extern IDL_tree				IDL_gentree_new_sibling(IDL_tree from,
+								IDL_tree data);
 extern IDL_tree				IDL_gentree_chain_sibling(IDL_tree from,
 								  IDL_tree data);
 extern IDL_tree				IDL_gentree_chain_child(IDL_tree from,
@@ -162,6 +168,8 @@ struct _IDL_IDENT {
 	char *repo_id;
 	int _refs;
 	IDL_tree _ns_ref;		/* Internal use, do not recurse */
+	unsigned _flags;		/* Internal use */
+#define IDLF_IDENT_CASE_MISMATCH_HIT	(1UL << 0)
 };
 #define IDL_IDENT(a)			IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident)
 #define IDL_IDENT_TO_NS(a)		IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident._ns_ref)
@@ -510,8 +518,8 @@ typedef int				(*IDL_callback)(int level,
 							const char *filename,
 							const char *message);
 
-extern IDL_tree				IDL_check_type_cast(IDL_tree var,
-							    IDL_tree_type type, 
+extern IDL_tree				IDL_check_type_cast(const IDL_tree var,
+							    IDL_tree_type type,
 							    const char *file,
 							    int line,
 							    const char *function);
@@ -555,10 +563,12 @@ extern IDL_tree				IDL_ns_resolve_ident(IDL_ns ns,
 
 extern IDL_tree				IDL_ns_lookup_this_scope(IDL_ns ns,
 								 IDL_tree scope,
-								 IDL_tree ident);
+								 IDL_tree ident,
+								 gboolean *conflict);
 
 extern IDL_tree				IDL_ns_lookup_cur_scope(IDL_ns ns,
-								IDL_tree ident);
+								IDL_tree ident,
+								gboolean *conflict);
 
 extern IDL_tree				IDL_ns_place_new(IDL_ns ns,
 							 IDL_tree ident);

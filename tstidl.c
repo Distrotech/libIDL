@@ -9,6 +9,7 @@
 #include <libIDL/IDL.h>
 #endif
 
+#if 0
 void IDL_ns_rcs_traverse(IDL_tree p)
 {
 	if (p == NULL)
@@ -49,6 +50,13 @@ void IDL_ns_rcs_traverse(IDL_tree p)
 	}
 }
 
+#else
+void IDL_ns_rcs_traverse(IDL_tree p)
+{
+	printf("traversing namespace\n");
+}
+#endif
+
 void IDL_ns_dump_namespace(IDL_ns ns)
 {
 	IDL_ns_rcs_traverse(IDL_NS(ns).global);
@@ -62,6 +70,7 @@ int main(int argc, char *argv[])
 	char *fn;
 	extern int __IDL_debug;
 
+	IDL_check_cast_enable(IDL_TRUE);
 	__IDL_debug = 0;
 
 	if (argc < 2) {

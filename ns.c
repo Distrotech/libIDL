@@ -33,24 +33,7 @@
 #include "util.h"
 #include "IDL.h"
 
-static int my_strcmp(const char *a, const char *b)
-{
-	int rv = strcasecmp(a, b);
-	
-	if (__IDL_is_parsing && rv == 0 && strcmp(a, b) != 0) {
-		yywarningv(IDL_WARNING1, "Case mismatch between `%s' and `%s' ", a, b);
-		yywarning(IDL_WARNING1, "(Identifiers should be case-consistent after initial declaration)");
-	}
-
-	return rv;
-}
-
-static int identcmp(IDL_tree a, IDL_tree b)
-{
-	assert(IDL_NODE_TYPE(a) == IDLN_IDENT);
-	assert(IDL_NODE_TYPE(b) == IDLN_IDENT);
-	return my_strcmp(IDL_IDENT(a).str, IDL_IDENT(b).str);
-}
+static int is_inheritance_conflict(IDL_tree p);
 
 IDL_ns IDL_ns_new(void)
 {
@@ -63,7 +46,9 @@ IDL_ns IDL_ns_new(void)
 	}
 	memset(ns, 0, sizeof(struct _IDL_ns));
 
-	IDL_NS(ns).global = IDL_gentree_new(NULL);
+	IDL_NS(ns).global = IDL_gentree_new(IDL_ident_hash,
+					    IDL_ident_equal,
+					    IDL_ident_new(""));
 	IDL_NS(ns).file = 
 		IDL_NS(ns).current = IDL_NS(ns).global;
 
@@ -100,9 +85,9 @@ int IDL_ns_prefix(IDL_ns ns, const char *s)
 		return IDL_FALSE;
 
 	if (*s == '"')
-		r = strdup(s + 1);
+		r = g_strdup(s + 1);
 	else
-		r = strdup(s);
+		r = g_strdup(s);
 
 	l = strlen(r);
 	if (r[l - 1] == '"')
@@ -126,7 +111,7 @@ IDL_tree IDL_ns_resolve_this_scope_ident(IDL_ns ns, IDL_tree scope, IDL_tree ide
 
 	while (p != NULL) {
 
-		q = IDL_ns_lookup_this_scope(ns, p, ident);
+		q = IDL_ns_lookup_this_scope(ns, p, ident, NULL);
 		
 		if (q != NULL)
 			return q;
@@ -142,11 +127,14 @@ IDL_tree IDL_ns_resolve_ident(IDL_ns ns, IDL_tree ident)
 	return IDL_ns_resolve_this_scope_ident(ns, IDL_NS(ns).current, ident);
 }
 
-IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident)
+IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident, gboolean *conflict)
 {
 	IDL_tree p, q;
 	
 	IDL_NS_ASSERTS;
+
+	if (conflict)
+		*conflict = IDL_TRUE;
 
 	if (scope == NULL)
 		return NULL;
@@ -154,12 +142,10 @@ IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident)
 	assert(IDL_NODE_TYPE(scope) == IDLN_GENTREE);
 
 	/* Search this namespace */
-	for (p = IDL_GENTREE(scope).children; p != NULL; p = IDL_GENTREE(p).siblings) {
-		if (IDL_GENTREE(p).data == NULL)
-			continue;
+	if (g_hash_table_lookup_extended(IDL_GENTREE(scope).children, ident, NULL, (gpointer)&p)) {
+		assert(IDL_GENTREE(p).data != NULL);
 		assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
-		if (identcmp(IDL_GENTREE(p).data, ident) == 0)
-			return p;
+		return p;
 	}
 
 	/* If there are inherited namespaces, look in those before giving up */
@@ -176,41 +162,46 @@ IDL_tree IDL_ns_lookup_this_scope(IDL_ns ns, IDL_tree scope, IDL_tree ident)
 		assert(IDL_IDENT_TO_NS(IDL_LIST(q).data) != NULL);
 		assert(IDL_NODE_TYPE(IDL_IDENT_TO_NS(IDL_LIST(q).data)) == IDLN_GENTREE);
 
-		/* Search inherited namespaces */
-		for (p = IDL_GENTREE(IDL_IDENT_TO_NS(IDL_LIST(q).data)).children;
-		     p != NULL; p = IDL_GENTREE(p).siblings) {
-			if (IDL_GENTREE(p).data == NULL)
-				continue;
+		/* Search imported namespace scope q */
+		if (g_hash_table_lookup_extended(IDL_GENTREE(IDL_IDENT_TO_NS(IDL_LIST(q).data)).children,
+						 ident, NULL, (gpointer)&p)) {
+			assert(IDL_GENTREE(p).data != NULL);
 			assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
-			if (identcmp(IDL_GENTREE(p).data, ident) == 0)
-				return p;
+			
+			/* This needs more work, it won't do full ambiguity detection */
+			if (conflict && !is_inheritance_conflict(p))
+				*conflict = IDL_FALSE;
+			
+			return p;
 		}
 
 		/* Search up one level */
 		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(q).data)) == IDLN_INTERFACE &&
-		    (r = IDL_ns_lookup_this_scope(ns, IDL_IDENT_TO_NS(IDL_LIST(q).data), ident)))
+		    (r = IDL_ns_lookup_this_scope(ns, IDL_IDENT_TO_NS(IDL_LIST(q).data), ident, conflict)))
 			return r;
 	}
 
 	return NULL;
 }
 
-IDL_tree IDL_ns_lookup_cur_scope(IDL_ns ns, IDL_tree ident)
+IDL_tree IDL_ns_lookup_cur_scope(IDL_ns ns, IDL_tree ident, gboolean *conflict)
 {
-	return IDL_ns_lookup_this_scope(ns, IDL_NS(ns).current, ident);
+	return IDL_ns_lookup_this_scope(ns, IDL_NS(ns).current, ident, conflict);
 }
 
 IDL_tree IDL_ns_place_new(IDL_ns ns, IDL_tree ident)
 {
 	IDL_tree p, up_save;
+	gboolean does_conflict;
 
 	IDL_NS_ASSERTS;
 
-	if (IDL_ns_lookup_cur_scope(ns, ident) != NULL)
+	p = IDL_ns_lookup_cur_scope(ns, ident, &does_conflict);
+	if (p != NULL && does_conflict)
 		return NULL;
 
-	/* don't want to change the ident's parent, since this is in
-	   the namespace domain... */
+	/* The namespace tree is separate from the primary parse tree,
+	   so keep the primary tree node's parent the same */
 	up_save = IDL_NODE_UP(ident);
 	p = IDL_gentree_chain_child(IDL_NS(ns).current, ident);
 	IDL_NODE_UP(ident) = up_save;
@@ -224,7 +215,7 @@ IDL_tree IDL_ns_place_new(IDL_ns ns, IDL_tree ident)
 
 	assert(IDL_NODE_UP(IDL_IDENT_TO_NS(ident)) == IDL_NS(ns).current);
 
-	/* Make default repository ID */
+	/* Generate default repository ID */
 	IDL_IDENT_REPO_ID(ident) = IDL_ns_ident_make_repo_id(__IDL_root_ns, p, NULL, NULL, NULL);
 
 	return p;
@@ -258,7 +249,7 @@ IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
 			nsid = IDL_NODE_UP(nsid);
 			continue;
 		}
-		l = IDL_list_new(IDL_ident_new(strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
+		l = IDL_list_new(IDL_ident_new(g_strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
 		if (tail == NULL)
 			tail = l;
 		IDL_LIST(l).next = prev;
@@ -396,12 +387,45 @@ static void mark_visited_interface(GHashTable *visited_interfaces, IDL_tree scop
 	g_hash_table_insert(visited_interfaces, scope, scope);
 }
 
+struct insert_heap_cb_data {
+	IDL_tree interface_ident;
+	GTree *ident_heap;
+	int insert_conflict;
+};
+
+static int is_inheritance_conflict(IDL_tree p)
+{
+	if (IDL_GENTREE(p).data == NULL)
+		return IDL_FALSE;
+
+	assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
+
+	if (IDL_NODE_UP(IDL_GENTREE(p).data) == NULL)
+		return IDL_FALSE;
+
+	if (!(IDL_NODE_TYPE(IDL_NODE_UP(IDL_GENTREE(p).data)) == IDLN_OP_DCL ||
+	      (IDL_NODE_UP(IDL_GENTREE(p).data) &&
+	       IDL_NODE_TYPE(IDL_NODE_UP(IDL_NODE_UP(IDL_GENTREE(p).data))) == IDLN_ATTR_DCL)))
+		return IDL_FALSE;
+
+	return IDL_TRUE;
+}
+
+static void insert_heap_cb(IDL_tree ident, IDL_tree p, struct insert_heap_cb_data *data)
+{
+	if (!is_inheritance_conflict(p))
+		return;
+
+	if (!heap_insert_ident(data->interface_ident, data->ident_heap, IDL_GENTREE(p).data))
+		data->insert_conflict = 1;
+}
+
 /* Return true if adds went okay */
 static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident_scope,
 					GTree *ident_heap, GHashTable *visited_interfaces)
 {
-	IDL_tree p, q, scope;
-	int insert_conflict = 0;
+	IDL_tree q, scope;
+	struct insert_heap_cb_data data = { interface_ident, ident_heap, 0 };
 
 	assert(ident_scope != NULL);
 	assert(IDL_NODE_TYPE(ident_scope) == IDLN_IDENT);
@@ -421,27 +445,12 @@ static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident
 		return IDL_TRUE;
 
 	/* Search this namespace */
-	for (p = IDL_GENTREE(scope).children; p != NULL; p = IDL_GENTREE(p).siblings) {
-		if (IDL_GENTREE(p).data == NULL)
-			continue;
-		assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
-
-		if (IDL_NODE_UP(IDL_GENTREE(p).data) == NULL)
-			continue;
-		
-		if (!(IDL_NODE_TYPE(IDL_NODE_UP(IDL_GENTREE(p).data)) == IDLN_OP_DCL ||
-		      (IDL_NODE_UP(IDL_GENTREE(p).data) &&
-		       IDL_NODE_TYPE(IDL_NODE_UP(IDL_NODE_UP(IDL_GENTREE(p).data))) == IDLN_ATTR_DCL)))
-			continue;
-
-		if (!heap_insert_ident(interface_ident, ident_heap, IDL_GENTREE(p).data))
-			insert_conflict = 1;
-	}
+	g_hash_table_foreach(IDL_GENTREE(scope).children, (GHFunc)insert_heap_cb, &data);
 
 	/* If there are inherited namespaces, look in those before giving up */
 	q = IDL_GENTREE(scope)._import;
 	if (!q)
-		insert_conflict = 0;
+		data.insert_conflict = 0;
 	else
 		assert(IDL_NODE_TYPE(q) == IDLN_LIST);
 
@@ -457,12 +466,12 @@ static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident
 		
 		if (!(r = IDL_ns_load_idents_to_tables(interface_ident, IDL_LIST(q).data,
 						       ident_heap, visited_interfaces)))
-			insert_conflict = 1;
+			data.insert_conflict = 1;
 	}
 	
 	mark_visited_interface(visited_interfaces, scope);
 
-	return insert_conflict == 0;
+	return data.insert_conflict == 0;
 }
 
 int IDL_ns_check_for_ambiguous_inheritance(IDL_tree interface_ident, IDL_tree p)
@@ -478,23 +487,14 @@ int IDL_ns_check_for_ambiguous_inheritance(IDL_tree interface_ident, IDL_tree p)
 	if (!p)
 		return 0;
 
-	ident_heap = g_tree_new((GCompareFunc)identcmp);
+	ident_heap = g_tree_new(IDL_ident_cmp);
 	visited_interfaces = g_hash_table_new(g_direct_hash, g_direct_equal);
 
 	assert(IDL_NODE_TYPE(p) == IDLN_LIST);
-	while (p) {
-		char *s;
-
-		s = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(IDL_LIST(p).data), "::", 0);
-		if (!s)
-			break;
-
+	for (; p;  p = IDL_LIST(p).next) {
 		if (!IDL_ns_load_idents_to_tables(interface_ident, IDL_LIST(p).data,
 						  ident_heap, visited_interfaces))
 			is_ambiguous = 1;
-
-		free(s);
-		p = IDL_LIST(p).next;
 	}
 
 	g_tree_destroy(ident_heap);
@@ -502,3 +502,12 @@ int IDL_ns_check_for_ambiguous_inheritance(IDL_tree interface_ident, IDL_tree p)
 
 	return is_ambiguous;
 }
+
+/*
+ * Local variables:
+ * mode: C
+ * c-basic-offset: 8
+ * tab-width: 8
+ * indent-tabs-mode: t
+ * End:
+ */

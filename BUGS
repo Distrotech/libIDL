@@ -4,6 +4,4 @@
 - if an parse error occurs, memory will be leaked--implement an
   allocator and do a non-recursive free if parse fails
 
-- change lists to sorted heaps or hashes later if needed (low priority)
-
 - do wide support string (?)

@@ -38,11 +38,6 @@
 struct _IDL_tree_node;
 struct _IDL_ns;
 
-#ifndef HAVE_STRDUP
-#define strdup			__strdup
-extern char *			strdup(const char *s);
-#endif
-
 extern void			yyerror(const char *s);
 extern void			yyerrorl(const char *s, int ofs);
 extern void			yywarning(int level, const char *s);
@@ -53,6 +48,9 @@ extern void			yywarningv(int level, const char *fmt, ...);
 extern void			yywarninglv(int level, const char *fmt, int ofs, ...);
 
 /* Functions not yet deemed public */
+extern guint			IDL_ident_hash(gconstpointer v);
+extern gint			IDL_ident_equal(gconstpointer a, gconstpointer b);
+extern gint			IDL_ident_cmp(gconstpointer a, gconstpointer b);
 int				IDL_tree_get_node_info(struct _IDL_tree_node *tree,
 						       char **who, char **what);
 int				IDL_ns_check_for_ambiguous_inheritance(struct _IDL_tree_node * interface_ident,

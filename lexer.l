@@ -73,10 +73,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	s = p;
 	sscanf(p, "%*6s%n", &n); s += n;
 	while (isspace(*s)) ++s;
-#ifdef YYDEBUG
-	if (yydebug)
-		printf("lexer.l: pragma '%s'\n", s);
-#endif
+
 	__IDL_do_pragma(s);
 }
 {cpp_status}		{
@@ -85,7 +82,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	sscanf(yytext, "# %d %s", &__IDL_cur_line, filename);
 	if (__IDL_cur_filename)
 		free(__IDL_cur_filename);
-	__IDL_cur_filename = strdup(filename + 1);
+	__IDL_cur_filename = g_strdup(filename + 1);
 	__IDL_cur_filename[strlen(filename) - 2] = 0;
 	free(filename);
 	if (
@@ -96,7 +93,7 @@ dqstring		\"[^\"\n]*[\"\n]
 #endif
 	) {
 		free(__IDL_cur_filename);
-		__IDL_cur_filename = strdup(__IDL_real_filename);
+		__IDL_cur_filename = g_strdup(__IDL_real_filename);
 	}
 }
 {whitespace}
@@ -117,7 +114,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	tokreturn(TOK_INTEGER);
 }
 {fixed_lit}		{
-	yylval.str = strdup(yytext);
+	yylval.str = g_strdup(yytext);
 	tokreturn(TOK_FIXEDP);
 }
 {float_lit}		{
@@ -165,29 +162,29 @@ wstring			tokreturn(TOK_WSTRING);
 \>\>			tokreturn(TOK_OP_SHR);
 \<\<			tokreturn(TOK_OP_SHL);
 {happy_ident}		{
-	yylval.str = strdup(yytext);
+	yylval.str = g_strdup(yytext);
 	tokreturn(TOK_IDENT);
 }
 {err1_ident}		{
 	yyerrorv("`%s' is not a valid identifier in IDL", yytext);
 	yyerror("(Identifiers cannot start with an underscore)");
-	yylval.str = strdup(yytext);
+	yylval.str = g_strdup(yytext);
 	tokreturn(TOK_IDENT);
 }
 {warn1_ident}		{
 	yywarningv(IDL_WARNING2,
 		   "`%s' underscores within identifiers are discouraged for use "
 		   "with C-language IDL mappings", yytext);
-	yylval.str = strdup(yytext);
+	yylval.str = g_strdup(yytext);
 	tokreturn(TOK_IDENT);
 }
 {sqstring}		{
-	yylval.str = strdup(yytext + 1);
+	yylval.str = g_strdup(yytext + 1);
 	yylval.str[strlen(yytext) - 2] = 0;
 	tokreturn(TOK_SQSTRING);
 }
 {dqstring}		{
-	yylval.str = strdup(yytext + 1);
+	yylval.str = g_strdup(yytext + 1);
 	yylval.str[strlen(yytext) - 2] = 0;
 	tokreturn(TOK_DQSTRING);
 }
