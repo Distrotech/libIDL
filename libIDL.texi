@@ -298,3 +298,6 @@ will be omitted from the primary tree.
 @node Function Index, , Reference, top
 @chapter Function Index
 @printindex fn
+
+@contents
+@bye
