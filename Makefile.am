@@ -11,10 +11,10 @@ LIBS			= @GLIB_LIBS@
 
 lexer.c: $(srcdir)/lexer.l
 	@rm -f $@
-	$(LEX) $(LFLAGS) -t $< | sed -e 's/yy/__IDL_/g' >$@
+	$(LEX) $(LFLAGS) -t $(srcdir)/lexer.l | sed -e 's/yy/__IDL_/g' >$@
 
 stamp-parser: $(srcdir)/parser.y
-	$(YACC) $(YFLAGS) $<
+	$(YACC) $(YFLAGS) $(srcdir)/parser.y
 	touch $@
 
 parser.c: stamp-parser
