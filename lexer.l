@@ -37,13 +37,13 @@
 	return token;					\
 } while (0)
 
-extern void		__IDL_do_pragma(const char *s);
+extern void		__IDL_do_pragma			(const char *s);
 #ifdef YYDEBUG
-extern int		yydebug;
+extern int				yydebug;
 #endif
-int			__IDL_prev_token_line;
-int			__IDL_cur_token_line;
-static int		warn_underscores;
+int					__IDL_prev_token_line;
+int					__IDL_cur_token_line;
+static int				warn_underscores;
 %}
 
 whitespace		[ \t\f\r]*
@@ -70,153 +70,153 @@ dqstring		\"[^\"\n]*[\"\n]
 	char *p = yytext;
 	char *s;
 
-	while (isspace(*p) || *p == '#') ++p;
+	while (isspace (*p) || *p == '#') ++p;
 	s = p;
-	sscanf(p, "%*6s%n", &n); s += n;
-	while (isspace(*s)) ++s;
+	sscanf (p, "%*6s%n", &n); s += n;
+	while (isspace (*s)) ++s;
 
-	__IDL_do_pragma(s);
+	__IDL_do_pragma (s);
 }
 {cpp_status}		{
-	char *filename = (char *)malloc(strlen(yytext) + 1);
+	char *filename = (char *) malloc (strlen (yytext) + 1);
 	char *orig;
 
-	sscanf(yytext, "# %d %s", &__IDL_cur_line, filename);
+	sscanf (yytext, "# %d %s", &__IDL_cur_line, filename);
 
-	__IDL_cur_filename = g_strdup(filename + 1);
-	__IDL_cur_filename[strlen(filename) - 2] = 0;
+	__IDL_cur_filename = g_strdup (filename + 1);
+	__IDL_cur_filename[strlen (filename) - 2] = 0;
 
-	free(filename);
+	free (filename);
 
 	if (
 #ifdef HAVE_CPP_PIPE_STDIN
-	!strlen(__IDL_cur_filename)
+	!strlen (__IDL_cur_filename)
 #else
-	!strcmp(__IDL_cur_filename, __IDL_tmp_filename)
+	!strcmp (__IDL_cur_filename, __IDL_tmp_filename)
 #endif
 	) {
-		free(__IDL_cur_filename);
-		__IDL_cur_filename = g_strdup(__IDL_real_filename);
+		free (__IDL_cur_filename);
+		__IDL_cur_filename = g_strdup (__IDL_real_filename);
 	}
 
-	if (g_hash_table_lookup_extended(__IDL_filename_hash, __IDL_cur_filename,
+	if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
 					 (gpointer)&orig, NULL)) {
-		free(__IDL_cur_filename);
+		free (__IDL_cur_filename);
 		__IDL_cur_filename = orig;
 	} else {
-		g_hash_table_insert(__IDL_filename_hash, __IDL_cur_filename, NULL);
+		g_hash_table_insert (__IDL_filename_hash, __IDL_cur_filename, NULL);
 	}
 }
 {whitespace}
 {b8_int}		{
-	sscanf(yytext, IDL_B8_FMT, &yylval.integer);
-	tokreturn(TOK_INTEGER);
+	sscanf (yytext, IDL_B8_FMT, &yylval.integer);
+	tokreturn (TOK_INTEGER);
 }
 {b10_int}		{
-	sscanf(yytext, IDL_SB10_FMT, &yylval.integer);
-	tokreturn(TOK_INTEGER);
+	sscanf (yytext, IDL_SB10_FMT, &yylval.integer);
+	tokreturn (TOK_INTEGER);
 }
 {b10_uint}		{
-	sscanf(yytext, IDL_UB10_FMT, &yylval.integer);
-	tokreturn(TOK_INTEGER);
+	sscanf (yytext, IDL_UB10_FMT, &yylval.integer);
+	tokreturn (TOK_INTEGER);
 }
 {b16_int}		{
-	sscanf(yytext + 2, IDL_B16_FMT, &yylval.integer);
-	tokreturn(TOK_INTEGER);
+	sscanf (yytext + 2, IDL_B16_FMT, &yylval.integer);
+	tokreturn (TOK_INTEGER);
 }
 {fixed_lit}		{
-	yylval.str = g_strdup(yytext);
-	tokreturn(TOK_FIXEDP);
+	yylval.str = g_strdup (yytext);
+	tokreturn (TOK_FIXEDP);
 }
 {float_lit}		{
-	yylval.floatp = atof(yytext);
-	tokreturn(TOK_FLOATP);
+	yylval.floatp = atof (yytext);
+	tokreturn (TOK_FLOATP);
 }
-FALSE			tokreturn(TOK_FALSE);
-TRUE			tokreturn(TOK_TRUE);
-any			tokreturn(TOK_ANY);
-attribute		tokreturn(TOK_ATTRIBUTE);
-boolean			tokreturn(TOK_BOOLEAN);
-case			tokreturn(TOK_CASE);
-char			tokreturn(TOK_CHAR);
-const			tokreturn(TOK_CONST);
-context			tokreturn(TOK_CONTEXT);
-default			tokreturn(TOK_DEFAULT);
-double			tokreturn(TOK_DOUBLE);
-enum			tokreturn(TOK_ENUM);
-exception		tokreturn(TOK_EXCEPTION);
-fixed			tokreturn(TOK_FIXED);
-float			tokreturn(TOK_FLOAT);
-in			tokreturn(TOK_IN);
-inout			tokreturn(TOK_INOUT);
-interface		tokreturn(TOK_INTERFACE);
-long			tokreturn(TOK_LONG);
-module			tokreturn(TOK_MODULE);
-native			tokreturn(TOK_NATIVE);
-octet			tokreturn(TOK_OCTET);
-oneway			tokreturn(TOK_ONEWAY);
-out			tokreturn(TOK_OUT);
-raises			tokreturn(TOK_RAISES);
-readonly		tokreturn(TOK_READONLY);
-sequence		tokreturn(TOK_SEQUENCE);
-short			tokreturn(TOK_SHORT);
-string			tokreturn(TOK_STRING);
-struct			tokreturn(TOK_STRUCT);
-switch			tokreturn(TOK_SWITCH);
-typedef			tokreturn(TOK_TYPEDEF);
-union			tokreturn(TOK_UNION);
-unsigned		tokreturn(TOK_UNSIGNED);
-void			tokreturn(TOK_VOID);
-wchar			tokreturn(TOK_WCHAR);
-wstring			tokreturn(TOK_WSTRING);
-::			tokreturn(TOK_OP_SCOPE);
-\>\>			tokreturn(TOK_OP_SHR);
-\<\<			tokreturn(TOK_OP_SHL);
+FALSE			tokreturn (TOK_FALSE);
+TRUE			tokreturn (TOK_TRUE);
+any			tokreturn (TOK_ANY);
+attribute		tokreturn (TOK_ATTRIBUTE);
+boolean			tokreturn (TOK_BOOLEAN);
+case			tokreturn (TOK_CASE);
+char			tokreturn (TOK_CHAR);
+const			tokreturn (TOK_CONST);
+context			tokreturn (TOK_CONTEXT);
+default			tokreturn (TOK_DEFAULT);
+double			tokreturn (TOK_DOUBLE);
+enum			tokreturn (TOK_ENUM);
+exception		tokreturn (TOK_EXCEPTION);
+fixed			tokreturn (TOK_FIXED);
+float			tokreturn (TOK_FLOAT);
+in			tokreturn (TOK_IN);
+inout			tokreturn (TOK_INOUT);
+interface		tokreturn (TOK_INTERFACE);
+long			tokreturn (TOK_LONG);
+module			tokreturn (TOK_MODULE);
+native			tokreturn (TOK_NATIVE);
+octet			tokreturn (TOK_OCTET);
+oneway			tokreturn (TOK_ONEWAY);
+out			tokreturn (TOK_OUT);
+raises			tokreturn (TOK_RAISES);
+readonly		tokreturn (TOK_READONLY);
+sequence		tokreturn (TOK_SEQUENCE);
+short			tokreturn (TOK_SHORT);
+string			tokreturn (TOK_STRING);
+struct			tokreturn (TOK_STRUCT);
+switch			tokreturn (TOK_SWITCH);
+typedef			tokreturn (TOK_TYPEDEF);
+union			tokreturn (TOK_UNION);
+unsigned		tokreturn (TOK_UNSIGNED);
+void			tokreturn (TOK_VOID);
+wchar			tokreturn (TOK_WCHAR);
+wstring			tokreturn (TOK_WSTRING);
+::			tokreturn (TOK_OP_SCOPE);
+\>\>			tokreturn (TOK_OP_SHR);
+\<\<			tokreturn (TOK_OP_SHL);
 {declspec}		{
-	char *s = g_strdup(yytext);
-	sscanf(yytext, "__declspec %*[(] %[A-Za-z_] %*[)]", s);
+	char *s = g_strdup (yytext);
+	sscanf (yytext, "__declspec %*[(] %[A-Za-z_] %*[)]", s);
 	yylval.str = s;
-	tokreturn(TOK_DECLSPEC);
+	tokreturn (TOK_DECLSPEC);
 }
 {happy_ident}		{
 	if ((*yytext == 'O' || *yytext == 'o') &&
-	    IDL_strcase_equal(yytext + 1, "bject"))
-		tokreturn(TOK_OBJECT);
-	yylval.str = g_strdup(yytext);
-	tokreturn(TOK_IDENT);
+	    IDL_strcase_equal (yytext + 1, "bject"))
+		tokreturn (TOK_OBJECT);
+	yylval.str = g_strdup (yytext);
+	tokreturn (TOK_IDENT);
 }
 {err1_ident}		{
-	yyerrorv("`%s' is not a valid identifier in IDL", yytext);
-	yyerror("(Identifiers cannot start with an underscore)");
-	yylval.str = g_strdup(yytext);
-	tokreturn(TOK_IDENT);
+	yyerrorv ("`%s' is not a valid identifier in IDL", yytext);
+	yyerror ("(Identifiers cannot start with an underscore)");
+	yylval.str = g_strdup (yytext);
+	tokreturn (TOK_IDENT);
 }
 {warn1_ident}		{
 	if (!warn_underscores) {
-		yywarningv(IDL_WARNING2,
+		yywarningv (IDL_WARNING2,
 			   "`%s' underscores within identifiers are discouraged for use "
 			   "with C-language IDL mappings", yytext);
 		warn_underscores = 1;
 	}
-	yylval.str = g_strdup(yytext);
-	tokreturn(TOK_IDENT);
+	yylval.str = g_strdup (yytext);
+	tokreturn (TOK_IDENT);
 }
 {sqstring}		{
-	yylval.str = g_strdup(yytext + 1);
-	yylval.str[strlen(yytext) - 2] = 0;
-	tokreturn(TOK_SQSTRING);
+	yylval.str = g_strdup (yytext + 1);
+	yylval.str[strlen (yytext) - 2] = 0;
+	tokreturn (TOK_SQSTRING);
 }
 {dqstring}		{
-	yylval.str = g_strdup(yytext + 1);
-	yylval.str[strlen(yytext) - 2] = 0;
-	tokreturn(TOK_DQSTRING);
+	yylval.str = g_strdup (yytext + 1);
+	yylval.str[strlen (yytext) - 2] = 0;
+	tokreturn (TOK_DQSTRING);
 }
 {newline}		++__IDL_cur_line;
-.			tokreturn(yytext[0]);
+.			tokreturn (yytext[0]);
 
 %%
 
-void __IDL_lex_init(void)
+void __IDL_lex_init (void)
 {
 	__IDL_cur_line = 0;
 	__IDL_cur_token_line = 0;
@@ -225,12 +225,12 @@ void __IDL_lex_init(void)
 	warn_underscores = 0;
 }
 
-void __IDL_lex_cleanup(void)
+void __IDL_lex_cleanup (void)
 {
 	__IDL_cur_filename = NULL;
 }
 
-int yywrap(void)
+int yywrap (void)
 {
 	return 1;
 }

@@ -159,7 +159,7 @@ traverse the tree.
 
 @itemize @bullet
 @item
-Function: int IDL_parse_filename(const char *NAME, const char *CPP_ARGS,
+Function: int IDL_parse_filename (const char *NAME, const char *CPP_ARGS,
 IDL_callback CALLBACK, IDL_tree *TREE, IDL_ns *NS, unsigned long FLAGS,
 int MAX_MESSAGE_LEVEL)
 @findex IDL_parse_filename
@@ -226,7 +226,7 @@ all messages will be displayed.
 @end itemize
 
 @item
-Function: void IDL_tree_walk_in_order(IDL_tree ROOT, IDL_tree_func
+Function: void IDL_tree_walk_in_order (IDL_tree ROOT, IDL_tree_func
 FUNC, gpointer DATA)
 @findex IDL_tree_walk_in_order
 
@@ -248,13 +248,13 @@ DATA: optional, specifies the callback data.
 @end itemize
 
 @item
-Function: void IDL_tree_free(IDL_tree TREE)
+Function: void IDL_tree_free (IDL_tree TREE)
 @findex IDL_tree_free
 
 Frees the memory associated with TREE.
 
 @item
-Function: void IDL_ns_free(IDL_ns NS)
+Function: void IDL_ns_free (IDL_ns NS)
 @findex IDL_ns_free
 
 Frees the memory associated with NS.
