@@ -1,5 +1,5 @@
 dnl Autoconf extension macros for libIDL
-AC_DEFUN(AC_CPP_ACCEPT_IDL,
+AC_DEFUN([AC_CPP_ACCEPT_IDL],
 	[AC_CACHE_CHECK([if C preprocessor likes IDL],
 		ac_cv_cpp_accept_idl,
 		[AC_TRY_CPP([
@@ -14,7 +14,7 @@ AC_DEFUN(AC_CPP_ACCEPT_IDL,
 		ac_cv_cpp_accept_idl=yes,
 		ac_cv_cpp_accept_idl=no)])])
 
-AC_DEFUN(AC_CPP_PIPE_STDIN,
+AC_DEFUN([AC_CPP_PIPE_STDIN],
 	[AC_CACHE_CHECK([if C preprocessor can read from stdin],
 		ac_cv_cpp_pipe_stdin,
 		[AC_REQUIRE_CPP
@@ -27,7 +27,7 @@ AC_DEFUN(AC_CPP_PIPE_STDIN,
 		AC_DEFINE(HAVE_CPP_PIPE_STDIN)
 	fi])
 
-AC_DEFUN(AC_UPDATE_IF_CHANGED,
+AC_DEFUN([AC_UPDATE_IF_CHANGED],
 	[if test -f "$2"; then
 		if cmp -s "$1" "$2" 2>/dev/null; then
 			echo "$1 is unchanged"
@@ -38,7 +38,7 @@ AC_DEFUN(AC_UPDATE_IF_CHANGED,
 		fi
 	fi])
 
-AC_DEFUN(AC_CPP_NOSTDINC,
+AC_DEFUN([AC_CPP_NOSTDINC],
        [AC_CACHE_CHECK([how to ignore standard include path],
                ac_cv_cpp_nostdinc,
                [saved_CPPFLAGS="$CPPFLAGS"
