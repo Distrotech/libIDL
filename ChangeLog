@@ -1,3 +1,25 @@
+1999-03-08  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.2.
+
+	* util.c (IDL_tree_process_forward_dcls): No longer remove
+	unresolved forward declaration nodes.  If IDLF_PEDANTIC isn't
+	specified, unresolved forwards will be flagged as warnings instead
+	of errors.
+
+	* IDL.h.new.in: Improve hack for GINT64's conversion type until
+	glib gets smarter about this.
+
+	(IDLF_PEDANTIC): New parse flag; turns some warnings into errors.
+
+1999-03-06  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* IDL.h.new.in: Change IDLF_RESOLVE_FORWARDS to
+	IDLF_IGNORE_FORWARDS.  CORBA 2.2 requires that the interface
+	definition be listed in the file, so I would rather that the
+	default be stricter to the CORBA 2.2 standard.  If you don't want
+	forward declaration resolution, use this flag.
+
 1999-03-04  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.1.

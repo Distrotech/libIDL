@@ -52,7 +52,8 @@ extern "C" {
 #define IDLF_NO_EVAL_CONST		(1UL << 1)
 #define IDLF_COMBINE_REOPENED_MODULES	(1UL << 2)
 #define IDLF_PREFIX_FILENAME		(1UL << 3)
-#define IDLF_RESOLVE_FORWARDS		(1UL << 4)
+#define IDLF_IGNORE_FORWARDS		(1UL << 4)
+#define IDLF_PEDANTIC			(1UL << 5)
 
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)
@@ -87,7 +88,11 @@ extern "C" {
 			    G_GNUC_PRETTY_FUNCTION)->u.name)
 
 #ifdef G_HAVE_GINT64
-#  define IDL_LL			"ll"
+#  if G_MAXLONG > 0xffffffffUL
+#    define IDL_LL			"l"
+#  else
+#    define IDL_LL			"ll"
+#  endif
 typedef gint64				IDL_longlong_t;
 typedef guint64				IDL_ulonglong_t;
 #else

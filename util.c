@@ -183,7 +183,7 @@ const char *IDL_get_IDLver_string (void)
 
 static void IDL_tree_optimize (IDL_tree *p, IDL_ns ns)
 {
-	if (__IDL_flags & IDLF_RESOLVE_FORWARDS)
+	if (!(__IDL_flags & IDLF_IGNORE_FORWARDS))
 		IDL_tree_process_forward_dcls (p, ns);
 	IDL_tree_remove_inhibits (p, ns);
 	IDL_tree_remove_empty_modules (p, ns);
@@ -2223,25 +2223,19 @@ static int resolve_forward_dcls (IDL_tree_func_data *tfd, GHashTable *table)
 
 static int print_unresolved_forward_dcls (char *s, IDL_tree p)
 {
-	IDL_tree_error (p, "Unresolved forward declaration `%s'", s);
+	if (__IDL_flags & IDLF_PEDANTIC)
+		IDL_tree_error (p, "Unresolved forward declaration `%s'", s);
+	else
+		IDL_tree_warning (p,
+			IDL_WARNING1, "Unresolved forward declaration `%s'", s);
 	g_free (s);
-
-	return TRUE;
-}
-
-static int load_forward_dcls_to_node_hash (char *s, IDL_tree p, GHashTable *node_hash)
-{
-	g_hash_table_insert (node_hash, IDL_NODE_UP (p), IDL_NODE_UP (IDL_NODE_UP (p)) ?
-			     &IDL_MODULE (IDL_NODE_UP (IDL_NODE_UP (p))).definition_list : NULL);
 
 	return TRUE;
 }
 
 void IDL_tree_process_forward_dcls (IDL_tree *p, IDL_ns ns)
 {
-	RemoveListNodeData data;
 	GHashTable *table = g_hash_table_new (IDL_strcase_hash, IDL_strcase_equal);
-	GHashTable *node_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
 	gint total, resolved;
 
 	IDL_tree_walk_in_order (*p, (IDL_tree_func) load_forward_dcls, table);
@@ -2249,11 +2243,6 @@ void IDL_tree_process_forward_dcls (IDL_tree *p, IDL_ns ns)
 	IDL_tree_walk_in_order (*p, (IDL_tree_func) resolve_forward_dcls, table);
 	resolved = total - g_hash_table_size (table);
 	g_hash_table_foreach (table, (GHFunc) print_unresolved_forward_dcls, NULL);
-	g_hash_table_foreach (table, (GHFunc) load_forward_dcls_to_node_hash, node_hash);
-	data.root = p;
-	data.removed_nodes = NULL;
-	g_hash_table_foreach (node_hash, (GHFunc) remove_list_node, &data);
-	g_hash_table_destroy (node_hash);
 	g_hash_table_destroy (table);
 	if (__IDL_flags & IDLF_VERBOSE)
 		g_message ("Forward declarations resolved: %d of %d", resolved, total);
