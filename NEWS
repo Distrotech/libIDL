@@ -1,0 +1,10 @@
+* Status as of 7/18/98
+
+Most needed features are working to read CORBA v2.2 IDL.  See the file
+BUGS to see what else needs to be done; at this point things like
+speed are low priority, however a changeover to using glib and more
+efficient data structures like sorted heaps or hashes might be in
+order down the line.  I'm not sure how useful libIDL might be apart
+from its use in an IDL compiler, but the docs still need work.
+
+Andrew Veliath

@@ -1,0 +1,9 @@
+Welcome to libIDL
+~~~~~~~~~~~~~~~~~
+
+libIDL is a small library for creating parse trees of CORBA v2.2
+compliant Interface Definition Language (IDL) files, which is a
+specification for defining interfaces which can be used between
+different CORBA implementations.  Although the primary use of libIDL
+will be for a tool such as an IDL compiler, future uses may include
+use in an interface repository or interface browsing tool.

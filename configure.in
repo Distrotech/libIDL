@@ -1,18 +1,18 @@
-# -*- mode: shell-script -*-
-#
-# libIDL configure.in
-#
-# Copyright (C) 1998 Andrew Veliath <andrewtv@usa.net>
-# Licensed under the GNU General Public License version 2
-#
+dnl -*- mode: shell-script -*-
+dnl Process this file with autoconf to produce a configure script.
+
 AC_INIT(IDL.h)
 AM_INIT_AUTOMAKE(libIDL, 0.1)
+
+dnl Checks for programs.
 AC_PROG_CC
+
 AC_PROG_CPP
 CPP="/lib/cpp"
 AC_ARG_WITH(cpp,
 [  --with-cpp=PROGRAM      full path to C preprocessor [/lib/cpp]],
 CPP="$withval")
+
 AC_MSG_CHECKING(the C preprocessor)
 if [[ ! -x "$CPP" ]]; then
     AC_MSG_RESULT(WARNING: cannot execute "$CPP")
@@ -20,6 +20,7 @@ else
     AC_MSG_RESULT(found and executable)
 fi
 AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
+
 AM_PROG_LEX
 if [[ "$LEX" = "flex" ]]; then
     LFLAGS="-8"
@@ -28,12 +29,30 @@ else
 fi
 AC_SUBST(LFLAGS)
 AC_PROG_YACC
+
 AC_PROG_RANLIB
+
+dnl Checks for libraries.
+AC_CHECK_PROG(HAVE_GLIB_CONFIG, glib-config, yes, no)
+
+if test "$HAVE_GLIB_CONFIG" != "yes"; then
+	echo "You must have glib installed."
+	exit 1
+fi
+GLIB_INCLUDES=`glib-config --cflags`
+GLIB_LIBS=`glib-config --libs`
+AC_SUBST(GLIB_INCLUDES)
+AC_SUBST(GLIB_LIBS)
+
 AC_ISC_POSIX
+
 AC_STDC_HEADERS
 AC_CHECK_HEADERS(stddef.h wchar.h wcstr.h)
+
 AC_CHECK_FUNCS(strdup)
+
 AC_OUTPUT(Makefile)
+
 echo
 echo libIDL configuration successful
 echo

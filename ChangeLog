@@ -1,3 +1,8 @@
+1998-07-20  Andrew Veliath  <andrewtv@usa.net>
+
+	* Most of inhertance is done.  ChangeLog won't be updated much now
+	  in preference to CVS logs.
+
 1998-07-01  Andrew Veliath  <andrewtv@usa.net>
 
 	* Fix spelling of "inheritance" :)

@@ -1,8 +1,8 @@
+- partial inheritance checks; does not check for ambiguous declarations
 
-- no inheritance checks yet
+- if an parse error occurs, memory will be leaked--implement an
+  allocator and do a non-recursive free if parse fails
 
-- wide strings and long long not implemented (though long long could
-  use the gcc long long if __GNUC__ is defined)
+- change lists to sorted heaps or hashes later if needed (low priority)
 
-- if an parse error occurs, memory will be leaked
-
+- do wide support string (?)

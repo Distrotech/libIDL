@@ -33,6 +33,8 @@
 #  include <wcstr.h>
 #endif
 
+#include <glib.h>
+
 #ifndef HAVE_STRDUP
 #define strdup		__strdup
 extern char *		strdup(const char *s);

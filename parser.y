@@ -2444,7 +2444,7 @@ static int IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b)
 	    IDL_NODE_TYPE(a) != IDLN_UNARYOP &&
 	    IDL_NODE_TYPE(b) != IDLN_UNARYOP &&
 	    IDL_NODE_TYPE(a) != IDL_NODE_TYPE(b)) {
-		yyerror("invalid mix of types in constant expression");
+		yyerror("Invalid mix of types in constant expression");
 		return -1;
 	}
 
