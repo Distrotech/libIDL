@@ -1056,14 +1056,11 @@ ns_new_ident:		ident				{
 		     ++i)
 			if (IDL_NODE_UP (q))
 				q = IDL_NODE_UP (q);
-		
-#if 0
-		/* FIXME: work with lists better */
+
 		if (q) {
-			IDL_tree_error ($1, "Identifier `%s' conflicts", IDL_IDENT ($1).str);
+			IDL_tree_error ($1, "`%s' conflicts", IDL_IDENT ($1).str);
 			do_token_error (q, "with", FALSE);
 		} else
-#endif
 			yyerrorv ("`%s' duplicate identifier", IDL_IDENT ($1).str);
 
 		IDL_tree_free ($1);
@@ -1122,7 +1119,8 @@ cur_ns_new_or_prev_ident:
 ns_global_ident:	ident				{
 	IDL_tree p;
 
-	if ((p = IDL_ns_lookup_this_scope (__IDL_root_ns, IDL_NS (__IDL_root_ns).file, $1, NULL)) == NULL) {
+	if ((p = IDL_ns_lookup_this_scope (
+		__IDL_root_ns,IDL_NS (__IDL_root_ns).file, $1, NULL)) == NULL) {
 		yyerrorv ("`%s' undeclared identifier", IDL_IDENT ($1).str);
 		IDL_tree_free ($1);
 		YYABORT;
@@ -1568,13 +1566,9 @@ static int do_token_error (IDL_tree p, const char *message, gboolean prev)
 	assert (what != NULL);
 	
 	if (who && *who)
-		yyerrorlv ("%s %s `%s'",
-			   prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
-			   message, what, who);
+		IDL_tree_error (p, "%s %s `%s'", message, what, who);
 	else
-		yyerrorlv ("%s %s",
-			   prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
-			   message, what);
+		IDL_tree_error (p, "%s %s", message, what);
 	
 	return dienow;
 }

@@ -144,8 +144,8 @@ static int my_strcmp (IDL_tree p, IDL_tree q)
 	    strcmp (a, b) != 0 &&
 	    !(IDL_IDENT (p)._flags & IDLF_IDENT_CASE_MISMATCH_HIT ||
 	      IDL_IDENT (q)._flags & IDLF_IDENT_CASE_MISMATCH_HIT)) {
-		yywarningv (IDL_WARNING1,
-			    "Case mismatch between `%s' and `%s' ", a, b);
+		IDL_tree_warning (p, IDL_WARNING1, "Case mismatch between `%s'", a);
+		IDL_tree_warning (q, IDL_WARNING1, "and `%s'", b);
 		yywarning (IDL_WARNING1,
 			   "(Identifiers should be case-consistent after initial declaration)");
 		IDL_IDENT (p)._flags |= IDLF_IDENT_CASE_MISMATCH_HIT;
@@ -681,10 +681,14 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 	case IDLN_LIST:
 		if (!IDL_LIST (p).data)
 			break;
+#if 0
 		assert (IDL_LIST (p)._tail != NULL);
 		if (!IDL_LIST (IDL_LIST (p)._tail).data)
 			break;
 		dienow = IDL_tree_get_node_info (IDL_LIST (IDL_LIST (p)._tail).data, what, who);
+#else
+		dienow = IDL_tree_get_node_info (IDL_LIST (p).data, what, who);
+#endif
 		break;
 		
 	case IDLN_ATTR_DCL:
