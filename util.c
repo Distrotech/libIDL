@@ -735,7 +735,7 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 		break;
 		
 	case IDLN_INTERFACE:
-
+		*what = "interface";
 		*who = IDL_IDENT (IDL_INTERFACE (p).ident).str;
 		break;
 		
