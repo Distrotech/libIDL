@@ -39,9 +39,10 @@
 #  define alloca
 #endif
 
-/* internal parse flags */
-#define IDLFP_XPIDL_PROPERTY	(1UL << 0)
-#define IDLFP_XPIDL_NATIVE	(1UL << 1)
+/* Internal parse flags */
+#define IDLFP_PROPERTIES	(1UL << 0)
+#define IDLFP_NATIVE		(1UL << 1)
+#define IDLFP_IN_INCLUDES	(1UL << 2)
 
 typedef struct {
 	unsigned long flags;
@@ -51,12 +52,18 @@ extern void		yyerror				(const char *s);
 extern void		yyerrorl			(const char *s, int ofs);
 extern void		yywarning			(int level, const char *s);
 extern void		yywarningl			(int level, const char *s, int ofs);
-extern void		yyerrorv			(const char *fmt, ...);
-extern void		yyerrorlv			(const char *fmt, int ofs, ...);
-extern void		yywarningv			(int level, const char *fmt, ...);
-extern void		yywarninglv			(int level, const char *fmt, int ofs, ...);
-extern void		yyerrornv			(IDL_tree p, const char *fmt, ...);
-extern void		yywarningnv			(IDL_tree p, int level, const char *fmt, ...);
+extern void		yyerrorv			(const char *fmt, ...)
+							G_GNUC_PRINTF (1, 2);
+extern void		yyerrorlv			(const char *fmt, int ofs, ...)
+							G_GNUC_PRINTF (1, 3);
+extern void		yywarningv			(int level, const char *fmt, ...)
+							G_GNUC_PRINTF (2, 3);
+extern void		yywarninglv			(int level, const char *fmt, int ofs, ...)
+							G_GNUC_PRINTF (2, 4);
+extern void		yyerrornv			(IDL_tree p, const char *fmt, ...)
+							G_GNUC_PRINTF (2, 3);
+extern void		yywarningnv			(IDL_tree p, int level, const char *fmt, ...)
+							G_GNUC_PRINTF (3, 4);
 
 extern guint		IDL_strcase_hash		(gconstpointer v);
 extern gint		IDL_strcase_equal		(gconstpointer a, gconstpointer b);
@@ -68,7 +75,6 @@ extern int		IDL_ns_check_for_ambiguous_inheritance
 							(IDL_tree interface_ident,
 							 IDL_tree p);
 extern void		IDL_tree_process_forward_dcls	(IDL_tree *p, IDL_ns ns);
-extern void		IDL_tree_remove_inhibits	(IDL_tree *p, IDL_ns ns);
 extern void		IDL_tree_remove_empty_modules	(IDL_tree *p, IDL_ns ns);
 
 extern void		__IDL_free_properties		(GHashTable *table);

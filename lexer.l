@@ -1,6 +1,6 @@
 /***************************************************************************
 
-    lexer.l (IDL flex scanner)
+    lexer.l (IDL lex scanner)
 
     Copyright (C) 1998, 1999 Andrew T. Veliath
 
@@ -35,7 +35,7 @@
 	if (__IDL_inputcb == NULL) {						\
 		if ((result = fread (buf, 1, the_max_size, yyin)) == YY_NULL &&	\
 		    ferror (yyin))						\
-			YY_FATAL_ERROR ("input in flex scanner failed");	\
+			YY_FATAL_ERROR ("input in scanner failed");		\
 	} else {								\
 		union IDL_input_data data;					\
 										\
@@ -54,7 +54,26 @@
 	return token;					\
 } while (0)
 
+#define SELECT_START				\
+	/* Parser driven start conditions */	\
+	if (__IDL_flagsi & IDLFP_PROPERTIES)	\
+		BEGIN (PROP);			\
+	else if (__IDL_flagsi & IDLFP_NATIVE)	\
+		BEGIN (NATIVE);			\
+	/* Global syntax start conditions */	\
+	else if (__IDL_flags & IDLF_XPIDL)	\
+		BEGIN (XP);			\
+	else if (__IDL_flags & IDLF_CODEFRAGS)	\
+		BEGIN (CFRG);
+
+#define SELECT_RESTART				\
+	SELECT_START				\
+	else					\
+		BEGIN (INITIAL);
+
 extern void		__IDL_do_pragma			(const char *s);
+static int		count_nl			(const char *s);
+
 #ifdef YYDEBUG
 extern int				yydebug;
 #endif
@@ -66,17 +85,18 @@ static GSList *				codefrag_list;
 static GSList *				codefrag_list_tail;
 %}
 
-whitespace		[ \t\f\r]*
+whitespace		[ \t\v\f\r]*
+whitespacenl		[ \t\v\f\r\n]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
-cpp_status		^#.*
+cpp_status		^{whitespace}#.*
 b8_int			0[0-9]*
 b10_int			-[1-9][0-9]*
 b10_uint		[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
 float_lit		-?[0-9]*\.[0-9]+([eE]-?[0-9]+)?|-?[0-9]+\.?([eE]-?[0-9]+)?
 fixed_lit		(-?[0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
-declspec		__declspec{whitespace}\({whitespace}[A-Za-z]*{whitespace}\)
+declspec		__declspec{whitespacenl}\({whitespacenl}[A-Za-z]*{whitespacenl}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
@@ -86,33 +106,37 @@ native_type		[^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
-%s XPIDL
-%x XPIDLPROP XPIDLNATIVE XPIDLCODEFRAGX
+%p 5000
+
+%s XP
+
+%x PROP
+%x NATIVE
+
+%s CFRG
+%x CFRGX
 
 %%
-	/* Global syntax */
-	if (__IDL_flags & IDLF_XPIDL)
-		BEGIN (XPIDL);
 
-	/* Exclusive parser driven conditions */
-	if (__IDL_flagsi & IDLFP_XPIDL_PROPERTY)
-		BEGIN (XPIDLPROP);
-	else if (__IDL_flagsi & IDLFP_XPIDL_NATIVE)
-		BEGIN (XPIDLNATIVE);
+	SELECT_START;
 
-<XPIDL>^%\{.*						{
+<INITIAL,XP,CFRG>^%\{.*					{
 	char *s = yytext + 2;
 
 	while (isspace (*s)) ++s;
 	codefrag_desc = g_strdup (s);
 	codefrag_list = codefrag_list_tail = NULL;
-	BEGIN (XPIDLCODEFRAGX);
+
+	if (!(__IDL_flags & IDLF_XPIDL || __IDL_flags & IDLF_CODEFRAGS))
+		yyerror ("Code fragment syntax not enabled");
+	else
+		BEGIN (CFRGX);
 }
-<XPIDLCODEFRAGX>^%\}.*					{
+<CFRGX>^%\}.*						{
 	yylval.tree = IDL_codefrag_new (codefrag_desc, codefrag_list);
 	tokreturn (TOK_CODEFRAG);
 }
-<XPIDLCODEFRAGX>.*					{
+<CFRGX>.*						{
 	char *s;
 	GSList *slist;
 
@@ -128,7 +152,7 @@ dqstring		\"[^\"\n]*[\"\n]
 		codefrag_list_tail = slist;
 	}
 }
-<*>{cpp_pragma}						{
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{cpp_pragma}		{
 	int n;
 	char *p = yytext;
 	char *s;
@@ -140,12 +164,17 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	__IDL_do_pragma (s);
 }
-<*>{cpp_status}						{
-	char *filename = g_malloc (strlen (yytext) + 1);
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{cpp_status}		{
+	char *starttext;
+	char *filename;
 	char *filename2;
 	int line;
 
-	sscanf (yytext, "# %d %s", &line, filename);
+	starttext = yytext;
+	while (isspace (*starttext)) ++starttext;
+	filename = g_malloc (strlen (starttext) + 1);
+
+	sscanf (starttext, "# %d %s", &line, filename);
 
 	if (*filename == '"') {
 		filename2 = g_strdup (filename + 1);
@@ -158,7 +187,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	g_free (filename2);
 }
-<*>{whitespace}
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{whitespace}
 {b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
@@ -205,7 +234,7 @@ interface		tokreturn (TOK_INTERFACE);
 long			tokreturn (TOK_LONG);
 module			tokreturn (TOK_MODULE);
 native			tokreturn (TOK_NATIVE);
-<XPIDL>noscript		tokreturn (TOK_NOSCRIPT);
+<XP>noscript		tokreturn (TOK_NOSCRIPT);
 octet			tokreturn (TOK_OCTET);
 oneway			tokreturn (TOK_ONEWAY);
 out			tokreturn (TOK_OUT);
@@ -219,7 +248,7 @@ switch			tokreturn (TOK_SWITCH);
 typedef			tokreturn (TOK_TYPEDEF);
 union			tokreturn (TOK_UNION);
 unsigned		tokreturn (TOK_UNSIGNED);
-<XPIDL>\.\.\.		tokreturn (TOK_VARARGS);
+<XP>\.\.\.		tokreturn (TOK_VARARGS);
 void			tokreturn (TOK_VOID);
 wchar			tokreturn (TOK_WCHAR);
 wstring			tokreturn (TOK_WSTRING);
@@ -228,8 +257,11 @@ wstring			tokreturn (TOK_WSTRING);
 \<\<			tokreturn (TOK_OP_SHL);
 {declspec}						{
 	char *s = g_strdup (yytext);
+
+	/* Get the parenthesized expression (ignoring whitespace) */
 	sscanf (yytext, "__declspec %*[(] %[A-Za-z_] %*[)]", s);
 	yylval.str = s;
+	__IDL_cur_line += count_nl (yytext);
 	tokreturn (TOK_DECLSPEC);
 }
 {happy_ident}						{
@@ -254,16 +286,22 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-<XPIDLPROP>{prop_key}					{
+<PROP>]							{
+	__IDL_flagsi &= ~IDLFP_PROPERTIES;
+	SELECT_RESTART;
+	tokreturn (yytext[0]);
+}
+<PROP>{prop_key}					{
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_PROP_KEY);
 }
-<XPIDLPROP>{prop_value}					{
+<PROP>{prop_value}					{
 	yylval.str = g_strdup (yytext + 1);
 	yylval.str[strlen (yylval.str) - 1] = 0;
 	tokreturn (TOK_PROP_VALUE);
 }
-<XPIDLNATIVE>{native_type}				{
+<NATIVE>{native_type}					{
+	__IDL_flagsi &= ~IDLFP_NATIVE;
 	yylval.str = g_strdup (yytext);
 	yylval.str[strlen (yylval.str) - 1] = 0;
 	tokreturn (TOK_NATIVE_TYPE);
@@ -278,9 +316,9 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str[strlen (yytext) - 2] = 0;
 	tokreturn (TOK_DQSTRING);
 }
-<*>{newline}		++__IDL_cur_line;
-<*>\/\/.*
-<*>.			tokreturn (yytext[0]);
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{newline}		++__IDL_cur_line;
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>\/\/.*
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>.			tokreturn (yytext[0]);
 
 %%
 
@@ -303,6 +341,17 @@ void __IDL_lex_cleanup (void)
 int yywrap (void)
 {
 	return 1;
+}
+
+static int count_nl (const char *s)
+{
+	int i;
+
+	for (i = 0;
+	     (s = strchr (s, '\n')) != NULL;
+	     ++s, ++i) ;
+
+	return i;
 }
 
 /*

@@ -36,8 +36,8 @@ extern "C" {
 #define LIBIDL_VERSION(a,b,c)		(((a) << 16) + ((b) << 8) + (c))
 #define LIBIDL_MAJOR_VERSION		0
 #define LIBIDL_MINOR_VERSION		6
-#define LIBIDL_MICRO_VERSION		3
-#define LIBIDL_VERSION_CODE		LIBIDL_VERSION(0,6,3)
+#define LIBIDL_MICRO_VERSION		8
+#define LIBIDL_VERSION_CODE		LIBIDL_VERSION(0,6,8)
 
 /* miscellaneous constants */
 #define IDL_SUCCESS			0
@@ -54,10 +54,14 @@ extern "C" {
 #define IDLF_PREFIX_FILENAME		(1UL << 3)
 #define IDLF_IGNORE_FORWARDS		(1UL << 4)
 #define IDLF_PEDANTIC			(1UL << 5)
+#define IDLF_INHIBIT_TAG_ONLY		(1UL << 6)
+#define IDLF_INHIBIT_INCLUDES		(1UL << 7)
 
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)
 #define IDLF_XPIDL			(1UL << 17)
+#define IDLF_PROPERTIES			(1UL << 18)
+#define IDLF_CODEFRAGS			(1UL << 19)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
@@ -101,7 +105,7 @@ typedef long				IDL_longlong_t;
 typedef unsigned long			IDL_ulonglong_t;
 #  warning 64-bit integer type not available, using 32-bit instead
 #endif /* G_HAVE_GINT64 */
-	
+
 typedef unsigned int			IDL_declspec_t;
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
@@ -204,13 +208,13 @@ struct _IDL_IDENT {
 #define IDL_IDENT_REPO_ID(a)		IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident.repo_id)
 extern IDL_tree		IDL_ident_new			(char *str);
 extern void		IDL_queue_new_ident_comment	(const char *str);
-	
+
 enum IDL_float_type {
 	IDL_FLOAT_TYPE_FLOAT,
 	IDL_FLOAT_TYPE_DOUBLE,
 	IDL_FLOAT_TYPE_LONGDOUBLE
 };
-	
+
 struct _IDL_TYPE_FLOAT {
 	enum IDL_float_type f_type;
 };
@@ -519,7 +523,7 @@ typedef enum {
 	IDLN_BINOP,
 	IDLN_UNARYOP,
 	IDLN_CODEFRAG,
-	
+
 	IDLN_LAST
 } IDL_tree_type;
 IDL_IMPORT const char *			IDL_tree_type_names[];
@@ -528,8 +532,6 @@ struct _IDL_tree_node {
 	IDL_tree_type _type;
 	IDL_tree up;			/* Do not recurse */
 	IDL_declspec_t declspec;
-	/* properties is an XPIDL extension.  It is a hash table of
-	 * case-insensitive string keys to string values. */
 	GHashTable *properties;
 	int refs;
 	char *_file;			/* Internal use */
@@ -572,6 +574,10 @@ struct _IDL_tree_node {
 		struct _IDL_UNARYOP idl_unaryop;
 		struct _IDL_CODEFRAG idl_codefrag;
 	} u;
+
+	/* Fields for application use */
+	guint32 flags;
+	gpointer data;
 };
 #define IDL_NODE_TYPE(a)		((a)->_type)
 #define IDL_NODE_TYPE_NAME(a)		((a)?IDL_tree_type_names[IDL_NODE_TYPE(a)]:"NULL")
@@ -615,7 +621,7 @@ struct _IDL_tree_node {
 	 IDL_NODE_TYPE(a) == IDLN_TYPE_ENUM ||		\
 	 IDL_NODE_TYPE(a) == IDLN_TYPE_STRUCT ||	\
 	 IDL_NODE_TYPE(a) == IDLN_TYPE_UNION)
-	
+
 typedef struct _IDL_ns *		IDL_ns;
 
 struct _IDL_ns {
@@ -671,6 +677,8 @@ struct _IDL_tree_func_data {
 	IDL_tree_func_state *state;
 	IDL_tree_func_data *up;
 	IDL_tree tree;
+	gint step;
+	gpointer data;		/* Application data */
 };
 
 typedef gboolean	(*IDL_tree_func)		(IDL_tree_func_data *tnfd,
@@ -681,7 +689,7 @@ extern IDL_tree		IDL_check_type_cast		(const IDL_tree var,
 							 const char *file,
 							 int line,
 							 const char *function);
-	
+
 extern const char *	IDL_get_libver_string		(void);
 
 extern const char *	IDL_get_IDLver_string		(void);
@@ -706,7 +714,7 @@ extern int		IDL_ns_prefix			(IDL_ns ns,
 
 extern void		IDL_ns_ID			(IDL_ns ns,
 							 const char *s);
-	
+
 extern void		IDL_ns_version			(IDL_ns ns,
 							 const char *s);
 
@@ -734,12 +742,14 @@ extern int		IDL_tree_get_node_info		(IDL_tree tree,
 
 extern void		IDL_tree_error			(IDL_tree p,
 							 const char *fmt,
-							 ...);
+							 ...)
+							G_GNUC_PRINTF (2, 3);
 
 extern void		IDL_tree_warning		(IDL_tree p,
 							 int level,
 							 const char *fmt,
-							 ...);
+							 ...)
+							G_GNUC_PRINTF (3, 4);
 
 extern const char *	IDL_tree_property_get		(IDL_tree tree,
 							 const char *key);
@@ -753,6 +763,9 @@ extern gboolean		IDL_tree_property_remove	(IDL_tree tree,
 
 extern void		IDL_tree_properties_copy	(IDL_tree from_tree,
 							 IDL_tree to_tree);
+
+extern void		IDL_tree_remove_inhibits	(IDL_tree *tree,
+							 IDL_ns ns);
 
 extern void		IDL_tree_walk			(IDL_tree p,
 							 IDL_tree_func_data *current,
@@ -771,11 +784,15 @@ extern void		IDL_tree_to_IDL			(IDL_tree p,
 							 FILE *output,
 							 unsigned long output_flags);
 
-extern char *		IDL_do_escapes			(const char *s);
+extern GString *	IDL_tree_to_IDL_string		(IDL_tree p,
+							 IDL_ns ns,
+							 unsigned long output_flags);
+
+extern gchar *		IDL_do_escapes			(const char *s);
 
 extern IDL_tree		IDL_resolve_const_exp		(IDL_tree p,
 							 IDL_tree_type type);
-	
+
 extern IDL_ns		IDL_ns_new			(void);
 
 extern void		IDL_ns_free			(IDL_ns ns);
@@ -806,7 +823,7 @@ extern void		IDL_ns_pop_scope		(IDL_ns ns);
 
 extern IDL_tree		IDL_ns_qualified_ident_new	(IDL_tree nsid);
 
-extern char *		IDL_ns_ident_to_qstring		(IDL_tree ns_ident,
+extern gchar *		IDL_ns_ident_to_qstring		(IDL_tree ns_ident,
 							 const char *join,
 							 int scope_levels);
 
@@ -814,7 +831,7 @@ extern int		IDL_ns_scope_levels_from_here	(IDL_ns ns,
 							 IDL_tree ident,
 							 IDL_tree parent);
 
-extern char *		IDL_ns_ident_make_repo_id	(IDL_ns ns,
+extern gchar *		IDL_ns_ident_make_repo_id	(IDL_ns ns,
 							 IDL_tree p,
 							 const char *p_prefix,
 							 int *major,

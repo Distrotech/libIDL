@@ -1,3 +1,110 @@
+1999-04-12  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.8.
+
+	* IDL.h.new.in (IDLF_INHIBIT_INCLUDES): New parse flag;
+	automatically inhibits included files.
+
+	* util.h (IDLFP_IN_INCLUDES): Internal flag checked when we are
+	inside an include file.
+
+	* parser.y (assign_declspec): Wrap assignment, and if we are
+	inside an include file check the inhibit include flag.
+	(IDL_file_set): Add detection of include files here.
+
+1999-04-01  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* IDL.h.new.in (IDL_tree_remove_inhibits): Move prototype here
+	from util.h.
+
+	* util.c (IDL_tree_optimize): Skip inhibit removal if
+	the IDLF_INHIBIT_TAG_ONLY parse flag is specified.
+
+1999-03-29  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.6.
+
+	* util.c (load_inhibits): Don't recurse inhibited nodes.
+
+1999-03-23  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.4.
+
+	* lexer.l: Allow more whitespace in __declspec, and generate error
+	if we see a code fragment and the syntax isn't enabled.
+
+	* parser.y: Much improved error messages about illegal types in
+	attributes, operations and parameters.  Also, explicit errors
+	added for struct, union and enum definitions with missing
+	identifiers.
+
+	* (IDLF_PROPERTIES): New syntax flag; properties can be used
+	independently of XPIDL.
+
+	* IDL.h.new.in, util.h: Use G_GNUC_PRINTF on warning and error
+	functions.
+
+	* util.c: Rework IDL_tree_to_IDL logic a bit to accept more node
+	types, even literals.
+
+	* IDL.h.new.in: Add a step variable to IDL_tree_func_data.  This
+	is 0 in the first call, and increments for every call thereafter
+	(currently only from 0 to 1).
+
+1999-03-22  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* util.c (IDL_tree_error): 
+	(IDL_tree_warning): If node is NULL, omit file and line number
+	information gracefully.
+
+	* parser.y: Error out with better message if one tries to use a
+	void type in an attribute or parameter.
+
+	* util.c (IDL_tree_to_IDL*): If IDL_ns is NULL, output flag
+	IDLF_OUTPUT_NO_QUALIFY_IDENTS is enabled automatically.
+
+	* IDL.h.new.in: Added a flags and data field to the end of the
+	IDL_tree node type, for application use. The application can
+	assume these will be initialized to zero. Should be backward
+	compatible with apps that don't touch it.
+
+	* util.c (IDL_emit_IDL_type_pre): For sequences output proper
+	typespec.
+
+	* IDL.h.new.in, util.c (IDL_tree_to_IDL_string): New function;
+	just like IDL_tree_to_IDL but returns a GString instead of writing
+	to a file.  Useful for IDL_tree_{error,warning}.
+
+	* IDL.h.new.in: Change functions that return glib heap strings to
+	return gchar instead of char.
+
+	* Makefile.am: Add stamp-parser to EXTRA_DIST so one isn't forced
+	to regenerate parser files. Tweak stamp rule to handle a time
+	change.
+
+	* lexer.l: Strip more whitespace from cpp status. Rework start
+	conditions to be compatible with standard lex (messier but
+	functionally equivalent). A flex generated scanner is the
+	preferred method, however.
+
+1999-03-12  Nuno Ferreira  <nmrf@rnl.ist.utl.pt>
+
+	* Makefile.am: Make parser files generation work when using
+	AM_MAKEFLAGS=-j4.
+
+1999-03-19  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* Makefile.am (IDL.h): Add rule to autoupdate IDL.h.
+	* acinclude.m4 (AC_UPDATE_IF_CHANGED): Don't remove intermediate
+	file.  This prevents unnecessary rebuilding of IDL.h.new.
+
+1999-03-18  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* lexer.l: Handle independent code fragments.
+
+	* IDL.h.new.in (IDLF_CODEFRAGS): New flag; code frags can be used
+	independently of XPIDL.
+
 1999-03-09  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.3.

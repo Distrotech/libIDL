@@ -11,19 +11,28 @@ LIBS			= @GLIB_LIBS@
 
 lexer.c: $(srcdir)/lexer.l
 	@rm -f $@
-	$(LEX) $(LFLAGS) -t $< | sed -e 's/yy/__IDL_/g' >$@
+	$(LEX) $(LFLAGS) -t $(srcdir)/lexer.l | sed -e 's/yy/__IDL_/g' >$@
 
-parser.c parser.h: $(srcdir)/parser.y
-	$(YACC) $(YFLAGS) $<
-	test -f y.tab.c && mv -f y.tab.c parser.c
-	test -f y.tab.h && mv -f y.tab.h parser.h
+stamp-parser: $(srcdir)/parser.y
+	$(YACC) $(YFLAGS) $(srcdir)/parser.y
+	touch $@
+
+parser.c: stamp-parser
+	test -f y.tab.c && mv -f y.tab.c parser.c || touch $@
+
+parser.h: stamp-parser
+	test -f y.tab.h && mv -f y.tab.h parser.h || touch $@
+
+IDL.h: IDL.h.new
+	@:
 
 MOSTLYCLEANFILES	= parser.output y.output
 DISTCLEANFILES		= IDL.h
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
-			  libIDL.def libIDLConf.sh.in
+			  libIDL.def libIDLConf.sh.in \
+			  stamp-parser
 
 info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
@@ -32,7 +41,7 @@ noinst_PROGRAMS		= tstidl
 
 bin_SCRIPTS		= libIDL-config
 
-BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h
+BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h stamp-parser
 
 libIDL_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h
@@ -43,7 +52,6 @@ m4datadir		= $(datadir)/aclocal
 m4data_DATA		= libIDL.m4
 
 tstidl_SOURCES		= tstidl.c
-tstidl_LDFLAGS		= -static
 tstidl_LDADD		= libIDL.la
 
 confexecdir		= $(libdir)
