@@ -9,9 +9,19 @@
 
 int print_repo_id(IDL_tree p, gpointer user_data)
 {
-	if (IDL_NODE_TYPE(p) == IDLN_IDENT && IDL_IDENT_REPO_ID(p)) {
-		printf("%s\n", IDL_IDENT_REPO_ID(p));
-	}
+	char *repo_id = NULL;
+
+	if (IDL_NODE_TYPE(p) == IDLN_INTERFACE)
+		repo_id = IDL_IDENT_REPO_ID(IDL_INTERFACE(p).ident);
+	else if (IDL_NODE_TYPE(p) == IDLN_IDENT &&
+		 IDL_NODE_UP(p) != NULL &&
+		 IDL_NODE_UP(IDL_NODE_UP(p)) != NULL &&
+		 IDL_NODE_TYPE(IDL_NODE_UP(IDL_NODE_UP(p))) == IDLN_ATTR_DCL)
+		repo_id = IDL_IDENT_REPO_ID(p);
+
+	if (repo_id)
+		printf("%s\n", repo_id);
+
 	return IDL_TRUE;
 }
 
