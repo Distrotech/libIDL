@@ -28,6 +28,13 @@
 
 #include <glib.h>
 
+#if @HAVE_WCHAR_H@ /* HAVE_WCHAR_H */
+#include <wchar.h>
+#endif
+#if @HAVE_WCSTR_H@ /* HAVE_WCSTR_H */
+#include <wcstr.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
