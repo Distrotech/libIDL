@@ -187,7 +187,8 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	FILE *input;
 	char *cmd;
 #ifdef HAVE_CPP_PIPE_STDIN
-	char *fmt = CPP_PROGRAM " - %s < \"%s\" 2>/dev/null";
+	char *fmt = CPP_PROGRAM " - %s%s %s < \"%s\" 2>/dev/null";
+	char *wd = "", *dirend;
 #else
 	char *fmt = CPP_PROGRAM " -I- -I%s %s \"%s\" 2>/dev/null";
 	char *s, *tmpfilename;
@@ -207,15 +208,27 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		return -1;
 
 #ifdef HAVE_CPP_PIPE_STDIN
-	cmd = (char *) malloc (strlen (filename) + 
+	if ((dirend = strrchr (filename, '/'))) {
+		int len = dirend - filename + 1;
+		wd = (char *) malloc (len);
+		strncpy (wd, filename, len - 1);
+		wd[len - 1] = 0;
+	}
+
+	cmd = (char *) malloc (strlen (filename) +
+			       (*wd ? 2 : 0) + strlen (wd) +
 			       (cpp_args ? strlen (cpp_args) : 0) +
-			       strlen (fmt) - 4 + 1);
+			       strlen (fmt) - 8 + 1);
 	if (!cmd) {
 		errno = ENOMEM;
 		return -1;
 	}
 
-	sprintf (cmd, fmt, cpp_args ? cpp_args : "", filename);
+	sprintf (cmd, fmt, *wd ? "-I" : "", wd,
+		 cpp_args ? cpp_args : "", filename);
+
+	if (dirend)
+		free (wd);
 #else
 	s = tmpnam (NULL);
 	if (s == NULL)

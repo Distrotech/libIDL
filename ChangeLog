@@ -1,3 +1,8 @@
+1998-10-20  Andrew Veliath  <andrewtv@usa.net>
+
+	* util.c (IDL_parse_filename): Try to make #includes behave more
+	rationally when source IDL file is not in the current directory.
+
 1998-10-14  Andrew Veliath  <andrewtv@usa.net>
 
 	* parser.y (IDL_resolve_const_exp): Allow return of enumerated
