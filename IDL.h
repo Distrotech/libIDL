@@ -276,6 +276,13 @@ struct _IDL_MEMBER {
 extern IDL_tree				IDL_member_new(IDL_tree type_spec,
 						       IDL_tree dcls);
 
+struct _IDL_NATIVE {
+	IDL_tree ident;
+};
+#define IDL_NATIVE(a)			IDL_CHECK_CAST(a, IDLN_NATIVE, idl_native)
+extern IDL_tree				IDL_native_new(IDL_tree ident);
+
+
 struct _IDL_TYPE_DCL {
 	IDL_tree type_spec;
 	IDL_tree dcls;
@@ -444,6 +451,7 @@ typedef enum {
 	IDLN_TYPE_STRUCT,
 	IDLN_TYPE_UNION,
 	IDLN_MEMBER,
+	IDLN_NATIVE,
 	IDLN_CASE_STMT,
 	IDLN_INTERFACE,
 	IDLN_MODULE,
@@ -485,6 +493,7 @@ struct _IDL_tree_node {
 		struct _IDL_TYPE_STRUCT idl_type_struct;
 		struct _IDL_TYPE_UNION idl_type_union;
 		struct _IDL_MEMBER idl_member;
+		struct _IDL_NATIVE idl_native;
 		struct _IDL_CASE_STMT idl_case_stmt;
 		struct _IDL_INTERFACE idl_interface;
 		struct _IDL_MODULE idl_module;

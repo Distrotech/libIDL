@@ -406,7 +406,7 @@ type_dcl:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
 |			struct_type
 |			union_type
 |			enum_type
-|			TOK_NATIVE simple_declarator	{ $$ = $2; }
+|			TOK_NATIVE simple_declarator	{ $$ = IDL_native_new($2); }
 	;
 
 type_declarator:	type_spec declarator_list	{ $$ = IDL_type_dcl_new($1, $2); }

@@ -71,6 +71,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_TYPE_STRUCT",
 	"IDLN_TYPE_UNION",
 	"IDLN_MEMBER",
+	"IDLN_NATIVE",
 	"IDLN_CASE_STMT",
 	"IDLN_INTERFACE",
 	"IDLN_MODULE",
@@ -467,6 +468,12 @@ int IDL_tree_get_node_info(IDL_tree p, char **what, char **who)
 		assert(IDL_NODE_TYPE(IDL_LIST(IDL_MEMBER(p).dcls)._tail) == IDLN_LIST);
 		*who = IDL_IDENT(IDL_LIST(IDL_LIST(IDL_MEMBER(p).dcls)._tail).data).str;
 		break;
+	case IDLN_NATIVE:
+		*what = "native declaration";
+		assert(IDL_NATIVE(p).ident != NULL);
+		assert(IDL_NODE_TYPE(IDL_NATIVE(p).ident) == IDLN_IDENT);
+		*who = IDL_IDENT(IDL_NATIVE(p).ident).str;
+		break;
 	case IDLN_LIST:
 		if (!IDL_LIST(p).data)
 			break;
@@ -705,6 +712,16 @@ IDL_tree IDL_member_new(IDL_tree type_spec, IDL_tree dcls)
 	assign_up_node(p, dcls);
 	IDL_MEMBER(p).type_spec = type_spec;
 	IDL_MEMBER(p).dcls = dcls;
+	
+	return p;
+}
+
+IDL_tree IDL_native_new(IDL_tree ident)
+{
+	IDL_tree p = IDL_node_new(IDLN_NATIVE);
+
+	assign_up_node(p, ident);
+	IDL_NATIVE(p).ident = ident;
 	
 	return p;
 }
@@ -1142,6 +1159,11 @@ int IDL_tree_walk_pre_order(IDL_tree p, IDL_tree_func tree_func, gpointer user_d
 			return IDL_FALSE;
 		break;
 		
+	case IDLN_NATIVE:
+		if (!IDL_tree_walk_pre_order(IDL_NATIVE(p).ident, tree_func, user_data))
+			return IDL_FALSE;
+		break;
+
 	case IDLN_TYPE_DCL:
 		if (!IDL_tree_walk_pre_order(IDL_TYPE_DCL(p).type_spec, tree_func, user_data))
 			return IDL_FALSE;
@@ -1361,6 +1383,11 @@ void IDL_tree_free(IDL_tree p)
 	case IDLN_MEMBER:
 		IDL_tree_free(IDL_MEMBER(p).type_spec);
 		IDL_tree_free(IDL_MEMBER(p).dcls);
+		free(p);
+		break;
+
+	case IDLN_NATIVE:
+		IDL_tree_free(IDL_NATIVE(p).ident);
 		free(p);
 		break;
 
