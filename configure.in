@@ -103,6 +103,7 @@ Makefile.msc
 libIDL-config
 libIDL.m4
 libIDL.spec
+libIDL.pc
 IDL.h.new
 ],[
 AC_UPDATE_IF_CHANGED(IDL.h, IDL.h.new)

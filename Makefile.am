@@ -32,7 +32,8 @@ DISTCLEANFILES		= IDL.h
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
 			  libIDL.def libIDLConf.sh.in \
-			  stamp-parser lexer.c parser.c parser.h
+			  stamp-parser lexer.c parser.c parser.h \
+			  libIDL.pc.in
 
 info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
@@ -70,3 +71,7 @@ libIDLConf.sh: libIDLConf.sh.in Makefile
 		-e 's?\@VERSION\@?$(VERSION)?g' \
 		< $(srcdir)/libIDLConf.sh.in > libIDLConf.tmp \
 		&& mv libIDLConf.tmp libIDLConf.sh
+
+pkgconfigdir = $(libexecdir)/pkgconfig
+pkgconfig_DATA= libIDL.pc
+
