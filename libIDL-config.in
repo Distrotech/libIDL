@@ -74,10 +74,10 @@ if test "$echo_exec_prefix" = "yes"; then
 	echo $exec_prefix
 fi
 if test "$echo_cflags" = "yes"; then
-	all_flags="$all_flags $includes $cflags @GLIB_CFLAGS@"
+	all_flags="$all_flags $includes $cflags `glib-config --cflags`"
 fi
 if test "$echo_libs" = "yes"; then
-	all_flags="$all_flags -L@libdir@ -lIDL @GLIB_LIBS@"
+	all_flags="$all_flags -L@libdir@ -lIDL `glib-config --libs`"
 fi
 
 # Straight out any possible duplicates, but be careful to
