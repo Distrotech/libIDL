@@ -1,17 +1,28 @@
+# -*- mode: makefile -*-
+#
+# libIDL Makefile.am
+#
+# Do not attempt a shared library (i.e. libtoolize) unless you know
+# what you are doing (standard yacc/lex parsers are not reentrant).
+#
+# Copyright (C) 1998 Andrew Veliath <andrewtv@usa.net>
+# Licensed under the GNU General Public License version 2
+#
 AUTOMAKE_OPTIONS = foreign
-CFLAGS = -g -O2 -Wall -pedantic -DYYDEBUG=1
+CFLAGS = -g -O2 -DYYDEBUG=1 -DIDL_LIBRARY
 YFLAGS = -d -v
-LEX_PREFIX = __IDL_
-LEX_OUTPUT_ROOT = lex.$(LEX_PREFIX)
-LFLAGS = -8 -P$(LEX_PREFIX)
+LFLAGS = @LFLAGS@
+# we don't want the lex library
 LIBS =
 
-include_HEADERS = idl.h
+# rule to rename lex' yy prefix
+lexer.c: lexer.l
+	rm -f $@
+	$(LEX) $(LFLAGS) $<
+	sed -e 's/yy/__IDL_/g' $(LEX_OUTPUT_ROOT).c > $@
+	rm -f $(LEX_OUTPUT_ROOT).c
+
+pkginclude_HEADERS = IDL.h
 lib_LIBRARIES = libIDL.a
-noinst_PROGRAMS = tstidl
 
 libIDL_a_SOURCES = parser.y lexer.l util.c
-
-tstidl_LDFLAGS = -L.
-tstidl_LDADD = -lIDL
-tstidl_DEPENDENCIES = libIDL.a

@@ -29,18 +29,18 @@
 #define	yylloc			__IDL_lloc
 #define yyreds			__IDL_reds
 #define yytoks			__IDL_toks
-#define yylhs			__IDL_yylhs
-#define yylen			__IDL_yylen
-#define yydefred 		__IDL_yydefred
-#define yydgoto			__IDL_yydgoto
-#define yysindex 		__IDL_yysindex
-#define yyrindex 		__IDL_yyrindex
-#define yygindex 		__IDL_yygindex
-#define yytable	 		__IDL_yytable
-#define yycheck	 		__IDL_yycheck
-#define	yyerror			__IDL_yyerror
-#define yywarning		__IDL_yywarning
-#define	yyerrorl		__IDL_yyerrorl
-#define yywarningl		__IDL_yywarningl
+#define yylhs			__IDL_lhs
+#define yylen			__IDL_len
+#define yydefred 		__IDL_defred
+#define yydgoto			__IDL_dgoto
+#define yysindex 		__IDL_sindex
+#define yyrindex 		__IDL_rindex
+#define yygindex 		__IDL_gindex
+#define yytable	 		__IDL_table
+#define yycheck	 		__IDL_check
+#define	yyerror			__IDL_error
+#define yywarning		__IDL_warning
+#define	yyerrorl		__IDL_errorl
+#define yywarningl		__IDL_warningl
 
 #endif /* __RENAME_H */

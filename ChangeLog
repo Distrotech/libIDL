@@ -1,5 +1,10 @@
 1998-06-29  Andrew Veliath  <andrewtv@usa.net>
 
+	* configure.in improved
+	
+	* Wee, should now also works with standard lex with new renaming
+	  rule
+	
 	* Now works with standard yacc, but flex will be a requirement
 
 1998-06-24  Andrew Veliath  <andrewtv@usa.net>

@@ -79,6 +79,8 @@ int main(int argc, char *argv[])
 		perror(fn);
 		exit(1);
 	}
+
+	printf("libIDL version: %s\n", IDL_get_version_string());
 	
 	return 0;
 }

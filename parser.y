@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "idl.h"
+#include "IDL.h"
 #include "rename.h"
 #include "util.h"
 
@@ -851,6 +851,11 @@ void yyerror(const char *s)
 void yywarning(const char *s)
 {
 	yywarningl(s, 0);
+}
+
+char *IDL_get_version_string(void)
+{
+	return VERSION;
 }
 
 void __IDL_do_pragma(const char *s)

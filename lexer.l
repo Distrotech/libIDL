@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "idl.h"
+#include "IDL.h"
 #include "rename.h"
 #include "util.h"
 #include "parser.h"

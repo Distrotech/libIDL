@@ -1,13 +1,47 @@
-AC_INIT(idl.h)
-AM_INIT_AUTOMAKE(idl, 0.1)
+# -*- mode: shell-script -*-
+#
+# libIDL configure.in
+#
+# Copyright (C) 1998 Andrew Veliath <andrewtv@usa.net>
+# Licensed under the GNU General Public License version 2
+#
+AC_INIT(IDL.h)
+AM_INIT_AUTOMAKE(libIDL, 0.1)
 AC_PROG_CC
-CPP="/lib/cpp"
-AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 AM_PROG_LEX
+if [[ "$LEX" = "flex" ]]; then
+    LFLAGS="-8"
+else
+    LFLAGS=""
+fi
+AC_SUBST(LFLAGS)
+AC_ARG_WITH(cpp,
+[  --with-cpp=PROGRAM      full path to C preprocessor (default /lib/cpp)],
+CPP="$withval",
+CPP="/lib/cpp")
+AC_MSG_CHECKING(the C preprocessor)
+if [[ ! -x "$CPP" ]]; then
+    AC_MSG_RESULT(warning: cannot execute $CPP)
+else
+    AC_MSG_RESULT(found and executable)
+fi
+AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 AC_PROG_YACC
 AC_PROG_RANLIB
 AC_ISC_POSIX
 AC_STDC_HEADERS
 AC_CHECK_FUNCS(strdup)
-AC_CHECK_LIB(fl, main)
 AC_OUTPUT(Makefile)
+echo
+echo libIDL configuration successful
+echo
+echo "  cpp: \"$CPP\""
+echo "lexer: \"$LEX\""
+echo " yacc: \"$YACC\""
+echo
+if [[ "$LEX" = "flex" ]]; then
+    echo Creating 8-bit safe lexer using flex.
+else
+    echo Creating standard lexer.
+fi
+echo
