@@ -67,5 +67,6 @@ libIDLConf.sh: libIDLConf.sh.in Makefile
 	sed -e 's?\@LIBIDL_LIBDIR\@?$(LIBIDL_LIBDIR)?g' \
 		-e 's?\@LIBIDL_INCLUDEDIR\@?$(LIBIDL_INCLUDEDIR)?g' \
 		-e 's?\@LIBIDL_LIBS\@?$(LIBIDL_LIBS)?g' \
+		-e 's?\@VERSION\@?$(VERSION)?g' \
 		< $(srcdir)/libIDLConf.sh.in > libIDLConf.tmp \
 		&& mv libIDLConf.tmp libIDLConf.sh
