@@ -1861,24 +1861,21 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	if (s == NULL)
 		return -1;
 
+	cwd = g_getcwd();
+	if (!cwd)
+		return -1;
+
 	if (*filename == '/') {
 		linkto = strdup(filename);
 	} else {
-		cwd = g_getcwd();
-		if (!cwd) {
-			errno = ENOMEM;
-			return -1;
-		}
 		linkto = (char *)malloc(strlen(cwd) + strlen(filename) + 2);
 		if (!linkto) {
-			g_free(cwd);
 			errno = ENOMEM;
 			return -1;
 		}
 		strcpy(linkto, cwd);
 		strcat(linkto, "/");
 		strcat(linkto, filename);
-		g_free(cwd);
 	}
 
 	tmpfilename = (char *)malloc(strlen(s) + 3);
@@ -1896,26 +1893,17 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	}
 	free(linkto);
 
-	cwd = g_getcwd();
-	if (!cwd) {
-		free(tmpfilename);
-		errno = ENOMEM;
-		return -1;
-	}
-
 	cmd = (char *)malloc(strlen(tmpfilename) + 
 			     strlen(cwd) +
 			     (cpp_args ? strlen(cpp_args) : 0) +
 			     strlen(fmt) - 6 + 1);
 	if (!cmd) {
-		g_free(cwd);
 		free(tmpfilename);
 		errno = ENOMEM;
 		return -1;
 	}
 
 	sprintf(cmd, fmt, cwd, cpp_args ? cpp_args : "", tmpfilename);
-	g_free(cwd);
 	input = popen(cmd, "r");
 	free(cmd);
 
