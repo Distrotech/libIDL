@@ -315,7 +315,9 @@ module:			TOK_MODULE new_or_prev_scope '{'
 		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
 		YYABORT;
 	}
-	yyerrorv("Empty module declaration `%s' is not legal IDL", IDL_IDENT($2).str);
+	yywarningv(IDL_WARNING1,
+		   "Empty module declaration `%s' is not legal IDL",
+		   IDL_IDENT($2).str);
 
 	$$ = IDL_NODE_UP ($2) ? NULL : IDL_module_new($2, NULL);
 }

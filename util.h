@@ -60,6 +60,7 @@ extern int			IDL_ns_check_for_ambiguous_inheritance(struct _IDL_tree_node *inter
 								       struct _IDL_tree_node *p);
 extern void			IDL_tree_resolve_forward_dcls(struct _IDL_tree_node *p);
 extern void			IDL_tree_remove_nostubs(struct _IDL_tree_node **p);
+extern void			IDL_tree_remove_empty_modules(struct _IDL_tree_node **p);
 
 #ifndef HAVE_CPP_PIPE_STDIN
 extern char *			__IDL_tmp_filename;
