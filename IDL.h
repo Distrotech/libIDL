@@ -238,7 +238,6 @@ struct _IDL_MEMBER {
 extern IDL_tree				IDL_member_new(IDL_tree type_spec,
 						       IDL_tree dcls);
 
-
 struct _IDL_TYPE_DCL {
 	IDL_tree type_spec;
 	IDL_tree dcls;
