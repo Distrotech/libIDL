@@ -1,3 +1,9 @@
+libIDL 0.8.5:
+
+	* use modern automake rather than 1.4 (James Henstridge)
+        * Fix a couple of warnings from sparse (Kjartan Maraas)
+        * Fix parsing of 'const octet' (Jules Colding)
+
 libIDL 0.8.4:
 
 	* Fix aclocal quotation issue (Tomasz K³oczko)
