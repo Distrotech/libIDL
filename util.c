@@ -167,13 +167,9 @@ const char *IDL_get_IDLver_string(void)
 	return "2.2";
 }
 
-static void IDL_tree_check_semantics(IDL_tree *p)
-{
-	IDL_tree_resolve_forward_dcls(*p);
-}
-
 static void IDL_tree_optimize(IDL_tree *p)
 {
+	IDL_tree_process_forward_dcls(p);
 	IDL_tree_remove_inhibits(p);
 	IDL_tree_remove_empty_modules(p);
 }
@@ -305,8 +301,8 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	free(tmpfilename);
 #endif
 
-	IDL_tree_check_semantics(&__IDL_root);
 	IDL_tree_optimize(&__IDL_root);
+
 	if (__IDL_root == NULL)
 		yyerror("File does not generate any useful information");
 
@@ -1693,6 +1689,22 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 	return curitem;
 }
 
+static int remove_list_node(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
+{
+	assert(p != NULL);
+
+	assert(IDL_NODE_TYPE (p) == IDLN_LIST);
+
+	if (list_head)
+		*list_head = IDL_list_remove(*list_head, p);
+	else
+		*root = IDL_list_remove(*root, p);
+	
+	IDL_tree_free(p);
+	
+	return TRUE;
+}
+
 /* Forward Declaration Resolution */
 static int load_forward_dcls(IDL_tree p, GHashTable *table)
 {
@@ -1731,18 +1743,32 @@ static int print_unresolved_forward_dcls(char *s, IDL_tree p)
 	return TRUE;
 }
 
-void IDL_tree_resolve_forward_dcls(IDL_tree p)
+static int load_forward_dcls_to_node_hash(char *s, IDL_tree p, GHashTable *node_hash)
+{
+	g_hash_table_insert(node_hash, IDL_NODE_UP(p), IDL_NODE_UP(IDL_NODE_UP(p)) ?
+			    &IDL_MODULE(IDL_NODE_UP(IDL_NODE_UP(p))).definition_list : NULL);
+	
+	return TRUE;
+}
+
+void IDL_tree_process_forward_dcls(IDL_tree *p)
 {
 	GHashTable *table = g_hash_table_new(IDL_strcase_hash, IDL_strcase_equal);
+	GHashTable *node_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 	int total, unresolved;
 
-	IDL_tree_walk_pre_order(p, (IDL_tree_func)load_forward_dcls, table);
+	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_forward_dcls, table);
 	total = g_hash_table_size(table);
-	IDL_tree_walk_pre_order(p, (IDL_tree_func)resolve_forward_dcls, table);
+	IDL_tree_walk_pre_order(*p, (IDL_tree_func)resolve_forward_dcls, table);
 	unresolved = g_hash_table_size(table);
 	g_hash_table_foreach(table, (GHFunc)print_unresolved_forward_dcls, NULL);
-	g_message("IDL_tree_resolve_forward_dcls: %d of %d forward declarations resolved",
+	g_hash_table_foreach(table, (GHFunc)load_forward_dcls_to_node_hash, node_hash);
+	g_hash_table_foreach(node_hash, (GHFunc)remove_list_node, p);
+	g_message("IDL_tree_process_forward_dcls: %d of %d forward declarations resolved",
 		  total - unresolved, total);
+	g_message("IDL_tree_process_forward_dcls: %d unresolved forward declarations removed",
+		  unresolved);
+	g_hash_table_destroy(node_hash);
 	g_hash_table_destroy(table);
 }
 
@@ -1769,28 +1795,12 @@ static int load_inhibits(IDL_tree p, GHashTable *table)
 	return IDL_TRUE;
 }
 
-static int remove_inhibits(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
-{
-	assert(p != NULL);
-	
-	assert(IDL_NODE_TYPE (p) == IDLN_LIST);
-
-	if (list_head)
-		*list_head = IDL_list_remove(*list_head, p);
-	else
-		*root = IDL_list_remove(*root, p);
-	
-	IDL_tree_free(p);
-	
-	return TRUE;
-}
-
 void IDL_tree_remove_inhibits(struct _IDL_tree_node **p)
 {
 	GHashTable *table = g_hash_table_new(g_direct_hash, g_direct_equal);
 
 	IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_inhibits, table);
-	g_hash_table_foreach(table, (GHFunc)remove_inhibits, p);
+	g_hash_table_foreach(table, (GHFunc)remove_list_node, p);
 	g_message("IDL_tree_remove_inhibits: %d subtree(s) removed", g_hash_table_size(table));
 	g_hash_table_destroy(table);
 }
@@ -1817,22 +1827,6 @@ static int load_empty_modules(IDL_tree p, GHashTable *table)
 	return IDL_TRUE;
 }
 
-static int remove_empty_modules(IDL_tree p, IDL_tree *list_head, IDL_tree *root)
-{
-	assert(p != NULL);
-	
-	assert(IDL_NODE_TYPE (p) == IDLN_LIST);
-
-	if (list_head)
-		*list_head = IDL_list_remove(*list_head, p);
-	else
-		*root = IDL_list_remove(*root, p);
-
-	IDL_tree_free(p);
-	
-	return TRUE;
-}
-
 void IDL_tree_remove_empty_modules(struct _IDL_tree_node **p)
 {
 	gboolean done = FALSE;
@@ -1843,7 +1837,7 @@ void IDL_tree_remove_empty_modules(struct _IDL_tree_node **p)
 		g_message("IDL_tree_remove_empty_modules: removing empty modules, pass #%d", ++count);
 		IDL_tree_walk_pre_order(*p, (IDL_tree_func)load_empty_modules, table);
 		done = g_hash_table_size(table) == 0;
-		g_hash_table_foreach(table, (GHFunc)remove_empty_modules, p);
+		g_hash_table_foreach(table, (GHFunc)remove_list_node, p);
 		g_message("IDL_tree_remove_empty_modules: %d empty module(s) removed", g_hash_table_size(table));
 		g_hash_table_destroy(table);
 	}
