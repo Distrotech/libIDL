@@ -1,12 +1,29 @@
-Welcome to libIDL
-~~~~~~~~~~~~~~~~~
+Introduction
+~~~~~~~~~~~~
 
 libIDL is a small library for creating parse trees of CORBA v2.2
 compliant Interface Definition Language (IDL) files, which is a
 specification for defining interfaces which can be used between
 different CORBA implementations.  Although the primary use of libIDL
 will be for a tool such as an IDL compiler, future uses may include
-use in an interface repository or interface browsing tool.
+use in an interface repository or interface browsing tool.  Since
+libIDL uses the Unix yacc and lex tools, the resulting library is not
+reentrant and must be linked statically.  However, the yacc and lex
+functions are hidden so that it does not conflict with other yacc
+parsers or lex scanners.
+
+
+What it Does
+~~~~~~~~~~~~~
+
+By calling IDL_parse_filename, libIDL performs compilation phases from
+lexical analysis to nearly full semantic analysis, and will attempt to
+generate meaningful errors and warnings for invalid or deprecated
+features, which can be redirected using callbacks.  A parse tree of
+the resulting IDL file is returned, and libIDL supports declarations
+specs which can tag attributes to certain interfaces (the main use is
+to not generate tree nodes or stub information for particular
+interfaces).
 
 
 Emacs Syntax Highlighting for IDL Code

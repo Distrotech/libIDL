@@ -1,7 +1,22 @@
+* Status as of 8/17/98
+
+** Just about everything is working now, except for a few small
+ambiguity cases which may not get detected, but should be easily
+avoidable anyway.  The changeover to using glib is there, and hash
+tables are used extensively now so that the O order has been reduced.
+
+Repository IDs are also generate properly now, along with the three
+pragams, and there is also a declaration spec which can tag certain
+interfaces to not generate tree data.  Error messages have also been
+improved significantly.
+
+The docs are out of date and need revamping.
+
+
 * Status as of 7/18/98
 
-Most needed features are working to read CORBA v2.2 IDL.  See the file
-BUGS to see what else needs to be done; at this point things like
+** Most needed features are working to read CORBA v2.2 IDL.  See the
+file BUGS to see what else needs to be done; at this point things like
 speed are low priority, however a changeover to using glib and more
 efficient data structures like sorted heaps or hashes might be in
 order down the line.  I'm not sure how useful libIDL might be apart

@@ -1,3 +1,18 @@
+1998-08-17  Andrew Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.3
+
+	* Create an IDLF_COMBINE_REOPENED_MODULES to have libIDL combine
+	  all the module declarations into one tree, instead of separate
+	  trees with the same ident node.
+
+	* Add __declspec support.  First one implemented is for
+	  interfaces, so that __declspec (nostubs) interface foo { ... };
+	  won't generate tree node information.  Had to revamp grammar
+	  slightly to get a single lookahead.
+
+	* Change IDL_long_t to IDL_longlong_t (+ unsigned version).
+
 1998-08-10  Andrew Veliath  <andrewtv@usa.net>
 
 	* parser.y: Catch the interface Object construct, which isn't
