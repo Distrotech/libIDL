@@ -110,10 +110,10 @@ struct _IDL_WIDE_CHAR {
 IDL_tree				IDL_wide_char_new(wchar_t *value);
 
 struct _IDL_FIXED {
-	double value;
+	char *value;
 };
 #define IDL_FIXED(a)			((a)->u.idl_fixed)
-IDL_tree				IDL_fixed_new(double value);
+IDL_tree				IDL_fixed_new(char *value);
 
 struct _IDL_FLOAT {
 	double value;

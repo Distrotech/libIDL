@@ -89,7 +89,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	return TOK_INTEGER;
 }
 {fixed_lit}		{
-	yylval.floatp = atof(yytext);
+	yylval.str = strdup(yytext);
 	return TOK_FIXEDP;
 }
 {float_lit}		{
@@ -114,6 +114,7 @@ in			return TOK_IN;
 inout			return TOK_INOUT;
 interface		return TOK_INTERFACE;
 long			return TOK_LONG;
+native			return TOK_NATIVE;
 module			return TOK_MODULE;
 Object			return TOK_OBJECT;
 octet			return TOK_OCTET;

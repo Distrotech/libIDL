@@ -116,7 +116,6 @@ static int			idl_is_parsing = IDL_FALSE;
 	char *str;
 	IDL_long_t integer;
 	double floatp;
-	double fixedp;
 	enum IDL_unaryop unaryop;
 	enum IDL_param_attr paramattr;
 }
@@ -124,16 +123,16 @@ static int			idl_is_parsing = IDL_FALSE;
 %token				TOK_ANY TOK_ATTRIBUTE TOK_BOOLEAN TOK_CASE TOK_CHAR
 %token				TOK_CONST TOK_CONTEXT TOK_DEFAULT TOK_DOUBLE TOK_ENUM
 %token				TOK_EXCEPTION TOK_FALSE TOK_FIXED TOK_FLOAT TOK_IN 
-%token				TOK_INOUT TOK_INTERFACE TOK_LONG TOK_MODULE TOK_OBJECT
+%token				TOK_INOUT TOK_INTERFACE TOK_LONG TOK_NATIVE TOK_MODULE TOK_OBJECT
 %token				TOK_OCTET TOK_ONEWAY TOK_OUT TOK_RAISES TOK_READONLY 
 %token				TOK_SEQUENCE TOK_SHORT TOK_STRING TOK_STRUCT TOK_SWITCH
 %token				TOK_TRUE TOK_TYPEDEF TOK_UNSIGNED TOK_UNION TOK_VOID
 %token				TOK_WCHAR TOK_WSTRING TOK_OP_SCOPE TOK_OP_SHR TOK_OP_SHL
 
 %token <str>			TOK_IDENT TOK_SQSTRING TOK_DQSTRING
+%token <str>			TOK_FIXEDP
 %token <integer>		TOK_INTEGER
 %token <floatp>			TOK_FLOATP
-%token <fixedp>			TOK_FIXEDP
 
 %type <tree>			specification
 %type <tree>			definition_list definition
@@ -249,7 +248,7 @@ type_dcl:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
 |			struct_type
 |			union_type
 |			enum_type
-|			"native" simple_declarator	{ $$ = $2; }
+|			TOK_NATIVE simple_declarator	{ $$ = $2; }
 	;
 
 type_declarator:	type_spec declarator_list	{ $$ = IDL_type_dcl_new($1, $2); }
@@ -1249,8 +1248,12 @@ static void __IDL_tree_free(IDL_tree p)
 		}
 		break;
 
-	case IDLN_INTEGER:
 	case IDLN_FIXED:
+		free(IDL_FIXED(p).value);
+		free(p);
+		break;
+
+	case IDLN_INTEGER:
 	case IDLN_FLOAT:
 	case IDLN_BOOLEAN:
 		free(p);
@@ -1939,7 +1942,7 @@ IDL_tree IDL_wide_char_new(wchar_t *value)
 	return p;
 }
 
-IDL_tree IDL_fixed_new(double value)
+IDL_tree IDL_fixed_new(char *value)
 {
 	IDL_tree p = IDL_node_new(IDLN_FIXED);
 
@@ -2416,6 +2419,7 @@ static IDL_tree IDL_binop_eval_integer(enum IDL_binop op, IDL_tree a, IDL_tree b
 	return p;
 }
 
+#if 0
 static IDL_tree IDL_binop_eval_fixed(enum IDL_binop op, IDL_tree a, IDL_tree b)
 {
 	IDL_tree p = NULL;
@@ -2449,6 +2453,7 @@ static IDL_tree IDL_binop_eval_fixed(enum IDL_binop op, IDL_tree a, IDL_tree b)
 
 	return p;
 }
+#endif
 
 static IDL_tree IDL_binop_eval_float(enum IDL_binop op, IDL_tree a, IDL_tree b)
 {
@@ -2490,7 +2495,9 @@ static IDL_tree IDL_binop_eval(enum IDL_binop op, IDL_tree a, IDL_tree b)
 
 	switch (IDL_NODE_TYPE(a)) {
 	case IDLN_INTEGER: return IDL_binop_eval_integer(op, a, b);
+#if 0
 	case IDLN_FIXED: return IDL_binop_eval_fixed(op, a, b);
+#endif
 	case IDLN_FLOAT: return IDL_binop_eval_float(op, a, b);
 	default: return NULL;
 	}
@@ -2529,10 +2536,11 @@ static IDL_tree IDL_unaryop_eval_fixed(enum IDL_unaryop op, IDL_tree a)
 	case IDL_UNARYOP_PLUS:
 		p = IDL_fixed_new(IDL_FIXED(a).value);
 		break;
-
+#if 0
 	case IDL_UNARYOP_MINUS:
 		p = IDL_fixed_new(-IDL_FIXED(a).value);
 		break;
+#endif
 
 	default:
 		break;
