@@ -709,8 +709,7 @@ ns_new_ident:		ident				{
 		yyerror("duplicate identifier");
 		YYABORT;
 	}
-	/* hook ident->data to the namespace structure */
-	IDL_IDENT($1)._ns_ref = p;
+	assert(IDL_IDENT($1)._ns_ref == p);
 	$$ = p;
 }
 	;
@@ -737,8 +736,7 @@ ns_new_or_prev_ident:	ident				{
 	if ((p = IDL_ns_resolve_ident(idl_ns, $1)) == NULL) {
 		p = IDL_ns_place_new(idl_ns, $1);
 		assert(p != NULL);
-		/* hook ident->data to the namespace structure */
-		IDL_IDENT($1)._ns_ref = p;
+		assert(IDL_IDENT($1)._ns_ref == p);
 	} else {
 		IDL_tree_free($1);
 		assert(IDL_GENTREE(p).data != NULL);
@@ -1524,6 +1522,8 @@ IDL_tree IDL_ns_place_new(IDL_ns ns, IDL_tree ident)
 
 	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
 
+	IDL_IDENT_TO_NS(ident) = p;
+
 	return p;
 }
 
@@ -1548,6 +1548,7 @@ IDL_tree IDL_ns_push_scope_new(IDL_ns ns, IDL_tree ident)
 	assert(IDL_GENTREE(p).data == ident);
 	
 	IDL_NS(ns).current = p;
+	IDL_IDENT_TO_NS(ident) = p;
 	
 	return q;
 }
