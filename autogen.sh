@@ -1,6 +1,9 @@
 #! /bin/sh
 # Run this to generate all the initial makefiles, etc.
 
+srcdir=`dirname $0`
+test -z "$srcdir" && srcdir=.
+
 DIE=0
 
 (autoconf --version) < /dev/null > /dev/null 2>&1 || {
@@ -31,7 +34,7 @@ if test "$DIE" -eq 1; then
 	exit 1
 fi
 
-(test -f IDL.h) || {
+(test -f $srcdir/IDL.h) || {
 	echo "You must run this script in the top-level libIDL directory"
 	exit 1
 }
@@ -41,7 +44,7 @@ if test -z "$*"; then
         echo "to pass any to it, please specify them on the $0 command line."
 fi
 
-for i in .
+for i in $srcdir
 do 
   echo processing $i
   (cd $i; \
@@ -52,7 +55,7 @@ do
 done
 
 echo "Running ./configure --enable-maintainer-mode" "$@"
-./configure --enable-maintainer-mode "$@"
+$srcdir/configure --enable-maintainer-mode "$@"
 
 echo 
 echo "Now type 'make' to compile libIDL."

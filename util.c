@@ -197,6 +197,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	extern FILE *__IDL_in;
 	FILE *input;
 	char *cmd;
+	size_t cmd_len;
 #ifdef HAVE_CPP_PIPE_STDIN
 	char *fmt = CPP_PROGRAM " - %s%s %s < \"%s\" 2>/dev/null";
 	char *wd = "", *dirend;
@@ -229,17 +230,17 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		wd[len - 1] = 0;
 	}
 
-	cmd = (char *) malloc (strlen (filename) +
-			       (*wd ? 2 : 0) + strlen (wd) +
-			       (cpp_args ? strlen (cpp_args) : 0) +
-			       strlen (fmt) - 8 + 1);
+	cmd_len = (strlen (filename) + (*wd ? 2 : 0) + strlen (wd) +
+		  (cpp_args ? strlen (cpp_args) : 0) +
+		  strlen (fmt) - 8 + 1);
+	cmd = (char *) malloc (cmd_len);
 	if (!cmd) {
 		errno = ENOMEM;
 		return -1;
 	}
 
-	sprintf (cmd, fmt, *wd ? "-I" : "", wd,
-		 cpp_args ? cpp_args : "", filename);
+	g_snprintf (cmd, cmd_len, fmt, *wd ? "-I" : "", wd,
+		    cpp_args ? cpp_args : "", filename);
 
 	if (dirend)
 		free (wd);
@@ -279,17 +280,18 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 	free (linkto);
 
-	cmd = (char *) malloc (strlen (tmpfilename) + 
-			       strlen (cwd) +
-			       (cpp_args ? strlen (cpp_args) : 0) +
-			       strlen (fmt) - 6 + 1);
+	cmd_len = (strlen (tmpfilename) + strlen (cwd) +
+		   (cpp_args ? strlen (cpp_args) : 0) +
+		   strlen (fmt) - 6 + 1);
+	cmd = (char *) malloc (cmd_len);
 	if (!cmd) {
 		free (tmpfilename);
 		errno = ENOMEM;
 		return -1;
 	}
 
-	sprintf (cmd, fmt, cwd, cpp_args ? cpp_args : "", tmpfilename);
+	g_snprintf (cmd, cmd_len, fmt,
+		    cwd, cpp_args ? cpp_args : "", tmpfilename);
 #endif
 
 	input = popen (cmd, "r");
@@ -534,68 +536,85 @@ void yywarning (int level, const char *s)
 
 void yyerrorlv (const char *fmt, int ofs, ...)
 {
-	char *msg = (char *) malloc (strlen (fmt) + 2048);
+	gchar *msg;
 	va_list args;
 
 	va_start (args, ofs);
-	vsprintf (msg, fmt, args);
+
+	msg = g_strdup_vprintf (fmt, args);
 	yyerrorl (msg, ofs);
+
 	va_end (args);
-	free (msg);
+
+	g_free (msg);
 }
 
 void yywarninglv (int level, const char *fmt, int ofs, ...)
 {
-	char *msg = (char *) malloc (strlen (fmt) + 2048);
+	gchar *msg;
 	va_list args;
 
 	va_start (args, ofs);
-	vsprintf (msg, fmt, args);
+
+	msg = g_strdup_vprintf (fmt, args);
 	yywarningl (level, msg, ofs);
+
 	va_end (args);
-	free (msg);
+
+	g_free (msg);
 }
 
 void yyerrorv (const char *fmt, ...)
 {
-	char *msg = (char *) malloc (strlen (fmt) + 2048);
+	gchar *msg;
 	va_list args;
 
 	va_start (args, fmt);
-	vsprintf (msg, fmt, args);
+
+	msg = g_strdup_vprintf (fmt, args);
 	yyerror (msg);
+
 	va_end (args);
-	free (msg);
+
+	g_free (msg);
 }
 
 void yywarningv (int level, const char *fmt, ...)
 {
-	char *msg = (char *) malloc (strlen (fmt) + 2048);
+	gchar *msg;
 	va_list args;
 
 	va_start (args, fmt);
-	vsprintf (msg, fmt, args);
+
+	msg = g_strdup_vprintf (fmt, args);
 	yywarning (level, msg);
+
 	va_end (args);
-	free (msg);
+
+	g_free (msg);
 }
 
 void IDL_tree_error (IDL_tree p, const char *fmt, ...)
 {
 	char *file_save = __IDL_cur_filename;
 	int line_save = __IDL_cur_line;
-	char *msg = (char *) malloc (strlen (fmt) + 2048);
+	gchar *msg;
 	va_list args;
 
 	g_return_if_fail (p != NULL);
 
 	__IDL_cur_filename = p->_file;
 	__IDL_cur_line = p->_line;
+
 	va_start (args, fmt);
-	vsprintf (msg, fmt, args);
+
+	msg = g_strdup_vprintf (fmt, args);
 	yyerror (msg);
+
 	va_end (args);
-	free (msg);
+
+	g_free (msg);
+
 	__IDL_cur_filename = file_save;
 	__IDL_cur_line = line_save;
 }
@@ -604,18 +623,23 @@ void IDL_tree_warning (IDL_tree p, int level, const char *fmt, ...)
 {
 	char *file_save = __IDL_cur_filename;
 	int line_save = __IDL_cur_line;
-	char *msg = (char *) malloc (strlen (fmt) + 2048);
+	gchar *msg;
 	va_list args;
 
 	g_return_if_fail (p != NULL);
 
 	__IDL_cur_filename = p->_file;
 	__IDL_cur_line = p->_line;
+
 	va_start (args, fmt);
-	vsprintf (msg, fmt, args);
+
+	msg = g_strdup_vprintf (fmt, args);
 	yywarning (level, msg);
+
 	va_end (args);
-	free (msg);
+
+	g_free (msg);
+
 	__IDL_cur_filename = file_save;
 	__IDL_cur_line = line_save;
 }
