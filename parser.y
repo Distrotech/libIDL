@@ -185,12 +185,14 @@ definition_list:	definition			{ $$ = list_start($1); }
 check_semicolon:	';'
 |			/* empty */			{
 	IDL_tree p = $<tree>0;
-	char *what, *who = NULL;
+	char *what = NULL, *who = NULL;
 	int dienow = 0;
 
 	assert(p != NULL);
 
 	dienow = get_error_strings(p, &what, &who);
+
+	assert(what != NULL);
 	
 	if (who && *who)
 		yyerrorlv("Missing semicolon after %s `%s'",
