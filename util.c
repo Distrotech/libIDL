@@ -460,8 +460,7 @@ void yyerrornv (IDL_tree p, const char *fmt, ...)
 	char *msg = (char *) malloc (strlen (fmt) + 2048);
 	va_list args;
 
-	if (p == NULL)
-		return;
+	assert (p != NULL);
 	
 	__IDL_cur_filename = p->_file;
 	__IDL_cur_line = p->_line;
@@ -481,8 +480,7 @@ void yywarningnv (IDL_tree p, int level, const char *fmt, ...)
 	char *msg = (char *) malloc (strlen (fmt) + 2048);
 	va_list args;
 
-	if (p == NULL)
-		return;
+	assert (p != NULL);
 	
 	__IDL_cur_filename = p->_file;
 	__IDL_cur_line = p->_line;

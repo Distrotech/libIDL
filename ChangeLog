@@ -1,3 +1,9 @@
+1998-10-14  Andrew Veliath  <andrewtv@usa.net>
+
+	* parser.y (IDL_resolve_const_exp): Allow return of enumerated
+	identifiers.  Trying to use an enumeration in an arithmetic
+	expression is disallowed.
+
 1998-10-09  Andrew Veliath  <andrewtv@usa.net>
 
 	* parser.y: (positive_int_const) Improve errors and warnings for

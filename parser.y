@@ -308,7 +308,6 @@ module:			module_declspec new_or_prev_scope '{'
 	if (__IDL_flags & IDLF_COMBINE_REOPENED_MODULES) {
 		if (IDL_NODE_UP ($2) == NULL)
 			module = IDL_module_new ($2, $4);
-		
 		else {
 			module = IDL_NODE_UP ($2);
 			
@@ -668,9 +667,11 @@ unary_op:		'-'				{ $$ = IDL_UNARYOP_MINUS; }
 	;
 
 primary_expr:		scoped_name			{
-	IDL_tree literal;
+	IDL_tree p, literal;
 	
 	assert (IDL_NODE_TYPE ($1) == IDLN_IDENT);
+
+	p = IDL_NODE_UP ($1);
 	
 	if ((literal = IDL_resolve_const_exp ($1, IDLN_ANY))) {
 		++IDL_NODE_REFS (literal);
@@ -1117,7 +1118,7 @@ static const char *IDL_ns_get_cur_prefix (IDL_ns ns)
 }
 
 char *IDL_ns_ident_make_repo_id (IDL_ns ns, IDL_tree p,
-				const char *p_prefix, int *major, int *minor)
+				 const char *p_prefix, int *major, int *minor)
 {
 	GString *s = g_string_new (NULL);
 	const char *prefix;
@@ -1134,11 +1135,11 @@ char *IDL_ns_ident_make_repo_id (IDL_ns ns, IDL_tree p,
 
 	q = IDL_ns_ident_to_qstring (p, "/", 0);
 	g_string_sprintf (s, "IDL:%s%s%s:%d.%d",
-			 prefix ? prefix : "",
-			 prefix && *prefix ? "/" : "",
-			 q,
-			 major ? *major : 1,
-			 minor ? *minor : 0);
+			  prefix ? prefix : "",
+			  prefix && *prefix ? "/" : "",
+			  q,
+			  major ? *major : 1,
+			  minor ? *minor : 0);
 	free (q);
 
 	q = s->str;
@@ -1280,13 +1281,13 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 			*v = 0;
 			s = g_string_new (NULL);
 			g_string_sprintf (s, "%s:%d.%d",
-					 IDL_IDENT_REPO_ID (ident), major, minor);
+					  IDL_IDENT_REPO_ID (ident), major, minor);
 			free (IDL_IDENT_REPO_ID (ident));
 			IDL_IDENT_REPO_ID (ident) = s->str;
 			g_string_free (s, FALSE);
 		} else if (__IDL_is_parsing)
 			yywarningv (IDL_WARNING1, "Cannot find RepositoryID OMG IDL version in ID `%s'",
-				   IDL_IDENT_REPO_ID (ident));
+				    IDL_IDENT_REPO_ID (ident));
 	} else
 		IDL_IDENT_REPO_ID (ident) =
 			IDL_ns_ident_make_repo_id (
@@ -1342,12 +1343,12 @@ static int do_token_error (IDL_tree p, const char *message, gboolean prev)
 	
 	if (who && *who)
 		yyerrorlv ("%s %s `%s'",
-			  prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
-			  message, what, who);
+			   prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
+			   message, what, who);
 	else
 		yyerrorlv ("%s %s",
-			  prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
-			  message, what);
+			   prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
+			   message, what);
 	
 	return dienow;
 }
@@ -1636,7 +1637,12 @@ IDL_tree IDL_resolve_const_exp (IDL_tree p, IDL_tree_type type)
 			IDL_tree q = IDL_NODE_UP (p);
 			
 			assert (q != NULL);
-			if (IDL_NODE_TYPE (q) != IDLN_CONST_DCL) {
+			if (IDL_NODE_UP (q) &&
+			    IDL_NODE_TYPE (IDL_NODE_UP (q)) == IDLN_TYPE_ENUM) {
+				p = q;
+				die = TRUE;
+				break;
+			} else if (IDL_NODE_TYPE (q) != IDLN_CONST_DCL) {
 				p = q;
 				wrong_type = TRUE;
 				die = TRUE;

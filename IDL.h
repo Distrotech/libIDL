@@ -96,7 +96,7 @@ extern IDL_tree		IDL_list_new			(IDL_tree data);
 extern IDL_tree		IDL_list_concat			(IDL_tree orig,
 							 IDL_tree append);
 extern IDL_tree		IDL_list_remove			(IDL_tree list,
-							IDL_tree p);
+							 IDL_tree p);
 extern int		IDL_list_length			(IDL_tree list);
 extern IDL_tree		IDL_list_nth			(IDL_tree list,
 							 int n);
