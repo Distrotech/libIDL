@@ -22,6 +22,7 @@ lexer.c: lexer.l
 	sed -e 's/yy/__IDL_/g' $(LEX_OUTPUT_ROOT).c > $@
 	rm -f $(LEX_OUTPUT_ROOT).c
 
+#info_TEXINFOS = libIDL.texi
 pkginclude_HEADERS = IDL.h
 lib_LIBRARIES = libIDL.a
 

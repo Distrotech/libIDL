@@ -853,9 +853,14 @@ void yywarning(const char *s)
 	yywarningl(s, 0);
 }
 
-char *IDL_get_version_string(void)
+char *IDL_get_libver_string(void)
 {
 	return VERSION;
+}
+
+char *IDL_get_IDLver_string(void)
+{
+	return "2.2";
 }
 
 void __IDL_do_pragma(const char *s)
@@ -1636,14 +1641,10 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	if (input == NULL)
 		return errno;
 
-	if (parse_flags & IDLF_NS_APPEND && !ns)
-		parse_flags &= ~IDLF_NS_APPEND;
-
 	__IDL_in = input;
 	idl_msgcb = cb;
 	flags = parse_flags;
 	idl_ns = IDL_ns_new();
-	__IDL_lex_init();
 	idl_is_parsing = IDL_TRUE;
 	rv = yyparse();
 	idl_is_parsing = IDL_FALSE;

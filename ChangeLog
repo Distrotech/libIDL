@@ -1,5 +1,7 @@
 1998-06-29  Andrew Veliath  <andrewtv@usa.net>
 
+	* Create skeleton texinfo file
+
 	* configure.in improved
 	
 	* Wee, should now also works with standard lex with new renaming

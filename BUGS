@@ -1,0 +1,5 @@
+
+- wide strings not implemented
+
+- if an parse error occurs, memory will be leaked
+

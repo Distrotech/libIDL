@@ -1,4 +1,4 @@
- /**************************************************************************
+/**************************************************************************
 
     IDL.h (IDL AST and namespace components)
 
@@ -39,19 +39,8 @@ extern "C" {
 #define IDL_WARNING			2
 
 /* parse flags for IDL_parse_filename */
-#if 0
 #define IDLF_EVAL_CONST			(1UL << 0)
-#define IDLF_ROOT_APPEND		(1UL << 1)
-#define IDLF_NS_APPEND			(1UL << 2)
-#define IDLF_PREFIX_FILENAME		(1UL << 3)
-#else
-/* not working yet */
-#define IDLF_EVAL_CONST			0 
-#define IDLF_ROOT_APPEND		0
-#define IDLF_NS_APPEND			0
-
-#define IDLF_PREFIX_FILENAME		(1UL << 3)
-#endif
+#define IDLF_PREFIX_FILENAME		(1UL << 1)
 
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
@@ -445,8 +434,6 @@ struct _IDL_ns {
 	IDL_tree current;
 };
 #define IDL_NS(a)			(*a)
-
-extern char *				IDL_get_version_string(void);
 
 typedef int				(*IDL_callback)(int level, int num, int line,
 							const char *filename, const char *s);

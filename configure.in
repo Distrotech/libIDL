@@ -16,7 +16,7 @@ else
 fi
 AC_SUBST(LFLAGS)
 AC_ARG_WITH(cpp,
-[  --with-cpp=PROGRAM      full path to C preprocessor (default /lib/cpp)],
+[  --with-cpp=PROGRAM      full path to C preprocessor [/lib/cpp]],
 CPP="$withval",
 CPP="/lib/cpp")
 AC_MSG_CHECKING(the C preprocessor)
