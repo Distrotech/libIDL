@@ -895,7 +895,8 @@ member:			type_spec declarator_list
 	    g_hash_table_lookup (struct_rdht, $1)) {
 		char *s = IDL_ns_ident_to_qstring (IDL_LIST ($2).data, "::", 0);
 		char *s2 = IDL_ns_ident_to_qstring ($1, "::", 0);
-		yyerrorv ("Member `%s' recurses structure `%s'", s, s2);
+		yyerrorv ("Member `%s' recurses", s);
+		IDL_tree_error ($1, "structure `%s'", s2);
 		g_free (s); g_free (s2);
 	}
 }
