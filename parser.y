@@ -80,7 +80,7 @@ static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 static int			do_token_error(IDL_tree p, const char *message, int prev);
-static int			get_error_strings(IDL_tree p, char **who, char **what);
+static int			get_node_info(IDL_tree p, char **who, char **what);
 
 #ifndef HAVE_CPP_PIPE_STDIN
 char *				__IDL_tmp_filename = NULL;
@@ -1354,7 +1354,7 @@ static int do_token_error(IDL_tree p, const char *message, int prev)
 
 	assert(p != NULL);
 
-	dienow = get_error_strings(p, &what, &who);
+	dienow = get_node_info(p, &what, &who);
 
 	assert(what != NULL);
 	
@@ -1370,7 +1370,7 @@ static int do_token_error(IDL_tree p, const char *message, int prev)
 	return dienow;
 }
 
-static int get_error_strings(IDL_tree p, char **what, char **who)
+static int get_node_info(IDL_tree p, char **what, char **who)
 {
 	int dienow = 0;
 
@@ -1416,7 +1416,7 @@ static int get_error_strings(IDL_tree p, char **what, char **who)
 		assert(IDL_LIST(p)._tail != NULL);
 		if (!IDL_LIST(IDL_LIST(p)._tail).data)
 			break;
-		dienow = get_error_strings(IDL_LIST(IDL_LIST(p)._tail).data, what, who);
+		dienow = get_node_info(IDL_LIST(IDL_LIST(p)._tail).data, what, who);
 		break;
 	case IDLN_ATTR_DCL:
 		*what = "interface attribute";
@@ -1933,13 +1933,31 @@ static gboolean heap_insert_ident(IDL_tree interface_ident, GTree *heap, IDL_tre
 	if ((p = g_tree_lookup(heap, any))) {
 		char *newi;
 		char *i1, *i2;
+		char *what1 = "identifier", *what2 = what1;
+		char *who1, *who2;
+		IDL_tree q;
 
 		assert(IDL_NODE_TYPE(p) == IDLN_IDENT);
 
 		newi = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(interface_ident), "::", 0);
 		i1 = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(p), "::", 0);
 		i2 = IDL_ns_ident_to_qstring(IDL_IDENT_TO_NS(any), "::", 0);
-		yyerrorv("Ambiguous inheritance in interface `%s' from `%s' and `%s'", newi, i1, i2);
+
+		q = p;
+		while (q && (IDL_NODE_TYPE(q) == IDLN_IDENT || IDL_NODE_TYPE(q) == IDLN_LIST))
+			q = IDL_NODE_UP(q);
+		assert(q != NULL);
+		get_node_info(q, &what1, &who1);
+
+		q = any;
+		while (q && (IDL_NODE_TYPE(q) == IDLN_IDENT || IDL_NODE_TYPE(q) == IDLN_LIST))
+			q = IDL_NODE_UP(q);
+		assert(q != NULL);
+		get_node_info(q, &what2, &who2);
+
+		yyerrorv("Ambiguous inheritance in interface `%s' from %s `%s' and %s `%s'",
+			 newi, what1, i1, what2, i2);
+
 		free(newi); free(i1); free(i2);
 
 		return IDL_FALSE;
