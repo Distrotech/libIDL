@@ -300,9 +300,9 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #endif
 
 #ifndef NO_POPEN
-	input = fopen (cmd, "r");
-#else
 	input = popen (cmd, "r");
+#else
+	input = fopen (cmd, "r");
 #endif
 	g_free (cmd);
 
@@ -346,9 +346,9 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	__IDL_tmp_filename = NULL;
 #endif
 #ifndef NO_POPEN
-	fclose (input);
-#else
 	pclose (input);
+#else
+	fclose (input);
 #endif
 #ifndef HAVE_CPP_PIPE_STDIN
 	unlink (tmpfilename);
