@@ -2414,7 +2414,7 @@ void IDL_tree_remove_empty_modules (IDL_tree *p, IDL_ns ns)
 #define save_flag(flagbit,val)	do {				\
 	tfd->data = GUINT_TO_POINTER (				\
  		GPOINTER_TO_UINT (tfd->data) |			\
- 		data->flagbit ? (1U << flagbit##bit) : 0);	\
+ 		(data->flagbit ? (1U << flagbit##bit) : 0));	\
 	data->flagbit = val;					\
 } while (0)
 #define restore_flag(flagbit)	do {			\
