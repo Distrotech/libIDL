@@ -95,57 +95,19 @@ static int			idl_is_parsing = IDL_FALSE;
 	enum IDL_param_attr paramattr;
 }
 
-/* Token aliases which are C reserved words are prefixed with an
-   underscore. */
-
-%token TOK_ANY			"any"
-%token TOK_ATTRIBUTE		"attribute"
-%token TOK_BOOLEAN		"boolean"
-%token TOK_CASE			"_case"
-%token TOK_CHAR			"_char"
-%token TOK_CONST		"_const"
-%token TOK_CONTEXT		"context"
-%token TOK_DEFAULT		"_default"
-%token TOK_DOUBLE		"_double"
-%token TOK_ENUM			"_enum"
-%token TOK_EXCEPTION		"exception"
-%token TOK_FALSE		"FALSE"
-%token TOK_FIXED		"fixed"
-%token TOK_FLOAT		"_float"
-%token TOK_IN			"in"
-%token TOK_INOUT		"inout"
-%token TOK_INTERFACE		"interface"
-%token TOK_LONG			"_long"
-%token TOK_MODULE		"module"
-%token TOK_OBJECT		"Object"
-%token TOK_OCTET		"octet"
-%token TOK_ONEWAY		"oneway"
-%token TOK_OUT			"out"
-%token TOK_RAISES		"raises"
-%token TOK_READONLY		"readonly"
-%token TOK_SEQUENCE		"sequence"
-%token TOK_SHORT		"_short"
-%token TOK_STRING		"string"
-%token TOK_STRUCT		"_struct"
-%token TOK_SWITCH		"_switch"
-%token TOK_TRUE			"TRUE"
-%token TOK_TYPEDEF		"_typedef"
-%token TOK_UNSIGNED		"_unsigned"
-%token TOK_UNION		"_union"
-%token TOK_VOID			"_void"
-%token TOK_WCHAR		"wchar"
-%token TOK_WSTRING		"wstring"
-
-%token TOK_OP_SCOPE		"::"
-%token TOK_OP_SHR		">>"
-%token TOK_OP_SHL		"<<"
+%token				TOK_ANY TOK_ATTRIBUTE TOK_BOOLEAN TOK_CASE TOK_CHAR
+%token				TOK_CONST TOK_CONTEXT TOK_DEFAULT TOK_DOUBLE TOK_ENUM
+%token				TOK_EXCEPTION TOK_FALSE TOK_FIXED TOK_FLOAT TOK_IN 
+%token				TOK_INOUT TOK_INTERFACE TOK_LONG TOK_MODULE TOK_OBJECT
+%token				TOK_OCTET TOK_ONEWAY TOK_OUT TOK_RAISES TOK_READONLY 
+%token				TOK_SEQUENCE TOK_SHORT TOK_STRING TOK_STRUCT TOK_SWITCH
+%token				TOK_TRUE TOK_TYPEDEF TOK_UNSIGNED TOK_UNION TOK_VOID
+%token				TOK_WCHAR TOK_WSTRING TOK_OP_SCOPE TOK_OP_SHR TOK_OP_SHL
 
 %token <str>			TOK_IDENT TOK_SQSTRING TOK_DQSTRING
 %token <integer>		TOK_INTEGER
 %token <floatp>			TOK_FLOATP
 %token <fixedp>			TOK_FIXEDP
-
-%type <str>			sqstring dqstring dqstring_cat
 
 %type <tree>			specification
 %type <tree>			definition_list definition
@@ -167,24 +129,20 @@ static int			idl_is_parsing = IDL_FALSE;
 %type <tree>			case_list case_label fixed_array_size_list
 %type <tree>			fixed_array_size positive_int_const ns_global_ident
 %type <tree>			ns_scoped_name ns_prev_ident ns_new_ident ns_new_or_prev_ident
-
 %type <tree>			param_type_spec op_type_spec parameter_dcls
 %type <tree>			is_raises_expr is_context_expr param_dcl_list
 %type <tree>			param_dcl raises_expr context_expr
-
 %type <tree>			const_exp or_expr xor_expr and_expr shift_expr
 %type <tree>			add_expr mult_expr unary_expr primary_expr literal
-
 %type <tree>			integer_lit
 %type <tree>			string_lit char_lit /* wide_string_lit wide_char_lit */ 
 %type <tree>			fixed_pt_lit floating_pt_lit
 %type <tree>			boolean_lit
 %type <tree>			string_lit_list
-
+%type <str>			sqstring dqstring dqstring_cat
+%type <integer>			signed_int unsigned_int is_readonly is_oneway
 %type <unaryop>			unary_op
 %type <paramattr>		param_attribute
-
-%type <integer>			signed_int unsigned_int is_readonly is_oneway
 
 %%
 
@@ -269,17 +227,17 @@ pop_scope:		/* empty */			{
 }
 	;
 
-module:			"module" ident new_or_prev_scope '{'
+module:			TOK_MODULE ident new_or_prev_scope '{'
 				definition_list
 			'}' pop_scope			{ $$ = IDL_module_new($2, $5); }
 	;
 
-interface_dcl:		"interface" ident new_or_prev_scope z_inheritence '{'
+interface_dcl:		TOK_INTERFACE ident new_or_prev_scope z_inheritence '{'
 				interface_body
 			'}' pop_scope			{ $$ = IDL_interface_new($2, $4, $6); }
 	;
 
-forward_dcl:		"interface" ident
+forward_dcl:		TOK_INTERFACE ident
 			new_or_prev_scope pop_scope	{ $$ = IDL_forward_dcl_new($2); }
 	;
 
@@ -306,7 +264,7 @@ export:			type_dcl ';'
 |			op_dcl ';'
 	;
 
-type_dcl:		"_typedef" type_declarator	{ $$ = $2; }
+type_dcl:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
 |			struct_type
 |			union_type
 |			enum_type
@@ -330,12 +288,12 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
-struct_type:		"_struct" ident new_scope '{'
+struct_type:		TOK_STRUCT ident new_scope '{'
 				member_list
 			'}' pop_scope			{ $$ = IDL_type_struct_new($2, $5); }
 	;
 
-union_type:		"_union" ident new_scope "_switch" '('
+union_type:		TOK_UNION ident new_scope TOK_SWITCH '('
 				switch_type_spec
 			')' '{'
 				switch_body
@@ -356,15 +314,15 @@ case_list:		case_label			{ $$ = list_start($1); }
 |			case_list case_label		{ $$ = list_chain($1, $2); }
 	;
 
-case_label:		"_case" const_exp ':'		{ $$ = IDL_case_label_new($2); }
-|			"_default" ':'			{ $$ = IDL_case_label_new(NULL); }
+case_label:		TOK_CASE const_exp ':'		{ $$ = IDL_case_label_new($2); }
+|			TOK_DEFAULT ':'			{ $$ = IDL_case_label_new(NULL); }
 	;
 
-const_dcl:		"_const" const_type new_ident
+const_dcl:		TOK_CONST const_type new_ident
 			'=' const_exp			{ $$ = IDL_const_dcl_new($2, $3, $5); }
 	;
 
-except_dcl:		"exception" ident new_scope '{'
+except_dcl:		TOK_EXCEPTION ident new_scope '{'
 				member_zlist
 			'}' pop_scope			{ $$ = IDL_except_dcl_new($2, $5); }
 	;
@@ -374,10 +332,10 @@ member_zlist:		/* empty */			{ $$ = NULL; }
 	;
 
 is_readonly:		/* empty */			{ $$ = IDL_FALSE; }
-|			"readonly"			{ $$ = IDL_TRUE; }
+|			TOK_READONLY			{ $$ = IDL_TRUE; }
 	;
 
-attr_dcl:		is_readonly "attribute"
+attr_dcl:		is_readonly TOK_ATTRIBUTE
 			param_type_spec
 			simple_declarator_list		{ $$ = IDL_attr_dcl_new($1, $3, $4); }
 	;
@@ -390,7 +348,7 @@ param_type_spec:	base_type_spec
 	;
 
 is_oneway:		/* empty */			{ $$ = IDL_FALSE; }
-|			"oneway"			{ $$ = IDL_TRUE; }
+|			TOK_ONEWAY			{ $$ = IDL_TRUE; }
 	;
 
 op_dcl:			is_oneway op_type_spec
@@ -400,7 +358,7 @@ op_dcl:			is_oneway op_type_spec
 	;
 
 op_type_spec:		param_type_spec
-|			"_void"				{ $$ = NULL; }
+|			TOK_VOID			{ $$ = NULL; }
 	;
 
 parameter_dcls:		'(' param_dcl_list ')'		{ $$ = $2; }
@@ -416,9 +374,9 @@ param_dcl:		param_attribute
 			simple_declarator		{ $$ = IDL_param_dcl_new($1, $2, $3); }
 	;
 
-param_attribute:	"in"				{ $$ = IDL_PARAM_IN; }
-|			"out"				{ $$ = IDL_PARAM_OUT; }
-|			"inout"				{ $$ = IDL_PARAM_INOUT; }
+param_attribute:	TOK_IN				{ $$ = IDL_PARAM_IN; }
+|			TOK_OUT				{ $$ = IDL_PARAM_OUT; }
+|			TOK_INOUT			{ $$ = IDL_PARAM_INOUT; }
 	;
 
 is_raises_expr:		/* empty */			{ $$ = NULL; }
@@ -429,12 +387,12 @@ is_context_expr:	/* empty */			{ $$ = NULL; }
 |			context_expr
 	;
 
-raises_expr:		"raises" '('
+raises_expr:		TOK_RAISES '('
 				scoped_name_list
 			')'				{ $$ = $3; }
 	;
 
-context_expr:		"context" '('
+context_expr:		TOK_CONTEXT '('
 				string_lit_list
 			')'				{ $$ = $3; }
 	;
@@ -466,8 +424,8 @@ and_expr:		shift_expr
 	;
 
 shift_expr:		add_expr
-|			shift_expr ">>" add_expr	{ do_binop($$, IDL_BINOP_SHR, $1, $3); }
-|			shift_expr "<<" add_expr	{ do_binop($$, IDL_BINOP_SHL, $1, $3); }
+|			shift_expr TOK_OP_SHR add_expr	{ do_binop($$, IDL_BINOP_SHR, $1, $3); }
+|			shift_expr TOK_OP_SHL add_expr	{ do_binop($$, IDL_BINOP_SHL, $1, $3); }
 	;
 
 add_expr:		mult_expr
@@ -521,7 +479,7 @@ literal:		integer_lit
 |			boolean_lit
 	;
 
-enum_type:		"_enum" ident new_scope '{'
+enum_type:		TOK_ENUM ident new_scope '{'
 				enumerator_list
 			'}' pop_scope			{ $$ = IDL_type_enum_new($2, $5); }
 	;
@@ -535,8 +493,8 @@ scoped_name:		ns_scoped_name			{
 	;
 
 ns_scoped_name:		ns_prev_ident
-|			"::" ns_global_ident		{ $$ = $2; }
-|			ns_scoped_name "::"
+|			TOK_OP_SCOPE ns_global_ident		{ $$ = $2; }
+|			ns_scoped_name TOK_OP_SCOPE
 			ident				{
 	IDL_tree p;
 
@@ -590,25 +548,25 @@ template_type_spec:	sequence_type
 |			fixed_pt_type
 	;
 
-sequence_type:		"sequence" '<'
+sequence_type:		TOK_SEQUENCE '<'
 				simple_type_spec ',' positive_int_const
 			'>'				{ $$ = IDL_type_sequence_new($3, $5); }
-|			"sequence" '<'
+|			TOK_SEQUENCE '<'
 				simple_type_spec
 			'>'				{ $$ = IDL_type_sequence_new($3, NULL); }
 	;
 
-floating_pt_type:	"_float"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_FLOAT); }
-|			"_double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_DOUBLE); }
-|			"_long" "_double"		{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_LONGDOUBLE); }
+floating_pt_type:	TOK_FLOAT			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_FLOAT); }
+|			TOK_DOUBLE			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_DOUBLE); }
+|			TOK_LONG TOK_DOUBLE		{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_LONGDOUBLE); }
 	;
 
-fixed_pt_type:		"fixed" '<'
+fixed_pt_type:		TOK_FIXED '<'
 				positive_int_const ',' integer_lit
 			'>'				{ $$ = IDL_type_fixed_new($3, $5); }
 	;
 
-fixed_pt_const_type:	"fixed"				{ $$ = IDL_type_fixed_new(NULL, NULL); }
+fixed_pt_const_type:	TOK_FIXED				{ $$ = IDL_type_fixed_new(NULL, NULL); }
 	;
 
 integer_type:		signed_int			{ $$ = IDL_type_integer_new(IDL_TRUE, $1); }
@@ -620,13 +578,13 @@ signed_int:		signed_short_int		{ $$ = IDL_INTEGER_TYPE_SHORT; }
 |			signed_longlong_int		{ $$ = IDL_INTEGER_TYPE_LONGLONG; }
 	;
 
-signed_short_int:	"_short"
+signed_short_int:	TOK_SHORT
 	;
 
-signed_long_int:	"_long"
+signed_long_int:	TOK_LONG
 	;
 
-signed_longlong_int:	"_long" "_long"
+signed_longlong_int:	TOK_LONG TOK_LONG
 	;
 
 unsigned_int:		unsigned_short_int		{ $$ = IDL_INTEGER_TYPE_SHORT; }
@@ -634,43 +592,43 @@ unsigned_int:		unsigned_short_int		{ $$ = IDL_INTEGER_TYPE_SHORT; }
 |			unsigned_longlong_int		{ $$ = IDL_INTEGER_TYPE_LONGLONG; }
 	;
 
-unsigned_short_int:	"_unsigned" "_short"
+unsigned_short_int:	TOK_UNSIGNED TOK_SHORT
 	;
 
-unsigned_long_int:	"_unsigned" "_long"
+unsigned_long_int:	TOK_UNSIGNED TOK_LONG
 	;
 
-unsigned_longlong_int:	"_unsigned" "_long" "_long"
+unsigned_longlong_int:	TOK_UNSIGNED TOK_LONG TOK_LONG
 	;
 
-char_type:		"_char"				{ $$ = IDL_type_char_new(); }
+char_type:		TOK_CHAR			{ $$ = IDL_type_char_new(); }
 	;
 
-wide_char_type:		"wchar"				{ $$ = IDL_type_wide_char_new(); }
+wide_char_type:		TOK_WCHAR			{ $$ = IDL_type_wide_char_new(); }
 	;
 
-boolean_type:		"boolean"			{ $$ = IDL_type_boolean_new(); }
+boolean_type:		TOK_BOOLEAN			{ $$ = IDL_type_boolean_new(); }
 	;
 
-octet_type:		"octet"				{ $$ = IDL_type_octet_new(); }
+octet_type:		TOK_OCTET			{ $$ = IDL_type_octet_new(); }
 	;
 
-any_type:		"any"				{ $$ = IDL_type_any_new(); }
+any_type:		TOK_ANY				{ $$ = IDL_type_any_new(); }
 	;
 
-object_type:		"Object"			{ $$ = IDL_type_object_new(); }
+object_type:		TOK_OBJECT			{ $$ = IDL_type_object_new(); }
 	;
 
-string_type:		"string" '<'
+string_type:		TOK_STRING '<'
 				positive_int_const
 				'>'			{ $$ = IDL_type_string_new($3); }
-|			"string"			{ $$ = IDL_type_string_new(NULL); }
+|			TOK_STRING			{ $$ = IDL_type_string_new(NULL); }
 	;
 
-wide_string_type:	"wstring" '<'
+wide_string_type:	TOK_WSTRING '<'
 				positive_int_const
 			'>'				{ $$ = IDL_type_wide_string_new($3); }
-|			"wstring"			{ $$ = IDL_type_wide_string_new(NULL); }
+|			TOK_WSTRING			{ $$ = IDL_type_wide_string_new(NULL); }
 	;
 
 declarator_list:	declarator			{ $$ = list_start($1); }
@@ -1651,6 +1609,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 {
 	extern void __IDL_lex_init(void);
 	extern void __IDL_lex_cleanup(void);
+	int yyparse(void);
 	extern FILE *__IDL_in;
 	FILE *input;
 	char *fmt = CPP_PROGRAM " %s %s";

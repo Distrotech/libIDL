@@ -1,6 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
 CFLAGS = -g -O2 -Wall -pedantic -DYYDEBUG=1
-#YACC = yacc
 YFLAGS = -d -v
 LEX_PREFIX = __IDL_
 LEX_OUTPUT_ROOT = lex.$(LEX_PREFIX)
