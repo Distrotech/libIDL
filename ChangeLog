@@ -1,5 +1,7 @@
 2002-03-01  jacob berkman  <jacob@ximian.com>
 
+	* Makefile.am (EXTRA_DIST): remove stamp-parser as this is broken
+
 	* autogen.sh: call automake with --copy
 
 2002-02-04  Mark McLoughlin  <mark@skynet.ie>
