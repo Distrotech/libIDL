@@ -1,3 +1,7 @@
+1999-03-19  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* Makefile.am (IDL.h): Add rule to autoupdate IDL.h.
+
 1999-03-18  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.4.

@@ -18,6 +18,9 @@ parser.c parser.h: $(srcdir)/parser.y
 	test -f y.tab.c && mv -f y.tab.c parser.c
 	test -f y.tab.h && mv -f y.tab.h parser.h
 
+IDL.h: IDL.h.new
+	@:
+
 MOSTLYCLEANFILES	= parser.output y.output
 DISTCLEANFILES		= IDL.h
 
