@@ -1,3 +1,12 @@
+libIDL 0.7.4:
+
+        * remove deprecated glib functions (Shivram U)
+
+libIDL 0.7.3:
+
+        * dist the spec file (Mark)
+        * gcc 3.0 workaround (Fabrice)
+
 Version 0.7.2
 
 	+ workaround for FreeBSD (Mark)
