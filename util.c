@@ -3543,68 +3543,134 @@ gboolean IDL_tree_contains_node(IDL_tree tree, IDL_tree node) {
 	return info.found;
 }
 
-/**************************************************************************
- *		
- *			IsRecursive
+struct IDL_recursive_walker_info {
+	GSList   *ident_list;
+	gboolean  recursive;
+	};
+
+/*
+ * IDL_tree_is_recursive_walker_post:
+ * @walk_frame: a #IDL_tree_func_data structure
+ * @user_data: a #IDL_recursive_walker_info structure.
  *
- **************************************************************************/
+ * If the current node in the parse tree is a structure or union
+ * add its IDLN_IDENT to the ident list contained in @user_data;
+ *
+ * If the current node in the parse tree is a sequence, check to
+ * see if the sequence element type is on the list of IDLN_IDENTs.
+ *
+ * Return value: %FALSE if recursion is detected - this stops the
+ *               walk to the parse tree -, %TRUE otherwise.
+ */
+static gboolean
+IDL_tree_is_recursive_walker_pre (IDL_tree_func_data *walk_frame,
+				  gpointer            user_data)
+{
+	struct IDL_recursive_walker_info *info = user_data;
+	IDL_tree                          node = walk_frame->tree;
 
+	switch (IDL_NODE_TYPE (node)) {
+	case IDLN_TYPE_STRUCT:
+	case IDLN_TYPE_UNION:
+		info->ident_list = g_slist_prepend (info->ident_list,
+						    IDL_TYPE_STRUCT (node).ident);
+		break;
+	case IDLN_TYPE_SEQUENCE: {
+		IDL_tree  seq_type = IDL_TYPE_SEQUENCE (node).simple_type_spec;
+		GSList   *l = info->ident_list;
 
-typedef struct {
-    IDL_tree	startDef;
-    gboolean	isRecur;
-    IDL_tree	hasRecur;
-} IsRecursiveWalkerInfo;
+		if (IDL_NODE_TYPE (seq_type) != IDLN_IDENT)
+			break;
 
-static gboolean 
-is_recursive_walker (IDL_tree_func_data *tfd, gpointer data) {
-	IsRecursiveWalkerInfo	*info = data;
+		g_assert (IDL_IDENT (seq_type).repo_id);
 
-	if ( IDL_NODE_TYPE(tfd->tree) == IDLN_IDENT ) {
-	    IDL_tree def = IDL_NODE_UP(tfd->tree);
-	    IDL_tree_func_data *past = tfd->up;
-	    if (past && past->tree == def )
-	    	return FALSE;	/* IDENT that is name of this type */
+		for (; l; l = l->next) {
+			IDL_tree n = (IDL_tree)l->data;
 
-	    for ( ; past; past = past->up) {
-	    	if ( past->tree == def ) {
-		    if ( def==info->startDef ) {
-		        info->isRecur = 1;
-		    } else {
-		        info->hasRecur = def;
-		    }
-		    return FALSE;	/* IDENT that is typespec within type */
+			g_assert (IDL_IDENT (n).repo_id);
+
+			if (!strcmp (IDL_IDENT (n).repo_id,
+				     IDL_IDENT (seq_type).repo_id)) {
+
+				info->recursive = TRUE;
+				return FALSE;
+			}
 		}
-	    }
-	    /* g_print("[%d] Begin recursive walk of %s.\n", 
-	     * tfd->level, IDL_IDENT(tfd->tree).str); */
-	    IDL_tree_walk2 (def, tfd, IDL_WalkF_TypespecOnly,
-	      /*pre*/is_recursive_walker, /*post*/NULL, info);
-	    /* g_print("[%d] End recursive walk of %s.\n", 
-	     * tfd->level, IDL_IDENT(tfd->tree).str); */
+		}
+		break;
+	default:
+		break;
 	}
- 	return TRUE;	/* continue walking */
+
+	return TRUE;
 }
 
-/**
-    Returns TRUE if {tree} is a recursive type. As far as I know,
-    the only ways to construct a recursive type is:
-    1) Declare a struct X which contains a member with type sequence<X>.
-    2) Declare a union Y which contains a member Y (is this allowed)?
-**/
-gboolean IDL_tree_is_recursive(IDL_tree tree, IDL_tree *hasRecur) {
-	IsRecursiveWalkerInfo	info;
-	info.startDef = tree;
-	info.isRecur = 0;
-	info.hasRecur = 0;
-	IDL_tree_walk2 (tree, /*walk*/NULL, IDL_WalkF_TypespecOnly,
-	  /*pre*/is_recursive_walker, /*post*/NULL, &info);
-	if ( hasRecur ) {
-	    *hasRecur = info.hasRecur;
+/*
+ * IDL_tree_is_recursive_walker_post:
+ * @walk_frame: a #IDL_tree_func_data structure
+ * @user_data: a #IDL_recursive_walker_info structure.
+ *
+ * If the current node in the parse tree is a structure or
+ * union, remove the IDLN_IDENT from the ident list.
+ *
+ * Return value: %TRUE.
+ */
+static gboolean
+IDL_tree_is_recursive_walker_post (IDL_tree_func_data *walk_frame,
+				   gpointer            user_data)
+{
+	struct IDL_recursive_walker_info *info = user_data;
+	IDL_tree                          node = walk_frame->tree;
+
+	switch (IDL_NODE_TYPE (node)) {
+	case IDLN_TYPE_STRUCT:
+	case IDLN_TYPE_UNION: {
+		GSList *link = info->ident_list;
+
+		g_assert (((IDL_tree)link->data) == IDL_TYPE_STRUCT (node).ident);
+
+		info->ident_list = g_slist_remove_link (info->ident_list,
+						        link);
+		g_slist_free_1 (link);
+		}
+		break;
+	default:
+		break;
 	}
-	return info.isRecur;
+
+	return TRUE;
 }
 
+/*
+ * IDL_tree_is_recursive:
+ * @tree: a #IDL_tree.
+ * @hasRecur: dummy argument, not used, deprecated, compatibility cruft.
+ *
+ * Checks whether or not @tree contains recursive types.
+ *
+ * Recursive types may only be constructed using structs/unions which
+ * contain sequences that hold the parent struct/union type.
+ *
+ * Return value: %TRUE if @tree contains recursive types,
+ *               %FALSE otherwise.
+ */
+gboolean
+IDL_tree_is_recursive (IDL_tree tree, gpointer dummy)
+{
+	struct IDL_recursive_walker_info info;
+
+	info.ident_list = NULL;
+	info.recursive  = FALSE;
+
+	IDL_tree_walk2 (tree, 0, IDL_WalkF_TypespecOnly, 
+			IDL_tree_is_recursive_walker_pre, 
+			IDL_tree_is_recursive_walker_post, 
+			&info);
+
+	g_assert (!info.ident_list);
+
+	return info.recursive;
+}
 
 /*
  * Local variables:

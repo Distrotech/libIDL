@@ -1,3 +1,13 @@
+2001-09-03  Mark McLoughlin <mark@skynet.ie>
+
+	Fixes Bug #59824: the time to parse a union seemed to grow 
+			  exponentially with the number of cases.
+
+	* util.c, util.h (IDL_tree_is_recursive): re-implement 
+	correctly. Recursion can only happen using sequences 
+	in structs/unions. Replace unused hasRecur arg with
+	compatibility dummy.
+
 2001-08-02  Havoc Pennington  <hp@pobox.com>
 
 	* Makefile.am: remove libIDL.m4 from build. It collided with

@@ -826,8 +826,8 @@ extern GString *	IDL_tree_to_IDL_string		(IDL_tree p,
 extern gboolean		IDL_tree_contains_node		(IDL_tree p,
 							 IDL_tree searchNode);
 
-extern gboolean 	IDL_tree_is_recursive		(IDL_tree tree, 
-							IDL_tree *hasRecur);
+extern gboolean 	IDL_tree_is_recursive		(IDL_tree tree,
+							 gpointer dummy);
 
 extern gchar *		IDL_do_escapes			(const char *s);
 
