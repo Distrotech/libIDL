@@ -25,6 +25,18 @@ int print_repo_id(IDL_tree p, gpointer user_data)
 	return IDL_TRUE;
 }
 
+int print_interface_forwards(IDL_tree p, gpointer user_data)
+{
+	if (IDL_NODE_TYPE(p) == IDLN_INTERFACE) {
+		char *s = IDL_ns_ident_to_qstring(IDL_INTERFACE(p).ident, "_", 0);
+		
+		printf("struct %s;\n", s);
+
+		free(s);
+	}
+	return IDL_TRUE;
+}
+
 int main(int argc, char *argv[])
 {
 	int rv;
@@ -46,7 +58,7 @@ int main(int argc, char *argv[])
 	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, argc == 3 ? atoi(argv[2]) : 0);
 
 	if (rv == IDL_SUCCESS) {
-		IDL_tree_walk_pre_order(tree, print_repo_id, NULL);
+		IDL_tree_walk_pre_order(tree, print_interface_forwards, NULL);
 		IDL_ns_free(ns);
 		IDL_tree_free(tree);
 	}
