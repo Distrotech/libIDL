@@ -99,8 +99,8 @@ print_ident_comments (IDL_tree_func_data *tfd, WalkData *data)
 				char *comment = list->data;
 				printf ("%s\n", comment);
 			}
-		} else
 			p->flags |= IDLFP_IDENT_VISITED;
+		}
 	}
 
 	return TRUE;
