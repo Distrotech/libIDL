@@ -407,6 +407,8 @@ typedef enum {
 	IDLN_UNARYOP
 } IDL_tree_type;
 
+extern const char *IDL_tree_type_names[];
+
 struct _IDL_tree_node {
 	IDL_tree_type _type;
 	union {
