@@ -647,7 +647,9 @@ is_readonly:		/* empty */			{ $$ = FALSE; }
 |			TOK_READONLY			{ $$ = TRUE; }
 	;
 
-attr_dcl:		z_props is_readonly TOK_ATTRIBUTE
+attr_dcl:		z_props
+			is_readonly
+			TOK_ATTRIBUTE
 			param_type_spec
 			simple_declarator_list		{
 	IDL_tree_node node;
@@ -678,17 +680,17 @@ is_oneway:		/* empty */			{ $$ = FALSE; }
 |			TOK_ONEWAY			{ $$ = TRUE; }
 	;
 
-op_dcl:			is_noscript
+op_dcl:			z_props
+			is_noscript
 			is_oneway
 			op_type_spec
-			z_props
 			new_scope parameter_dcls pop_scope
 			is_raises_expr
 			is_context_expr			{
-	$$ = IDL_op_dcl_new ($2, $3, $5, $6.tree, $8, $9);
-	IDL_OP_DCL ($$).f_noscript = $1;
+	$$ = IDL_op_dcl_new ($3, $4, $5, $6.tree, $8, $9);
+	IDL_OP_DCL ($$).f_noscript = $2;
 	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($6.data);
-	assign_props (IDL_OP_DCL ($$).ident, $4);
+	assign_props (IDL_OP_DCL ($$).ident, $1);
 }
 	;
 
