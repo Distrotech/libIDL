@@ -5,16 +5,18 @@ Summary:   IDL parsing library
 Name:      libIDL
 Version:   %{version}
 Release:   %{release}
-Source:    libIDL-%PACKAGE_VERSION.tar.gz
+Source:    %{name}-%PACKAGE_VERSION.tar.gz
 Vendor:    Andrew T. Veliath <andrewtv@usa.net>
 Copyright: LGPL
 Group:     Libraries
 Prereq:    /sbin/install-info
 Prefix:    /usr
 Docdir:    %prefix/doc
-BuildRoot: /var/tmp/libIDL-%{version}-root
+BuildRoot: /var/tmp/%{name}-%{version}-root
 
 %changelog
+* Fri Oct 12 2001 Ross Golder <ross@golder.org>
+- Updated filenames and paths for libIDL2
 * Mon Sep 24 2001 Mark McLoughlin <mark@skynet.ie>
 - use LIBIDL_VERSION instead of LIBIDL_LIBRARY_VERSION
 * Fri Nov 28 1998 Andrew T. Veliath <andrewtv@usa.net>
@@ -29,7 +31,7 @@ different CORBA implementations.
 %package devel
 Summary:  Header files and libraries needed for libIDL development
 Group:    Development/Libraries
-Requires: libIDL = %{version}
+Requires: %{name} = %{version}
 
 %description devel
 This package includes the header files and libraries needed for
@@ -51,11 +53,11 @@ gzip -9 $RPM_BUILD_ROOT/%prefix/info/*.info
 %postun -p /sbin/ldconfig
 
 %post devel
-/sbin/install-info %prefix/info/libIDL.info.gz %prefix/info/dir
+/sbin/install-info %prefix/info/libIDL2.info.gz %prefix/info/dir
 
 %preun devel
 if [ $1 = 0 ]; then
-	/sbin/install-info --delete %prefix/info/libIDL.info.gz %prefix/info/dir
+	/sbin/install-info --delete %prefix/info/libIDL2.info.gz %prefix/info/dir
 fi
 
 %clean
@@ -69,10 +71,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root)
-%prefix/bin/*
-%prefix/lib/*.sh
+%prefix/bin/libIDL-config-2
+#%prefix/lib/*.sh
+%prefix/lib/pkgconfig/*.pc
 %prefix/lib/lib*.a
 %prefix/lib/lib*.so
-%prefix/info/libIDL.info.gz
-%prefix/include/*
-%prefix/share/aclocal/*
+%prefix/info/libIDL2.info.gz
+%prefix/include/libIDL-2.0/libIDL/*.h
+#%prefix/share/aclocal/*
