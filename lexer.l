@@ -184,18 +184,20 @@ dqstring		\"[^\"\n]*[\"\n]
 	while (isspace (*starttext)) ++starttext;
 	filename = g_malloc (strlen (starttext) + 1);
 
-	sscanf (starttext, "# %d %s", &line, filename);
+	if (sscanf (starttext, "# %d %s", &line, filename) == 2) {
 
-	if (*filename == '"') {
-		filename2 = g_strdup (filename + 1);
-		filename2[strlen (filename) - 2] = 0;
-		g_free (filename);
+		if (*filename == '"') {
+			filename2 = g_strdup (filename + 1);
+			filename2[strlen (filename) - 2] = 0;
+			g_free (filename);
+		} else
+			filename2 = filename;
+
+		IDL_file_set (filename2, line);
+
+		g_free (filename2);
 	} else
-		filename2 = filename;
-
-	IDL_file_set (filename2, line);
-
-	g_free (filename2);
+		g_free (filename);
 }
 <*>{whitespace}						;
 {b8_int}						{
