@@ -1645,8 +1645,8 @@ void IDL_tree_walk (IDL_tree p, IDL_tree parent,
 		    IDL_tree_func pre_tree_func, IDL_tree_func post_tree_func,
 		    gpointer user_data)
 {
-	IDL_tree_walk_real (p, parent ? parent : IDL_NODE_UP (p), pre_tree_func,
-			    post_tree_func, user_data);
+	IDL_tree_walk_real (p, parent ? parent : (p ? IDL_NODE_UP (p) : NULL),
+			    pre_tree_func, post_tree_func, user_data);
 }
 
 void IDL_tree_walk_in_order (IDL_tree p, IDL_tree_func tree_func, gpointer user_data)
