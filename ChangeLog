@@ -1,3 +1,9 @@
+1998-12-03  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* parser.y: Add IDL_inhibit_push, IDL_inhibit_pop,
+	IDL_inhibit_get_level, IDL_file_set and IDL_file_get wrapper
+	functions.
+
 1998-12-01  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* parser.y, lexer.l, util.c, IDL.h: Allow boolean XPIDL

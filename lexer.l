@@ -111,37 +111,13 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 <*>{cpp_status}						{
 	char *filename = (char *) malloc (strlen (yytext) + 1);
-	char *orig;
-	IDL_fileinfo *fi;
+	int line;
 
-	sscanf (yytext, "# %d %s", &__IDL_cur_line, filename);
+	sscanf (yytext, "# %d %s", &line, filename);
 
-	__IDL_cur_filename = g_strdup (filename + 1);
-	__IDL_cur_filename[strlen (filename) - 2] = 0;
-
+	IDL_file_set (filename, line);
+	
 	free (filename);
-
-	if (
-#ifdef HAVE_CPP_PIPE_STDIN
-	!strlen (__IDL_cur_filename)
-#else
-	!strcmp (__IDL_cur_filename, __IDL_tmp_filename)
-#endif
-	) {
-		free (__IDL_cur_filename);
-		__IDL_cur_filename = g_strdup (__IDL_real_filename);
-	}
-
-	if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
-					  (gpointer) &orig, (gpointer) &fi)) {
-		free (__IDL_cur_filename);
-		__IDL_cur_filename = orig;
-		__IDL_cur_fileinfo = fi;
-	} else {
-		fi = g_new0 (IDL_fileinfo, 1);
-		__IDL_cur_fileinfo = fi;
-		g_hash_table_insert (__IDL_filename_hash, __IDL_cur_filename, fi);
-	}
 }
 <*>{whitespace}
 {b8_int}						{

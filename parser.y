@@ -1403,14 +1403,28 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 				__IDL_root_ns, p, NULL, &major, &minor);
 }
 
+int IDL_inhibit_get (void)
+{
+	return __IDL_inhibits;
+}
+
+void IDL_inhibit_push (void)
+{
+	++__IDL_inhibits;
+}
+
+void IDL_inhibit_pop (void)
+{
+	if (--__IDL_inhibits < 0)
+		__IDL_inhibits = 0;
+}
+
 static void IDL_inhibit (IDL_ns ns, const char *s)
 {
 	if (g_strcasecmp ("push", s) == 0)
-		++__IDL_inhibits;
-	else if (g_strcasecmp ("pop", s) == 0) {
-		if (--__IDL_inhibits < 0)
-			__IDL_inhibits = 0;
-	}
+		IDL_inhibit_push ();
+	else if (g_strcasecmp ("pop", s) == 0)
+		IDL_inhibit_pop ();
 }
 
 void __IDL_do_pragma (const char *s)
@@ -1449,6 +1463,51 @@ static IDL_declspec_t IDL_parse_declspec (const char *strspec)
 		yywarningv (IDL_WARNING1, "Ignoring unknown declspec `%s'", strspec);
 
 	return flags;
+}
+
+void IDL_file_set (const char *filename, int line)
+{
+	IDL_fileinfo *fi;
+	char *orig;
+
+	if (filename) {
+		__IDL_cur_filename = g_strdup (filename + 1);
+		__IDL_cur_filename[strlen (filename) - 2] = 0;
+		
+		if (
+#ifdef HAVE_CPP_PIPE_STDIN
+			!strlen (__IDL_cur_filename)
+#else
+			!strcmp (__IDL_cur_filename, __IDL_tmp_filename)
+#endif
+			) {
+			free (__IDL_cur_filename);
+			__IDL_cur_filename = g_strdup (__IDL_real_filename);
+		}
+		
+		if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
+						  (gpointer) &orig, (gpointer) &fi)) {
+			free (__IDL_cur_filename);
+			__IDL_cur_filename = orig;
+			__IDL_cur_fileinfo = fi;
+		} else {
+			fi = g_new0 (IDL_fileinfo, 1);
+			__IDL_cur_fileinfo = fi;
+			g_hash_table_insert (__IDL_filename_hash, __IDL_cur_filename, fi);
+		}
+	}
+
+	if (__IDL_cur_line > 0)
+		__IDL_cur_line = line;
+}
+
+void IDL_file_get (const char **filename, int *line)
+{
+	if (filename)
+		*filename = __IDL_cur_filename;
+
+	if (line)
+		*line = __IDL_cur_line;
 }
 
 static int do_token_error (IDL_tree p, const char *message, gboolean prev)

@@ -645,6 +645,18 @@ extern void		IDL_ns_ID			(IDL_ns ns,
 extern void		IDL_ns_version			(IDL_ns ns,
 							 const char *s);
 
+extern int		IDL_inhibit_get			(void);
+
+extern void		IDL_inhibit_push		(void);
+
+extern void		IDL_inhibit_pop			(void);
+
+extern void		IDL_file_set			(const char *filename,
+							 int line);
+
+extern void		IDL_file_get			(const char **filename,
+							 int *line);
+
 extern IDL_tree		IDL_get_parent_node		(IDL_tree p,
 							 IDL_tree_type type,
 							 int *scope_levels);
