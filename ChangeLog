@@ -1,3 +1,9 @@
+2004-11-05  Kjartan Maraas  <kmaraas@gnome.org>
+
+	* parser.y:
+	* util.c: (IDL_tree_is_recursive): Fix a couple of warnings
+	from sparse.
+
 2004-10-07  James Henstridge  <james@jamesh.id.au>
 
 	* acinclude.m4: quote macro names in AC_DEFUN() calls.

@@ -1739,7 +1739,7 @@ IDL_tree IDL_file_set (const char *filename, int line)
 	IDL_fileinfo *fi;
 	IDL_tree tree = NULL;
 
-	g_return_val_if_fail (__IDL_is_parsing, 0);
+	g_return_val_if_fail (__IDL_is_parsing, NULL);
 
 	if (filename) {
 		const char *oldfilename = __IDL_cur_filename;

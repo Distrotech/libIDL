@@ -3668,7 +3668,7 @@ IDL_tree_is_recursive (IDL_tree tree, gpointer dummy)
 	info.ident_list = NULL;
 	info.recursive  = FALSE;
 
-	IDL_tree_walk2 (tree, 0, IDL_WalkF_TypespecOnly, 
+	IDL_tree_walk2 (tree, NULL, IDL_WalkF_TypespecOnly, 
 			IDL_tree_is_recursive_walker_pre, 
 			IDL_tree_is_recursive_walker_post, 
 			&info);
