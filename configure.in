@@ -19,7 +19,7 @@ if [[ ! -x "$CPP" ]]; then
 else
     AC_MSG_RESULT(found and executable)
 fi
-AC_DEFINE(CPP_PROGRAM, "$CPP")
+AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 AM_PROG_LEX
 if [[ "$LEX" = "flex" ]]; then
     LFLAGS="-8"
