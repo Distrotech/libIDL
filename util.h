@@ -39,9 +39,9 @@
 #  define alloca
 #endif
 
-/* internal parse flags */
-#define IDLFP_XPIDL_PROPERTY	(1UL << 0)
-#define IDLFP_XPIDL_NATIVE	(1UL << 1)
+/* Internal parse flags */
+#define IDLFP_PROPERTIES	(1UL << 0)
+#define IDLFP_NATIVE		(1UL << 1)
 
 typedef struct {
 	unsigned long flags;

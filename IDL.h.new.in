@@ -58,7 +58,8 @@ extern "C" {
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)
 #define IDLF_XPIDL			(1UL << 17)
-#define IDLF_CODEFRAGS			(1UL << 18)
+#define IDLF_PROPERTIES			(1UL << 18)
+#define IDLF_CODEFRAGS			(1UL << 19)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
@@ -529,8 +530,6 @@ struct _IDL_tree_node {
 	IDL_tree_type _type;
 	IDL_tree up;			/* Do not recurse */
 	IDL_declspec_t declspec;
-	/* properties is an XPIDL extension.  It is a hash table of
-	 * case-insensitive string keys to string values. */
 	GHashTable *properties;
 	int refs;
 	char *_file;			/* Internal use */

@@ -58,7 +58,7 @@
 } while (0)
 
 #define assign_props(tree,props)	do {		\
-	if (__IDL_flags & IDLF_XPIDL)			\
+	if (__IDL_flags & IDLF_PROPERTIES)		\
 		IDL_NODE_PROPERTIES (tree) = (props);	\
 	else						\
 		__IDL_free_properties (props);		\
@@ -539,15 +539,12 @@ type_dcl_def:		z_props TOK_TYPEDEF
 			'('				{
 	/* Enable native type scanning */
 	if (__IDL_flags & IDLF_XPIDL)
-		__IDL_flagsi |= IDLFP_XPIDL_NATIVE;
+		__IDL_flagsi |= IDLFP_NATIVE;
 	else {
-		yyerror ("XPIDL syntax not enabled, cannot specify native extension");
+		yyerror ("Native extensions not enabled");
 		YYABORT;
 	}
 }			TOK_NATIVE_TYPE			{
-	/* Disable native type scanning */
-	if (__IDL_flags & IDLF_XPIDL)
-		__IDL_flagsi &= ~IDLFP_XPIDL_NATIVE;
 	$$ = IDL_native_new ($3);
 	IDL_NATIVE ($$).user_type = $6;
 	assign_props (IDL_NATIVE ($$).ident, $1);
@@ -1324,19 +1321,14 @@ z_declspec:		/* empty */			{ $$ = 0; }
 z_props:		/* empty */			{ $$ = NULL; }
 |			'['				{
 	/* Enable property scanning */
-	if (__IDL_flags & IDLF_XPIDL)
-		__IDL_flagsi |= IDLFP_XPIDL_PROPERTY;
+	if (__IDL_flags & IDLF_PROPERTIES)
+		__IDL_flagsi |= IDLFP_PROPERTIES;
 	else {
-		yyerror ("XPIDL syntax not enabled, cannot specify properties");
+		yyerror ("Property syntax not enabled");
 		YYABORT;
 	}
 }			prop_hash
-			']'				{
-	/* Disable property scanning */
-	if (__IDL_flags & IDLF_XPIDL)
-		__IDL_flagsi &= ~IDLFP_XPIDL_PROPERTY;
-	$$ = $3;
-}
+			']'				{ $$ = $3; }
 	;
 
 integer_lit:		TOK_INTEGER			{ $$ = IDL_integer_new ($1); }

@@ -54,6 +54,23 @@
 	return token;					\
 } while (0)
 
+#define SELECT_START				\
+	/* Parser driven start conditions */	\
+	if (__IDL_flagsi & IDLFP_PROPERTIES)	\
+		BEGIN (PROP);			\
+	else if (__IDL_flagsi & IDLFP_NATIVE)	\
+		BEGIN (NATIVE);			\
+	/* Global syntax start conditions */	\
+	else if (__IDL_flags & IDLF_XPIDL)	\
+		BEGIN (XP);			\
+	else if (__IDL_flags & IDLF_CODEFRAGS)	\
+		BEGIN (CFRG);
+
+#define SELECT_RESTART				\
+	SELECT_START				\
+	else					\
+		BEGIN (INITIAL);
+
 extern void		__IDL_do_pragma			(const char *s);
 #ifdef YYDEBUG
 extern int				yydebug;
@@ -89,23 +106,16 @@ dqstring		\"[^\"\n]*[\"\n]
 %p 5000
 
 %s XP
-%x XPPROP XPNAT 
+
+%x PROP
+%x NATIVE
 
 %s CFRG
 %x CFRGX
 
 %%
-	/* Global syntax */
-	if (__IDL_flags & IDLF_XPIDL)
-		BEGIN (XP);
-	else if (__IDL_flags & IDLF_CODEFRAGS)
-		BEGIN (CFRG);
 
-	/* Exclusive parser driven conditions */
-	if (__IDL_flagsi & IDLFP_XPIDL_PROPERTY)
-		BEGIN (XPPROP);
-	else if (__IDL_flagsi & IDLFP_XPIDL_NATIVE)
-		BEGIN (XPNAT);
+	SELECT_START;
 
 <XP,CFRG>^%\{.*						{
 	char *s = yytext + 2;
@@ -135,7 +145,7 @@ dqstring		\"[^\"\n]*[\"\n]
 		codefrag_list_tail = slist;
 	}
 }
-<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{cpp_pragma}	{
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{cpp_pragma}		{
 	int n;
 	char *p = yytext;
 	char *s;
@@ -147,7 +157,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	__IDL_do_pragma (s);
 }
-<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{cpp_status}	{
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{cpp_status}		{
 	char *starttext;
 	char *filename;
 	char *filename2;
@@ -170,7 +180,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	g_free (filename2);
 }
-<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{whitespace}
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{whitespace}
 {b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
@@ -266,16 +276,22 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-<XPPROP>{prop_key}					{
+<PROP>]							{
+	__IDL_flagsi &= ~IDLFP_PROPERTIES;
+	SELECT_RESTART;
+	tokreturn (yytext[0]);
+}
+<PROP>{prop_key}					{
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_PROP_KEY);
 }
-<XPPROP>{prop_value}					{
+<PROP>{prop_value}					{
 	yylval.str = g_strdup (yytext + 1);
 	yylval.str[strlen (yylval.str) - 1] = 0;
 	tokreturn (TOK_PROP_VALUE);
 }
-<XPNAT>{native_type}					{
+<NATIVE>{native_type}					{
+	__IDL_flagsi &= ~IDLFP_NATIVE;
 	yylval.str = g_strdup (yytext);
 	yylval.str[strlen (yylval.str) - 1] = 0;
 	tokreturn (TOK_NATIVE_TYPE);
@@ -290,9 +306,9 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str[strlen (yytext) - 2] = 0;
 	tokreturn (TOK_DQSTRING);
 }
-<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>{newline}		++__IDL_cur_line;
-<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>\/\/.*
-<INITIAL,XP,XPPROP,XPNAT,CFRG,CFRGX>.			tokreturn (yytext[0]);
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>{newline}		++__IDL_cur_line;
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>\/\/.*
+<INITIAL,XP,PROP,NATIVE,CFRG,CFRGX>.			tokreturn (yytext[0]);
 
 %%
 

@@ -306,6 +306,9 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		return IDL_ERROR;
 	}
 
+	if (parse_flags & IDLF_XPIDL)
+		parse_flags |= IDLF_PROPERTIES;
+
 	__IDL_max_msg_level = max_msg_level;
 	__IDL_nerrors = __IDL_nwarnings = 0;
 	__IDL_in = input;
@@ -398,6 +401,9 @@ int IDL_parse_filename_with_input (const char *filename,
 		errno = EINVAL;
 		return -1;
 	}
+
+	if (parse_flags & IDLF_XPIDL)
+		parse_flags |= IDLF_PROPERTIES;
 
 	__IDL_max_msg_level = max_msg_level;
 	__IDL_nerrors = __IDL_nwarnings = 0;
@@ -901,7 +907,7 @@ IDL_tree IDL_list_remove (IDL_tree list, IDL_tree p)
 	IDL_LIST (p).next = NULL;
 	IDL_LIST (p)._tail = p;
 
-	/* Note all tails not updated... */
+	/* Not all tails updated... */
 
 	return new_list;
 }
@@ -1387,12 +1393,14 @@ IDL_tree IDL_check_type_cast (const IDL_tree tree, IDL_tree_type type,
 {
 	if (__IDL_check_type_casts) {
 		if (tree == NULL) {
-			g_warning ("file %s: line %d: (%s) invalid type cast attempt, NULL tree to %s\n",
+			g_warning ("file %s: line %d: (%s) invalid type cast attempt,"
+				   " NULL tree to %s\n",
 				   file, line, function,
 				   IDL_tree_type_names[type]);
 		}
 		else if (IDL_NODE_TYPE (tree) != type) {
-			g_warning ("file %s: line %d: (%s) expected IDL tree type %s, but got %s\n",
+			g_warning ("file %s: line %d: (%s) expected IDL tree type %s,"
+				   " but got %s\n",
 				   file, line, function,
 				   IDL_tree_type_names[type], IDL_NODE_TYPE_NAME (tree));
 
@@ -1742,8 +1750,7 @@ void IDL_tree_walk (IDL_tree p, IDL_tree_func_data *current,
 	tfs.up = current ? current->state : NULL;
 	tfs.start = p;
 
-	if (current)
-		tfd = *current;
+	if (current) tfd = *current;
 	tfd.state = &tfs;
 	tfd.up = current;
 	tfd.tree = p;
@@ -2406,7 +2413,7 @@ void IDL_tree_remove_empty_modules (IDL_tree *p, IDL_ns ns)
 } while (0)
 #define save_flag(flagbit,val)	do {				\
 	GPOINTER_TO_UINT (tfd->data) |=				\
-		data->flagbit ? (1UL <<flagbit##bit) : 0;	\
+		data->flagbit ? (1UL << flagbit##bit) : 0;	\
 	data->flagbit = val;					\
 } while (0)
 #define restore_flag(flagbit)	do {				\

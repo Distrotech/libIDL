@@ -2,6 +2,9 @@
 
 	* Update version to 0.6.4.
 
+	* (IDLF_PROPERTIES): New syntax flag; properties can be used
+	independently of XPIDL.
+
 	* IDL.h.new.in, util.h: Use G_GNUC_PRINTF on warning and error
 	functions.
 
