@@ -1,3 +1,14 @@
+1999-03-09  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.3.
+
+	* util.c (IDL_emit_IDL_type_dcl_pre):
+	(IDL_emit_IDL_type_pre):
+	(IDL_emit_IDL_native_pre): Emit props.
+
+	* parser.y: Add XPIDL properties for type declarations, native and
+	constructed types.
+
 1999-03-08  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.2.

@@ -2785,7 +2785,10 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 	}
 
 	case IDLN_TYPE_ENUM:
-		idataf (data, "enum" DELIM_SPACE);
+		IDL_emit_IDL_indent (tfd, data);
+		data->inline_props = TRUE;
+		IDL_emit_IDL_properties (IDL_TYPE_ENUM (tfd->tree).ident, data);
+		dataf (data, "enum" DELIM_SPACE);
 		IDL_emit_IDL_ident (IDL_TYPE_ENUM (p).ident, tfd, data);
 		dataf (data, DELIM_SPACE "{" DELIM_SPACE);
 		IDL_output_delim (IDL_TYPE_ENUM (p).enumerator_list, tfd, data,
@@ -2812,6 +2815,8 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 		data->su_def = TRUE;
 		if (!su_def)
 			doindent ();
+		data->inline_props = TRUE;
+		IDL_emit_IDL_properties (IDL_TYPE_STRUCT (tfd->tree).ident, data);
 		dataf (data, "struct" DELIM_SPACE);
 		IDL_emit_IDL_ident (IDL_TYPE_STRUCT (p).ident, tfd, data);
 		dataf (data, DELIM_SPACE);
@@ -2832,6 +2837,8 @@ static gboolean IDL_emit_IDL_type_pre (IDL_tree_func_data *tfd, IDL_output_data 
 		data->su_def = TRUE;
 		if (!su_def)
 			doindent ();
+		data->inline_props = TRUE;
+		IDL_emit_IDL_properties (IDL_TYPE_UNION (tfd->tree).ident, data);
 		dataf (data, "union" DELIM_SPACE);
 		IDL_emit_IDL_ident (IDL_TYPE_UNION (p).ident, tfd, data);
 		dataf (data, DELIM_SPACE);
@@ -3029,7 +3036,10 @@ static gboolean IDL_emit_IDL_type_dcl_pre (IDL_tree_func_data *tfd, IDL_output_d
 	gboolean idents;
 	gboolean su_def;
 
-	idataf (data, "typedef" DELIM_SPACE);
+	IDL_emit_IDL_indent (tfd, data);
+	data->inline_props = TRUE;
+	IDL_emit_IDL_properties (IDL_LIST (IDL_TYPE_DCL (tfd->tree).dcls).data, data);
+	dataf (data, "typedef" DELIM_SPACE);
 	idents = data->idents;
 	data->idents = TRUE;
 	su_def = data->su_def;
@@ -3097,7 +3107,10 @@ static gboolean IDL_emit_IDL_except_dcl_pre (IDL_tree_func_data *tfd, IDL_output
 
 static gboolean IDL_emit_IDL_native_pre (IDL_tree_func_data *tfd, IDL_output_data *data)
 {
-	idataf (data, "native" DELIM_SPACE);
+	IDL_emit_IDL_indent (tfd, data);
+	data->inline_props = TRUE;
+	IDL_emit_IDL_properties (IDL_NATIVE (tfd->tree).ident, data);
+	dataf (data, "native" DELIM_SPACE);
 	IDL_emit_IDL_ident (IDL_NATIVE (tfd->tree).ident, tfd, data);
 	if (IDL_NATIVE (tfd->tree).user_type)
 		dataf (data, DELIM_SPACE "(%s)", IDL_NATIVE (tfd->tree).user_type);

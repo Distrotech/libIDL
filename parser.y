@@ -513,12 +513,28 @@ type_dcl:		z_declspec type_dcl_def		{
 }
 	;
 
-type_dcl_def:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
+type_dcl_def:		z_props TOK_TYPEDEF
+			type_declarator			{
+	IDL_tree_node node;
+	IDL_tree p, dcl;
+
+	$$ = $3;
+	node.properties = $1;
+	for (p = IDL_TYPE_DCL ($3).dcls; p; p = IDL_LIST (p).next) {
+		dcl = IDL_LIST (p).data;
+		IDL_tree_properties_copy (&node, dcl);
+	}
+	__IDL_free_properties (node.properties);
+}
 |			struct_type
 |			union_type
 |			enum_type
-|			TOK_NATIVE simple_declarator	{ $$ = IDL_native_new ($2); }
-|			TOK_NATIVE simple_declarator
+|			z_props TOK_NATIVE
+			simple_declarator		{
+	$$ = IDL_native_new ($3);
+	assign_props (IDL_NATIVE ($$).ident, $1);
+}
+|			z_props TOK_NATIVE simple_declarator
 			'('				{
 	/* Enable native type scanning */
 	if (__IDL_flags & IDLF_XPIDL)
@@ -531,8 +547,9 @@ type_dcl_def:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
 	/* Disable native type scanning */
 	if (__IDL_flags & IDLF_XPIDL)
 		__IDL_flagsi &= ~IDLFP_XPIDL_NATIVE;
-	$$ = IDL_native_new ($2);
-	IDL_NATIVE ($$).user_type = $5;
+	$$ = IDL_native_new ($3);
+	IDL_NATIVE ($$).user_type = $6;
+	assign_props (IDL_NATIVE ($$).ident, $1);
 }
 	;
 
@@ -553,29 +570,33 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
-struct_type:		TOK_STRUCT new_scope '{'	{
-	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
-	$$ = IDL_type_struct_new ($2, NULL);
+struct_type:		z_props TOK_STRUCT
+			new_scope '{'			{
+	g_hash_table_insert (__IDL_structunion_ht, $3, $3);
+	$$ = IDL_type_struct_new ($3, NULL);
 }				member_list
 			'}' pop_scope			{
-	g_hash_table_remove (__IDL_structunion_ht, $2);
-	$$ = $<tree>4;
-	__IDL_assign_up_node ($$, $5);
-	IDL_TYPE_STRUCT ($$).member_list = $5;
+	g_hash_table_remove (__IDL_structunion_ht, $3);
+	$$ = $<tree>5;
+	__IDL_assign_up_node ($$, $6);
+	IDL_TYPE_STRUCT ($$).member_list = $6;
+	assign_props (IDL_TYPE_STRUCT ($$).ident, $1);
 }
 	;
 
-union_type:		TOK_UNION new_scope TOK_SWITCH '('
+union_type:		z_props TOK_UNION
+			new_scope TOK_SWITCH '('
 				switch_type_spec
 			')' '{'				{
-	g_hash_table_insert (__IDL_structunion_ht, $2, $2);
-	$$ = IDL_type_union_new ($2, $5, NULL);
+	g_hash_table_insert (__IDL_structunion_ht, $3, $3);
+	$$ = IDL_type_union_new ($3, $6, NULL);
 }				switch_body
 			'}' pop_scope			{
-	g_hash_table_remove (__IDL_structunion_ht, $2);
-	$$ = $<tree>8;
-	__IDL_assign_up_node ($$, $9);
-	IDL_TYPE_UNION ($$).switch_body = $9;
+	g_hash_table_remove (__IDL_structunion_ht, $3);
+	$$ = $<tree>9;
+	__IDL_assign_up_node ($$, $10);
+	IDL_TYPE_UNION ($$).switch_body = $10;
+	assign_props (IDL_TYPE_UNION ($$).ident, $1);
 }
 	;
 
@@ -863,9 +884,13 @@ literal:		integer_lit
 |			boolean_lit
 	;
 
-enum_type:		TOK_ENUM new_ident '{'
+enum_type:		z_props TOK_ENUM
+			new_ident '{'
 				enumerator_list
-			'}'				{ $$ = IDL_type_enum_new ($2, $4); }
+			'}'				{
+	$$ = IDL_type_enum_new ($3, $5);
+	assign_props (IDL_TYPE_ENUM ($$).ident, $1);
+}
 	;
 
 scoped_name:		ns_scoped_name			{
