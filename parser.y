@@ -77,6 +77,7 @@ static void			assign_up_node(IDL_tree up, IDL_tree node);
 static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
+static int			get_error_strings(IDL_tree p, char **who, char **what);
 
 #ifndef HAVE_CPP_PIPE_STDIN
 char *				__IDL_tmp_filename = NULL;
@@ -185,41 +186,11 @@ check_semicolon:	';'
 |			/* empty */			{
 	IDL_tree p = $<tree>0;
 	char *what, *who = NULL;
+	int dienow = 0;
 
 	assert(p != NULL);
 
-	switch (IDL_NODE_TYPE(p)) {
-	case IDLN_TYPE_DCL: what = "type definition"; break;
-	case IDLN_ATTR_DCL: what = "interface attribute"; break;
-	case IDLN_MEMBER: what = "member declaration"; break;
-	case IDLN_CONST_DCL:
-		what = "constant declaration for";
-		who = IDL_IDENT(IDL_CONST_DCL(p).ident).str;
-		break;
-	case IDLN_EXCEPT_DCL:
-		what = "exception";
-		who = IDL_IDENT(IDL_EXCEPT_DCL(p).ident).str;
-		break;
-	case IDLN_OP_DCL:
-		what = "interface operation";
-		who = IDL_IDENT(IDL_OP_DCL(p).ident).str;
-		break;
-	case IDLN_MODULE:
-		what = "module";
-		who = IDL_IDENT(IDL_MODULE(p).ident).str;
-		break;
-	case IDLN_FORWARD_DCL:
-		what = "forward declaration";
-		who = IDL_IDENT(IDL_FORWARD_DCL(p).ident).str;
-		break;
-	case IDLN_INTERFACE:
-		what = "interface";
-		who = IDL_IDENT(IDL_INTERFACE(p).ident).str;
-		break;
-	default:
-		what = "unknown (internal error)";
-		break;
-	}
+	dienow = get_error_strings(p, &what, &who);
 	
 	if (who && *who)
 		yyerrorv("Missing semicolon after %s `%s'", what, who);
@@ -227,6 +198,31 @@ check_semicolon:	';'
 		yyerrorv("Missing semicolon after %s", what);
 		
 	idl_is_okay = IDL_FALSE;
+
+	if (dienow)
+		YYABORT;
+}
+	;
+
+check_comma:		','
+|			/* empty */			{
+	IDL_tree p = $<tree>0;
+	char *what, *who = NULL;
+	int dienow = 0;
+
+	assert(p != NULL);
+
+	dienow = get_error_strings(p, &what, &who);
+
+	if (who && *who)
+		yyerrorv("Missing comma after %s `%s'", what, who);
+	else
+		yyerrorv("Missing comma after %s", what);
+
+	idl_is_okay = IDL_FALSE;
+
+	if (dienow)
+		YYABORT;
 }
 	;
 
@@ -285,7 +281,7 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 
 scoped_name_list:	scoped_name			{ $$ = list_start($1); }
 |			scoped_name_list
-			',' scoped_name			{ $$ = list_chain($1, $3); }
+			check_comma scoped_name		{ $$ = list_chain($1, $3); }
 	;
 
 interface_body:		export_list
@@ -415,7 +411,8 @@ parameter_dcls:		'(' param_dcl_list ')'		{ $$ = $2; }
 	;
 
 param_dcl_list:		param_dcl			{ $$ = list_start($1); }
-|			param_dcl_list ',' param_dcl	{ $$ = list_chain($1, $3); }
+|			param_dcl_list
+			check_comma param_dcl		{ $$ = list_chain($1, $3); }
 	;
 
 param_dcl:		param_attribute
@@ -426,6 +423,12 @@ param_dcl:		param_attribute
 param_attribute:	TOK_IN				{ $$ = IDL_PARAM_IN; }
 |			TOK_OUT				{ $$ = IDL_PARAM_OUT; }
 |			TOK_INOUT			{ $$ = IDL_PARAM_INOUT; }
+|			ident				{
+	yyerrorv("Expecting parameter direction attribute (in, out, inout) before `%s'",
+		 IDL_IDENT($1).str);
+	IDL_tree_free($1);
+	YYABORT;
+}
 	;
 
 is_raises_expr:		/* empty */			{ $$ = NULL; }
@@ -573,7 +576,8 @@ ns_scoped_name:		ns_prev_ident
 	;
 
 enumerator_list:	new_ident			{ $$ = list_start($1); }
-|			enumerator_list ',' new_ident	{ $$ = list_chain($1, $3); }
+|			enumerator_list
+			check_comma new_ident		{ $$ = list_chain($1, $3); }
 	;
 
 member_list:		member				{ $$ = list_start($1); }
@@ -685,7 +689,7 @@ wide_string_type:	TOK_WSTRING '<'
 
 declarator_list:	declarator			{ $$ = list_start($1); }
 |			declarator_list 
-			',' declarator			{ $$ = list_chain($1, $3); }
+			check_comma declarator		{ $$ = list_chain($1, $3); }
 	;
 
 declarator:		simple_declarator
@@ -699,8 +703,8 @@ complex_declarator:	array_declarator
 	;
 
 simple_declarator_list:	simple_declarator		{ $$ = list_start($1); }
-|			simple_declarator_list ','
-			simple_declarator		{ $$ = list_chain($1, $3); }
+|			simple_declarator_list
+			check_comma simple_declarator	{ $$ = list_chain($1, $3); }
 	;
 
 array_declarator:	new_ident
@@ -878,8 +882,8 @@ ns_global_ident:	ident				{
 	;
 
 string_lit_list:	string_lit			{ $$ = list_start($1); }
-|			string_lit_list ',' 
-			string_lit			{ $$ = list_chain($1, $3); }
+|			string_lit_list
+			check_comma string_lit		{ $$ = list_chain($1, $3); }
 	;
 
 positive_int_const:	TOK_INTEGER			{
@@ -1127,6 +1131,100 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 	    curitem = IDL_LIST(curitem).next, i++)
 		/* */;
 	return curitem;
+}
+
+static int get_error_strings(IDL_tree p, char **what, char **who)
+{
+	int rv = 0;
+
+	assert(what != NULL);
+	assert(who != NULL);
+
+	switch (IDL_NODE_TYPE(p)) {
+	case IDLN_TYPE_STRUCT:
+		*what = "structure definition";
+		*who = IDL_IDENT(IDL_TYPE_STRUCT(p).ident).str;
+		break;
+	case IDLN_TYPE_UNION:
+		*what = "union definition";
+		*who = IDL_IDENT(IDL_TYPE_UNION(p).ident).str;
+		break;
+	case IDLN_TYPE_ENUM:
+		*what = "enumeration definition";
+		*who = IDL_IDENT(IDL_TYPE_ENUM(p).ident).str;
+		break;
+	case IDLN_IDENT:
+		*what = "identifier";
+		*who = IDL_IDENT(p).str;
+		break;
+	case IDLN_TYPE_DCL:
+		*what = "type definition";
+		assert(IDL_TYPE_DCL(p).dcls != NULL);
+		assert(IDL_NODE_TYPE(IDL_TYPE_DCL(p).dcls) == IDLN_LIST);
+		assert(IDL_LIST(IDL_TYPE_DCL(p).dcls)._tail != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(IDL_TYPE_DCL(p).dcls)._tail) == IDLN_LIST);
+		*who = IDL_IDENT(IDL_LIST(IDL_LIST(IDL_TYPE_DCL(p).dcls)._tail).data).str;
+		break;
+	case IDLN_MEMBER:
+		*what = "member declaration";
+		assert(IDL_MEMBER(p).dcls != NULL);
+		assert(IDL_NODE_TYPE(IDL_MEMBER(p).dcls) == IDLN_LIST);
+		assert(IDL_LIST(IDL_MEMBER(p).dcls)._tail != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(IDL_MEMBER(p).dcls)._tail) == IDLN_LIST);
+		*who = IDL_IDENT(IDL_LIST(IDL_LIST(IDL_MEMBER(p).dcls)._tail).data).str;
+		break;
+	case IDLN_LIST:
+		if (!IDL_LIST(p).data)
+			break;
+		assert(IDL_LIST(p)._tail != NULL);
+		if (!IDL_LIST(IDL_LIST(p)._tail).data)
+			break;
+		rv = get_error_strings(IDL_LIST(IDL_LIST(p)._tail).data, what, who);
+		break;
+	case IDLN_ATTR_DCL:
+		*what = "interface attribute";
+		assert(IDL_ATTR_DCL(p).simple_declarations != NULL);
+		assert(IDL_NODE_TYPE(IDL_ATTR_DCL(p).simple_declarations) == IDLN_LIST);
+		assert(IDL_LIST(IDL_ATTR_DCL(p).simple_declarations)._tail != NULL);
+		assert(IDL_NODE_TYPE(IDL_LIST(IDL_ATTR_DCL(p).simple_declarations)._tail) == IDLN_LIST);
+		*who = IDL_IDENT(IDL_LIST(IDL_LIST(IDL_ATTR_DCL(p).simple_declarations)._tail).data).str;
+		break;
+	case IDLN_PARAM_DCL:
+		assert(IDL_PARAM_DCL(p).simple_declarator != NULL);
+		assert(IDL_NODE_TYPE(IDL_PARAM_DCL(p).simple_declarator) = IDLN_IDENT);
+		*who = IDL_IDENT(IDL_PARAM_DCL(p).simple_declarator).str;
+		rv = 1;
+		break;
+	case IDLN_CONST_DCL:
+		*what = "constant declaration for";
+		*who = IDL_IDENT(IDL_CONST_DCL(p).ident).str;
+		break;
+	case IDLN_EXCEPT_DCL:
+		*what = "exception";
+		*who = IDL_IDENT(IDL_EXCEPT_DCL(p).ident).str;
+		break;
+	case IDLN_OP_DCL:
+		*what = "interface operation";
+		*who = IDL_IDENT(IDL_OP_DCL(p).ident).str;
+		break;
+	case IDLN_MODULE:
+		*what = "module";
+		*who = IDL_IDENT(IDL_MODULE(p).ident).str;
+		break;
+	case IDLN_FORWARD_DCL:
+		*what = "forward declaration";
+		*who = IDL_IDENT(IDL_FORWARD_DCL(p).ident).str;
+		break;
+	case IDLN_INTERFACE:
+		*what = "interface";
+		*who = IDL_IDENT(IDL_INTERFACE(p).ident).str;
+		break;
+	default:
+		*what = "unknown (internal error)";
+		break;
+	}
+
+	return rv;
 }
 
 void __IDL_tree_print(IDL_tree p)

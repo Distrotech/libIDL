@@ -3,7 +3,7 @@
 # libIDL Makefile.am
 #
 INCLUDES		= -DYYDEBUG=1 -DIDL_LIBRARY @GLIB_INCLUDES@
-YFLAGS			= -d -v
+YFLAGS			= -d -v 2>/dev/null
 LFLAGS			= @LFLAGS@
 LIBS			= @GLIB_LIBS@
 
