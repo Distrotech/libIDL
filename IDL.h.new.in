@@ -103,7 +103,7 @@ typedef long				IDL_longlong_t;
 typedef unsigned long			IDL_ulonglong_t;
 #  warning 64-bit integer type not available, using 32-bit instead
 #endif /* G_HAVE_GINT64 */
-	
+
 typedef unsigned int			IDL_declspec_t;
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
@@ -206,13 +206,13 @@ struct _IDL_IDENT {
 #define IDL_IDENT_REPO_ID(a)		IDL_CHECK_CAST(a, IDLN_IDENT, idl_ident.repo_id)
 extern IDL_tree		IDL_ident_new			(char *str);
 extern void		IDL_queue_new_ident_comment	(const char *str);
-	
+
 enum IDL_float_type {
 	IDL_FLOAT_TYPE_FLOAT,
 	IDL_FLOAT_TYPE_DOUBLE,
 	IDL_FLOAT_TYPE_LONGDOUBLE
 };
-	
+
 struct _IDL_TYPE_FLOAT {
 	enum IDL_float_type f_type;
 };
@@ -521,7 +521,7 @@ typedef enum {
 	IDLN_BINOP,
 	IDLN_UNARYOP,
 	IDLN_CODEFRAG,
-	
+
 	IDLN_LAST
 } IDL_tree_type;
 IDL_IMPORT const char *			IDL_tree_type_names[];
@@ -619,7 +619,7 @@ struct _IDL_tree_node {
 	 IDL_NODE_TYPE(a) == IDLN_TYPE_ENUM ||		\
 	 IDL_NODE_TYPE(a) == IDLN_TYPE_STRUCT ||	\
 	 IDL_NODE_TYPE(a) == IDLN_TYPE_UNION)
-	
+
 typedef struct _IDL_ns *		IDL_ns;
 
 struct _IDL_ns {
@@ -687,7 +687,7 @@ extern IDL_tree		IDL_check_type_cast		(const IDL_tree var,
 							 const char *file,
 							 int line,
 							 const char *function);
-	
+
 extern const char *	IDL_get_libver_string		(void);
 
 extern const char *	IDL_get_IDLver_string		(void);
@@ -712,7 +712,7 @@ extern int		IDL_ns_prefix			(IDL_ns ns,
 
 extern void		IDL_ns_ID			(IDL_ns ns,
 							 const char *s);
-	
+
 extern void		IDL_ns_version			(IDL_ns ns,
 							 const char *s);
 
@@ -787,7 +787,7 @@ extern gchar *		IDL_do_escapes			(const char *s);
 
 extern IDL_tree		IDL_resolve_const_exp		(IDL_tree p,
 							 IDL_tree_type type);
-	
+
 extern IDL_ns		IDL_ns_new			(void);
 
 extern void		IDL_ns_free			(IDL_ns ns);

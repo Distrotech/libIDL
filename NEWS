@@ -1,3 +1,43 @@
+* Status as of 3/23/99
+
+Version 0.6.4 Released
+
+*** Important Changes in 0.6.4 from 0.6.0 which may affect code ***
+
+- Some fields were added to the end of the IDL node structure, and
+IDL_tree_func_data.  Most code shouldn't be affected if you use
+pointers, unless you've hardcoded the struct.  A recompile may be
+necessary if you have hardcoded structs like this.
+
+** New Features for libIDL 0.6.4 from 0.6.0
+
+- Unresolved forward declarations generate warnings now, not errors
+(unless IDLF_PEDANTIC is specified).  These warnings can be turned off
+altogether if the IDLF_IGNORE_FORWARDS parse flag is specified.
+
+- IDL_tree_to_IDL improvements and fixes.
+
+- New function IDL_tree_to_IDL_string works exactly like
+IDL_tree_to_IDL but returns a GString instead.
+
+- More error and warning message improvements.
+
+- XPIDL support is more complete, and is nearing usefulness.
+
+- IDLF_CODEFRAGS and IDLF_PROPERTIES parse flags added to support
+individual enabling without full XPIDL syntax.  If you want the native
+extension, you might as well just enable XPIDL support since you're
+probably going to lose portability anyway.
+
+- Compatibility with standard lex. Although standard lex can be used,
+flex seems to create better and less buggy scanners.
+
+- Miscellaneous fixes the the build process from various people.  If
+you run into problems with undefined symbols in the parser or lexer,
+you might try rm -f stamp-parser and rebuild (hopefully this will be
+fixed in the future sometime, but it's low priority).
+
+
 * Status as of 2/22/99
 
 Version 0.6.0 Released

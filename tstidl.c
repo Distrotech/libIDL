@@ -23,6 +23,8 @@
 #  include <libIDL/IDL.h>
 #endif
 
+#define IDLFP_IDENT_VISITED	(1UL << 0)
+
 typedef struct {
 	IDL_tree tree;
 	IDL_ns ns;
@@ -90,12 +92,15 @@ print_ident_comments (IDL_tree_func_data *tfd, WalkData *data)
 	p = tfd->tree;
 
 	if (IDL_NODE_TYPE (p) == IDLN_IDENT) {
-		printf ("Identifier: %s\n", IDL_IDENT (p).str);
-		for (list = IDL_IDENT (p).comments; list;
-		     list = g_slist_next (list)) {
-			char *comment = list->data;
-			printf ("%s\n", comment);
-		}
+		if (!(p->flags & IDLFP_IDENT_VISITED)) {
+			printf ("Identifier: %s\n", IDL_IDENT (p).str);
+			for (list = IDL_IDENT (p).comments; list;
+			     list = g_slist_next (list)) {
+				char *comment = list->data;
+				printf ("%s\n", comment);
+			}
+		} else
+			p->flags |= IDLFP_IDENT_VISITED;
 	}
 
 	return TRUE;
@@ -196,7 +201,7 @@ main (int argc, char *argv[])
 	{ extern int __IDL_debug;
 	__IDL_debug = argc >= 4 ? TRUE : FALSE; }
 #endif
-	
+
 	IDL_check_cast_enable (TRUE);
 
 	g_message ("libIDL version %s", IDL_get_libver_string ());
