@@ -1953,9 +1953,7 @@ static int is_visited_interface(GHashTable *visited_interfaces, IDL_tree scope)
 	assert(scope != NULL);
 	assert(IDL_NODE_TYPE(scope) == IDLN_GENTREE);
 	/* If already visited, do not visit again */
-	if (g_hash_table_lookup_extended(visited_interfaces, scope, NULL, NULL))
-		return IDL_TRUE;
-	return IDL_FALSE;
+	return g_hash_table_lookup_extended(visited_interfaces, scope, NULL, NULL);
 }
 
 static void mark_visited_interface(GHashTable *visited_interfaces, IDL_tree scope)
@@ -1966,7 +1964,8 @@ static void mark_visited_interface(GHashTable *visited_interfaces, IDL_tree scop
 }
 
 /* Return true if adds went okay */
-static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident_scope, GTree *ident_heap, GHashTable *visited_interfaces)
+static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident_scope,
+					GTree *ident_heap, GHashTable *visited_interfaces)
 {
 	IDL_tree p, q, scope;
 	int insert_conflict = 0;
@@ -2048,7 +2047,8 @@ static int IDL_ns_check_for_ambiguous_inheritance(IDL_tree interface_ident, IDL_
 		if (!s)
 			break;
 
-		if (!IDL_ns_load_idents_to_tables(interface_ident, IDL_LIST(p).data, ident_heap, visited_interfaces))
+		if (!IDL_ns_load_idents_to_tables(interface_ident, IDL_LIST(p).data,
+						  ident_heap, visited_interfaces))
 			is_ambiguous = 1;
 
 		free(s);
@@ -3102,7 +3102,7 @@ static int IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b)
 		      IDL_NODE_TYPE(b) == IDLN_BINOP ||
 		      IDL_NODE_TYPE(a) == IDLN_UNARYOP ||
 		      IDL_NODE_TYPE(b) == IDLN_UNARYOP)) {
-			yyerror("invalid operation on non-integer value");
+			yyerror("Invalid operation on non-integer value");
 			return -1;
 		}
 		break;
@@ -3122,7 +3122,7 @@ static int IDL_unaryop_chktypes(enum IDL_unaryop op, IDL_tree a)
 		if (IDL_NODE_TYPE(a) != IDLN_INTEGER &&
 		    !(IDL_NODE_TYPE(a) == IDLN_BINOP ||
 		      IDL_NODE_TYPE(a) == IDLN_UNARYOP)) {
-			yyerror("operand to complement must be integer");
+			yyerror("Operand to complement must be integer");
 			return -1;
 		}
 		break;
@@ -3144,7 +3144,7 @@ static IDL_tree IDL_binop_eval_integer(enum IDL_binop op, IDL_tree a, IDL_tree b
 
 	case IDL_BINOP_DIV:
 		if (IDL_INTEGER(b).value == 0) {
-			yyerror("divide by zero in constant expression");
+			yyerror("Divide by zero in constant expression");
 			return NULL;
 		}
 		p = IDL_integer_new(IDL_INTEGER(a).value / IDL_INTEGER(b).value);
@@ -3206,7 +3206,7 @@ static IDL_tree IDL_binop_eval_fixed(enum IDL_binop op, IDL_tree a, IDL_tree b)
 
 	case IDL_BINOP_DIV:
 		if (IDL_FIXED(b).value == 0.0) {
-			yyerror("divide by zero in constant expression");
+			yyerror("Divide by zero in constant expression");
 			return NULL;
 		}
 		p = IDL_fixed_new(IDL_FIXED(a).value / IDL_FIXED(b).value);
@@ -3241,7 +3241,7 @@ static IDL_tree IDL_binop_eval_float(enum IDL_binop op, IDL_tree a, IDL_tree b)
 
 	case IDL_BINOP_DIV:
 		if (IDL_FLOAT(b).value == 0.0) {
-			yyerror("divide by zero in constant expression");
+			yyerror("Divide by zero in constant expression");
 			return NULL;
 		}
 		p = IDL_float_new(IDL_FLOAT(a).value / IDL_FLOAT(b).value);
