@@ -388,29 +388,47 @@ interface:		interface_declspec
 
 z_inheritance:		/* empty */			{ $$ = NULL; }
 |			':' scoped_name_list		{
+	GHashTable *table = g_hash_table_new(g_direct_hash, g_direct_equal);
+	gboolean die = FALSE;
 	IDL_tree p = $2;
 
 	assert(IDL_NODE_TYPE(p) == IDLN_LIST);
-	for (; p != NULL; p = IDL_LIST(p).next) {
+	for (; p != NULL && !die; p = IDL_LIST(p).next) {
 		assert(IDL_LIST(p).data != NULL);
 		assert(IDL_NODE_TYPE(IDL_LIST(p).data) == IDLN_IDENT);
+
+		if (g_hash_table_lookup_extended(table, IDL_LIST(p).data, NULL, NULL)) {
+			char *s = IDL_ns_ident_to_qstring(IDL_LIST(p).data, "::", 0);
+			yyerrorv("Cannot inherit from interface `%s' more than once", s);
+			free(s);
+			die = TRUE;
+			break;
+		} else
+			g_hash_table_insert(table, IDL_LIST(p).data, NULL);
+
 		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) == IDLN_FORWARD_DCL) {
-			yyerrorv("Incomplete definition of interface `%s'",
-				 IDL_IDENT(IDL_LIST(p).data).str);
+			char *s = IDL_ns_ident_to_qstring(IDL_LIST(p).data, "::", 0);
+			yyerrorv("Incomplete definition of interface `%s'", s);
 			yyerrornv(IDL_LIST(p).data,
-				 "Previous forward declaration of `%s'",
-				 IDL_IDENT(IDL_LIST(p).data).str);
-			YYABORT;
+				 "Previous forward declaration of `%s'", s);
+			free(s);
+			die = TRUE;
 		}
 		else if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) != IDLN_INTERFACE) {
-			yyerrorv("`%s' is not an interface",
-				 IDL_IDENT(IDL_LIST(p).data).str);
+			char *s = IDL_ns_ident_to_qstring(IDL_LIST(p).data, "::", 0);
+			yyerrorv("`%s' is not an interface", s);
 			yyerrornv(IDL_LIST(p).data,
-				  "Previous declaration of `%s'",
-				  IDL_IDENT(IDL_LIST(p).data).str);
-			YYABORT;
+				  "Previous declaration of `%s'", s);
+			free(s);
+			die = TRUE;
 		}
 	}
+
+	g_hash_table_destroy(table);
+
+	if (die)
+		YYABORT;
+
 	$$ = $2;
 }
 	;
