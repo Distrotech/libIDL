@@ -354,7 +354,7 @@ is_oneway:		/* empty */			{ $$ = IDL_FALSE; }
 op_dcl:			is_oneway op_type_spec
 			ident new_scope parameter_dcls pop_scope
 			is_raises_expr
-			is_context_expr			{ $$ = $2; }
+			is_context_expr			{ $$ = IDL_op_dcl_new($1, $2, $3, $5, $7, $8); }
 	;
 
 op_type_spec:		param_type_spec
