@@ -87,6 +87,10 @@ static IDL_tree		zlist_chain			(IDL_tree a,
 static int		do_token_error			(IDL_tree p,
 							 const char *message,
 							 gboolean prev);
+static void		illegal_context_type_error	(IDL_tree p,
+							 const char *what);
+static void		illegal_type_error		(IDL_tree p,
+							 const char *message);
 %}
 
 %union {
@@ -227,6 +231,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		op_dcl
 %type <tree>		op_dcl_def
 %type <tree>		op_param_type_spec
+%type <tree>		op_param_type_spec_illegal
 %type <tree>		op_type_spec
 %type <tree>		or_expr
 %type <tree>		param_dcl
@@ -263,6 +268,8 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		xor_expr
 %type <tree>		z_definition_list
 %type <tree>		z_inheritance
+%type <tree>		z_new_ident_catch
+%type <tree>		z_new_scope_catch
 %type <tree>		typecode_type
 
 %type <treedata>	parameter_dcls
@@ -568,32 +575,48 @@ constr_type_spec:	struct_type
 |			enum_type
 	;
 
+z_new_ident_catch:	/* empty */			{
+	yyerrorv ("Missing identifier in %s definition", $<str>0);
+	YYABORT;
+}
+|			new_ident
+	;
+
+z_new_scope_catch:	/* empty */			{
+	yyerrorv ("Missing identifier in %s definition", $<str>0);
+	YYABORT;
+}
+|			new_scope
+	;
+
 struct_type:		z_props TOK_STRUCT
-			new_scope '{'			{
-	g_hash_table_insert (__IDL_structunion_ht, $3, $3);
-	$$ = IDL_type_struct_new ($3, NULL);
+			{ $<str>$ = "struct"; }
+			z_new_scope_catch '{'		{
+	g_hash_table_insert (__IDL_structunion_ht, $4, $4);
+	$$ = IDL_type_struct_new ($4, NULL);
 }				member_list
 			'}' pop_scope			{
-	g_hash_table_remove (__IDL_structunion_ht, $3);
-	$$ = $<tree>5;
-	__IDL_assign_up_node ($$, $6);
-	IDL_TYPE_STRUCT ($$).member_list = $6;
+	g_hash_table_remove (__IDL_structunion_ht, $4);
+	$$ = $<tree>6;
+	__IDL_assign_up_node ($$, $7);
+	IDL_TYPE_STRUCT ($$).member_list = $7;
 	assign_props (IDL_TYPE_STRUCT ($$).ident, $1);
 }
 	;
 
 union_type:		z_props TOK_UNION
-			new_scope TOK_SWITCH '('
+			{ $<str>$ = "union"; }
+			z_new_scope_catch TOK_SWITCH '('
 				switch_type_spec
 			')' '{'				{
-	g_hash_table_insert (__IDL_structunion_ht, $3, $3);
-	$$ = IDL_type_union_new ($3, $6, NULL);
+	g_hash_table_insert (__IDL_structunion_ht, $4, $4);
+	$$ = IDL_type_union_new ($4, $7, NULL);
 }				switch_body
 			'}' pop_scope			{
-	g_hash_table_remove (__IDL_structunion_ht, $3);
-	$$ = $<tree>9;
-	__IDL_assign_up_node ($$, $10);
-	IDL_TYPE_UNION ($$).switch_body = $10;
+	g_hash_table_remove (__IDL_structunion_ht, $4);
+	$$ = $<tree>10;
+	__IDL_assign_up_node ($$, $11);
+	IDL_TYPE_UNION ($$).switch_body = $11;
 	assign_props (IDL_TYPE_UNION ($$).ident, $1);
 }
 	;
@@ -685,14 +708,15 @@ attr_dcl:		z_declspec attr_dcl_def		{
 attr_dcl_def:		z_props
 			is_readonly
 			TOK_ATTRIBUTE
+			{ $<str>$ = "attribute"; }
 			param_type_spec
 			simple_declarator_list		{
 	IDL_tree_node node;
 	IDL_tree p, dcl;
 
-	$$ = IDL_attr_dcl_new ($2, $4, $5);
+	$$ = IDL_attr_dcl_new ($2, $5, $6);
 	node.properties = $1;
-	for (p = $5; p; p = IDL_LIST (p).next) {
+	for (p = $6; p; p = IDL_LIST (p).next) {
 		dcl = IDL_LIST (p).data;
 		IDL_tree_properties_copy (&node, dcl);
 	}
@@ -704,9 +728,14 @@ attr_dcl_def:		z_props
 
 param_type_spec:	op_param_type_spec
 |			TOK_VOID			{
-	yyerrorv ("Cannot have void type here");
+	yyerrorv ("Illegal type `void' for %s", $<str>0);
 	$$ = NULL;
 }
+	;
+
+op_param_type_spec_illegal:
+			sequence_type
+|			constr_type_spec
 	;
 
 op_param_type_spec:	base_type_spec
@@ -714,6 +743,10 @@ op_param_type_spec:	base_type_spec
 |			wide_string_type
 |			fixed_pt_type
 |			scoped_name
+|			op_param_type_spec_illegal	{
+	illegal_context_type_error ($1, $<str>0);
+	$$ = $1;
+}
 	;
 
 is_noscript:		/* empty */			{ $$ = FALSE; }
@@ -746,7 +779,8 @@ op_dcl_def:		z_props
 }
 	;
 
-op_type_spec:		op_param_type_spec
+op_type_spec:		{ $<str>$ = "operation return value"; }
+			op_param_type_spec		{ $$ = $2; }
 |			TOK_VOID			{ $$ = NULL; }
 	;
 
@@ -778,9 +812,10 @@ param_dcl_list:		param_dcl			{ $$ = list_start ($1, TRUE); }
 
 param_dcl:		z_props
 			param_attribute
+			{ $<str>$ = "parameter"; }
 			param_type_spec
 			simple_declarator		{
-	$$ = IDL_param_dcl_new ($2, $3, $4);
+	$$ = IDL_param_dcl_new ($2, $4, $5);
 	assign_props (IDL_PARAM_DCL ($$).simple_declarator, $1);
 }
 	;
@@ -890,10 +925,11 @@ literal:		integer_lit
 	;
 
 enum_type:		z_props TOK_ENUM
-			new_ident '{'
+			{ $<str>$ = "enum"; }
+			z_new_ident_catch '{'
 				enumerator_list
 			'}'				{
-	$$ = IDL_type_enum_new ($3, $5);
+	$$ = IDL_type_enum_new ($4, $6);
 	assign_props (IDL_TYPE_ENUM ($$).ident, $1);
 }
 	;
@@ -1708,6 +1744,24 @@ static int do_token_error (IDL_tree p, const char *message, gboolean prev)
 		IDL_tree_error (p, "%s %s", message, what);
 	
 	return dienow;
+}
+
+static void illegal_context_type_error (IDL_tree p, const char *what)
+{
+	GString *s = g_string_new (NULL);
+
+	g_string_sprintf (s, "Illegal type `%%s' for %s", what);
+	illegal_type_error (p, s->str);
+	g_string_free (s, TRUE);
+}
+
+static void illegal_type_error (IDL_tree p, const char *message)
+{
+	GString *s;
+
+	s = IDL_tree_to_IDL_string (p, NULL, IDLF_OUTPUT_NO_NEWLINES);
+	yyerrorv (message, s->str);
+	g_string_free (s, TRUE);
 }
 
 static IDL_tree list_start (IDL_tree a, gboolean filter_null)
