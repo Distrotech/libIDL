@@ -394,7 +394,7 @@ typedef enum {
 } IDL_tree_type;
 
 struct _IDL_tree_node {
-	IDL_tree_type type;
+	IDL_tree_type _type;
 	union {
 		struct _IDL_LIST idl_list;
 		struct _IDL_GENTREE idl_gentree;
@@ -432,7 +432,7 @@ struct _IDL_tree_node {
 		struct _IDL_UNARYOP idl_unaryop;
 	} u;
 };
-#define IDL_NODE_TYPE(a)		((a)->type)
+#define IDL_NODE_TYPE(a)		((a)->_type)
 
 typedef struct _IDL_ns *		IDL_ns;
 
