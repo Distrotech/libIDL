@@ -52,15 +52,31 @@ EXPORTS
 	IDL_module_new
 	IDL_binop_new
 	IDL_unaryop_new
+	IDL_codefrag_new
 	IDL_check_type_cast
 	IDL_parse_filename
 	IDL_parse_filename_with_input
 	IDL_ns_prefix
 	IDL_ns_ID
 	IDL_ns_version
+	IDL_inhibit_get
+	IDL_inhibit_push
+	IDL_inhibit_pop
+	IDL_file_set
+	IDL_file_get
 	IDL_get_parent_node
+	IDL_tree_get_scope
+	IDL_tree_get_node_info
+	IDL_tree_error
+	IDL_tree_warning
+	IDL_tree_property_get
+	IDL_tree_property_set
+	IDL_tree_property_remove
+	IDL_tree_walk
 	IDL_tree_walk_in_order
 	IDL_tree_free
+	IDL_tree_to_IDL
+	IDL_do_escapes
 	IDL_resolve_const_exp
 	IDL_ns_new
 	IDL_ns_free
@@ -73,4 +89,5 @@ EXPORTS
 	IDL_ns_pop_scope
 	IDL_ns_qualified_ident_new
 	IDL_ns_ident_to_qstring
+	IDL_ns_scope_levels_from_here
 	IDL_ns_ident_make_repo_id
