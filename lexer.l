@@ -279,6 +279,7 @@ wstring			tokreturn (TOK_WSTRING);
 	tokreturn (TOK_DQSTRING);
 }
 <*>{newline}		++__IDL_cur_line;
+\/\/.*
 <*>.			tokreturn (yytext[0]);
 
 %%
