@@ -574,9 +574,9 @@ extern IDL_tree				IDL_get_parent_node(IDL_tree p,
 							    IDL_tree_type type,
 							    int *scope_levels);
 
-extern int				IDL_tree_walk_pre_order(IDL_tree p,
-								IDL_tree_func tree_func,
-								gpointer user_data);
+extern int				IDL_tree_walk_in_order(IDL_tree p,
+							       IDL_tree_func tree_func,
+							       gpointer user_data);
 
 extern void				IDL_tree_free(IDL_tree root);
 
