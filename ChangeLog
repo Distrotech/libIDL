@@ -1,3 +1,11 @@
+2003-04-28  Nick Lewycky  <nicholas@metrix.on.ca>
+
+	* lexer.l (escaped_ident): add '_' escaped keyword
+	identifier support.
+
+	* BUGS: upd.
+	* util.c: add TODO
+
 2003-04-12  Masahiro Sakai  <sakai@tom.sfc.keio.ac.jp>
 
 	* Makefile.am: add -no-undefined to libIDL_2_la_LDFLAGS.

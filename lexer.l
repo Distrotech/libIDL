@@ -105,7 +105,7 @@ float_lit		[0-9]*\.[0-9]+([eE]-?[0-9]+)?|[0-9]+\.?([eE]-?[0-9]+)?
 fixed_lit		([0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
 declspec		__declspec{whitespacenl}\({whitespacenl}[A-Za-z]*{whitespacenl}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
-err1_ident		_[A-Za-z0-9_]+
+escaped_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
 prop_key		[A-Za-z][A-Za-z0-9_]*
 prop_value		\([^\)]+\)
@@ -309,10 +309,8 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-{err1_ident}						{
-	yyerrorv ("`%s' is not a valid identifier in IDL", yytext);
-	yyerror ("(Identifiers cannot start with an underscore)");
-	yylval.str = g_strdup (yytext);
+{escaped_ident}						{
+	yylval.str = g_strdup (&yytext[1]);
 	tokreturn (TOK_IDENT);
 }
 {warn1_ident}						{

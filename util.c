@@ -2767,6 +2767,8 @@ static gboolean IDL_emit_IDL_ident_real (IDL_tree_func_data *tfd, IDL_output_dat
 	assert (IDL_NODE_TYPE (tfd->tree) == IDLN_IDENT);
 
 	if (!up_real || data->flags & IDLF_OUTPUT_NO_QUALIFY_IDENTS) {
+		/* TODO: If the IDENT is also a keyword, escape it by
+		   prepending an underscore. */
 		dataf (data, "%s", IDL_IDENT (tfd->tree).str);
 	} else {
 		if ( up_path == 0 ) {
