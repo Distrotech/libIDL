@@ -1,3 +1,10 @@
+1999-02-12  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* parser.y: Allow forward decls to be suppressed as well.
+
+	* util.c (yyerrorl, yywarningl): Only call g_basename if we aren't
+	piping input from CPP.
+
 1999-02-11  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.5.9.

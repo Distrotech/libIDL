@@ -482,9 +482,13 @@ void yyerrorl (const char *s, int ofs)
 	int line = __IDL_cur_line - 1 + ofs;
 	gchar *filename = NULL;
 
-	if (__IDL_cur_filename)
+	if (__IDL_cur_filename) {
+#ifdef HAVE_CPP_PIPE_STDIN
+		filename = __IDL_cur_filename;
+#else
 		filename = g_basename (__IDL_cur_filename);
-	else
+#endif
+	} else
 		line = -1;
 
 	++__IDL_nerrors;
@@ -513,9 +517,13 @@ void yywarningl (int level, const char *s, int ofs)
 	if (__IDL_max_msg_level < level)
 		return;
 	
-	if (__IDL_cur_filename)
+	if (__IDL_cur_filename) {
+#ifdef HAVE_CPP_PIPE_STDIN
+		filename = __IDL_cur_filename;
+#else
 		filename = g_basename (__IDL_cur_filename);
-	else
+#endif
+	} else
 		line = -1;
 
 	++__IDL_nwarnings;

@@ -440,13 +440,13 @@ interface:		z_declspec
 			TOK_INTERFACE
 			interface_catch_ident
 			pop_scope			{
-	if ($1) yywarningv (IDL_WARNING1,
-			    "Ignoring declspec for forward declaration `%s'",
-			    IDL_IDENT ($4));
 	if ($2) yywarningv (IDL_WARNING1,
 			    "Ignoring properties for forward declaration `%s'",
 			    IDL_IDENT ($4));
 	$$ = IDL_forward_dcl_new ($4);
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 }
 	;
 
