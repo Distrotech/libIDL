@@ -35,7 +35,7 @@ extern void		yyerrorl(const char *s, int ofs);
 extern void		yywarning(const char *s);
 extern void		yywarningl(const char *s, int ofs);
 
-extern char *		__idl_cur_filename;
-extern int		__idl_cur_line;
+extern char *		__IDL_cur_filename;
+extern int		__IDL_cur_line;
 
 #endif /* __UTIL_H */

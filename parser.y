@@ -27,27 +27,63 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include "idl.h"
 #include "rename.h"
 #include "util.h"
 
-static void			do_escapes(char *s);
-static IDL_tree *		IDL_tree_node_new(void);
+#define do_binop(rv,op,a,b)	do {		\
+	if (IDL_binop_chktypes(op, a, b))	\
+		YYABORT;			\
+	if (flags & IDLF_EVAL_CONST) {		\
+		rv = IDL_binop_eval(op, a, b);	\
+		IDL_root_free(a);		\
+		IDL_root_free(b);		\
+		if (!rv) YYABORT;		\
+	} else {				\
+		rv = IDL_binop_new(op, a, b);	\
+	}					\
+} while (0)
 
-static IDL_tree			__idl_root, __idl_symtab;
-static IDL_callback		__idl_cb = NULL;
+#define do_unaryop(rv,op,a)	do {		\
+	if (IDL_unaryop_chktypes(op, a))	\
+		YYABORT;			\
+	if (flags & IDLF_EVAL_CONST) {		\
+		rv = IDL_unaryop_eval(op, a);	\
+		IDL_root_free(a);		\
+		if (!rv) YYABORT;		\
+	} else {				\
+		rv = IDL_unaryop_new(op, a);	\
+	}					\
+} while (0)
+
+static int			IDL_binop_chktypes(enum IDL_binop op,
+						   IDL_tree a,
+						   IDL_tree b);
+static int			IDL_unaryop_chktypes(enum IDL_unaryop op,
+						     IDL_tree a);
+static IDL_tree			IDL_binop_eval(enum IDL_binop op,
+					       IDL_tree a,
+					       IDL_tree b);
+static IDL_tree			IDL_unaryop_eval(enum IDL_unaryop op,
+						 IDL_tree a);
 static int			okay;
-static int			__idl_nerrors, __idl_nwarnings;
+static unsigned long		flags;
+static int			idl_nerrors, idl_nwarnings;
+static IDL_tree			idl_root, idl_symtab;
+static IDL_callback		idl_msgcb;
 
-char *				__idl_cur_filename = NULL;
-int				__idl_cur_line;
+char *				__IDL_cur_filename = NULL;
+int				__IDL_cur_line;
 
-void				__idl_print_tree(IDL_tree p);
+void				__IDL_print_tree(IDL_tree p);
 
 static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
+
+extern int			yylex(void);
 %}
 
 %union {
@@ -156,17 +192,17 @@ static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 
 idl_init:						{
 	okay = 1;
-	__idl_nerrors = __idl_nwarnings = 0;
-	__idl_symtab = NULL;
+	idl_nerrors = idl_nwarnings = 0;
+	idl_symtab = NULL;
 }
 	;
 
 start:			idl_init
 			specification
 			idl_finish			{
-	__idl_root = NULL;
+	idl_root = NULL;
 	if (okay)
-		__idl_root = $2;
+		idl_root = $2;
 }
 	;
 
@@ -377,34 +413,34 @@ const_exp:		or_expr
 	;
 
 or_expr:		xor_expr
-|			or_expr '|' xor_expr		{ $$ = IDL_binop_new(IDL_BINOP_OR, $1, $3); }
+|			or_expr '|' xor_expr		{ do_binop($$, IDL_BINOP_OR, $1, $3); }
 	;
 
 xor_expr:		and_expr
-|			xor_expr '^' and_expr		{ $$ = IDL_binop_new(IDL_BINOP_XOR, $1, $3); }
+|			xor_expr '^' and_expr		{ do_binop($$, IDL_BINOP_XOR, $1, $3); }
 	;
 
 and_expr:		shift_expr
-|			and_expr '&' shift_expr		{ $$ = IDL_binop_new(IDL_BINOP_AND, $1, $3); }
+|			and_expr '&' shift_expr		{ do_binop($$, IDL_BINOP_AND, $1, $3); }
 	;
 
 shift_expr:		add_expr
-|			shift_expr ">>" add_expr	{ $$ = IDL_binop_new(IDL_BINOP_SHR, $1, $3); }
-|			shift_expr "<<" add_expr	{ $$ = IDL_binop_new(IDL_BINOP_SHL, $1, $3); }
+|			shift_expr ">>" add_expr	{ do_binop($$, IDL_BINOP_SHR, $1, $3); }
+|			shift_expr "<<" add_expr	{ do_binop($$, IDL_BINOP_SHL, $1, $3); }
 	;
 
 add_expr:		mult_expr
-|			add_expr '+' mult_expr		{ $$ = IDL_binop_new(IDL_BINOP_ADD, $1, $3); }
-|			add_expr '-' mult_expr		{ $$ = IDL_binop_new(IDL_BINOP_SUB, $1, $3); }
+|			add_expr '+' mult_expr		{ do_binop($$, IDL_BINOP_ADD, $1, $3); }
+|			add_expr '-' mult_expr		{ do_binop($$, IDL_BINOP_SUB, $1, $3); }
 	;
 
 mult_expr:		unary_expr
-|			mult_expr '*' unary_expr	{ $$ = IDL_binop_new(IDL_BINOP_MULT, $1, $3); }
-|			mult_expr '/' unary_expr	{ $$ = IDL_binop_new(IDL_BINOP_DIV, $1, $3); }
-|			mult_expr '%' unary_expr	{ $$ = IDL_binop_new(IDL_BINOP_MOD, $1, $3); }
+|			mult_expr '*' unary_expr	{ do_binop($$, IDL_BINOP_MULT, $1, $3); }
+|			mult_expr '/' unary_expr	{ do_binop($$, IDL_BINOP_DIV, $1, $3); }
+|			mult_expr '%' unary_expr	{ do_binop($$, IDL_BINOP_MOD, $1, $3); }
 	;
 
-unary_expr:		unary_op primary_expr		{ $$ = IDL_unaryop_new($1, $2); }
+unary_expr:		unary_op primary_expr		{ do_unaryop($$, $1, $2); }
 |			primary_expr
 	;
 
@@ -414,7 +450,19 @@ unary_op:		'-'				{ $$ = IDL_UNARYOP_MINUS; }
 	;
 
 primary_expr:		scoped_name
-|			literal
+|			literal				{
+	switch (IDL_NODE_TYPE($1)) {
+	case IDLN_INTEGER:
+	case IDLN_FLOAT:
+	case IDLN_FIXED:
+		break;
+	default:
+		yyerror("invalid constant expression");
+		YYABORT;
+		break;
+	}
+	$$ = $1;
+}
 |			'(' const_exp ')'		{ $$ = $2; }
 	;
 
@@ -522,39 +570,39 @@ unsigned_long_int:	"unsigned" "long"
 unsigned_longlong_int:	"unsigned" "long" "long"
 	;
 
-char_type:		"char"			{ $$ = IDL_type_char_new(); }
+char_type:		"char"				{ $$ = IDL_type_char_new(); }
 	;
 
-wide_char_type:		"wchar"			{ $$ = IDL_type_wide_char_new(); }
+wide_char_type:		"wchar"				{ $$ = IDL_type_wide_char_new(); }
 	;
 
-boolean_type:		"boolean"		{ $$ = IDL_type_boolean_new(); }
+boolean_type:		"boolean"			{ $$ = IDL_type_boolean_new(); }
 	;
 
-octet_type:		"octet"			{ $$ = IDL_type_octet_new(); }
+octet_type:		"octet"				{ $$ = IDL_type_octet_new(); }
 	;
 
-any_type:		"any"			{ $$ = IDL_type_any_new(); }
+any_type:		"any"				{ $$ = IDL_type_any_new(); }
 	;
 
-object_type:		"Object"		{ $$ = IDL_type_object_new(); }
+object_type:		"Object"			{ $$ = IDL_type_object_new(); }
 	;
 
 string_type:		"string" '<'
 				positive_int_const
-				'>'		{ $$ = IDL_type_string_new($3); }
-|			"string"		{ $$ = IDL_type_string_new(NULL); }
+				'>'			{ $$ = IDL_type_string_new($3); }
+|			"string"			{ $$ = IDL_type_string_new(NULL); }
 	;
 
 wide_string_type:	"wstring" '<'
 				positive_int_const
-			'>'			{ $$ = IDL_type_wide_string_new($3); }
-|			"wstring"		{ $$ = IDL_type_wide_string_new(NULL); }
+			'>'				{ $$ = IDL_type_wide_string_new($3); }
+|			"wstring"			{ $$ = IDL_type_wide_string_new(NULL); }
 	;
 
-declarator_list:	declarator		{ $$ = list_start($1); }
+declarator_list:	declarator			{ $$ = list_start($1); }
 |			declarator_list 
-			',' declarator		{ $$ = list_chain($1, $3); }
+			',' declarator			{ $$ = list_chain($1, $3); }
 	;
 
 declarator:		simple_declarator
@@ -573,7 +621,8 @@ simple_declarator_list:	simple_declarator		{ $$ = list_start($1); }
 	;
 
 
-array_declarator:	ident fixed_array_size_list	{ $$ = IDL_type_array_new($1, $2); }
+array_declarator:	ident
+			fixed_array_size_list		{ $$ = IDL_type_array_new($1, $2); }
 	;
 
 fixed_array_size_list:	fixed_array_size		{ $$ = list_start($1); }
@@ -581,25 +630,28 @@ fixed_array_size_list:	fixed_array_size		{ $$ = list_start($1); }
 			fixed_array_size		{ $$ = list_chain($1, $2); }
 	;
 
-fixed_array_size:	'[' positive_int_const ']'	{ $$ = $2; }
+fixed_array_size:	'[' 
+			positive_int_const 
+			']'				{ $$ = $2; }
 	;
 
 ident:			TOK_IDENT			{
 	int added;
 
-	IDL_tree p = IDL_ident_get(&__idl_symtab, $1, IDL_TRUE, &added);
+	IDL_tree p = IDL_ident_get(&idl_symtab, $1, IDL_TRUE, &added);
 
 	$$ = p;
 }
 	;
 
 string_lit_list:	string_lit			{ $$ = list_start($1); }
-|			string_lit_list ',' string_lit	{ $$ = list_chain($1, $3); }
+|			string_lit_list ',' 
+			string_lit			{ $$ = list_chain($1, $3); }
 	;
 
 positive_int_const:	TOK_INTEGER			{
 	if ($1 < 0) {
-		yyerror("cannot use negative value, using absolute value");
+		yywarning("cannot use negative value, using absolute value");
 		$$ = IDL_integer_new(-$1);
 	}
 	else
@@ -637,14 +689,16 @@ dqstring_cat:		dqstring
 	;
 
 dqstring:		TOK_DQSTRING			{
-	do_escapes($1);
-	$$ = $1;
+	char *s = IDL_do_escapes($1);
+	free($1);
+	$$ = s;
 }
 	;
 
 sqstring:		TOK_SQSTRING			{
-	do_escapes($1);
-	$$ = $1;
+	char *s = IDL_do_escapes($1);
+	free($1);
+	$$ = s;
 }
 	;
 
@@ -652,28 +706,28 @@ sqstring:		TOK_SQSTRING			{
 
 void yyerrorl(const char *s, int ofs)
 {
-	int line = __idl_cur_line - 1 + ofs;
+	int line = __IDL_cur_line - 1 + ofs;
 
-	++__idl_nerrors;
+	++idl_nerrors;
 	
-	if (__idl_cb)
-		(*__idl_cb)(IDL_ERROR, __idl_nerrors, line, __idl_cur_filename, s);
+	if (idl_msgcb)
+		(*idl_msgcb)(IDL_ERROR, idl_nerrors, line, __IDL_cur_filename, s);
 	else
 		fprintf(stderr, "%s:%d: error [%d], %s\n", 
-			__idl_cur_filename, line, __idl_nerrors, s);
+			__IDL_cur_filename, line, idl_nerrors, s);
 }
 
 void yywarningl(const char *s, int ofs)
 {
-	int line = __idl_cur_line - 1 + ofs;
+	int line = __IDL_cur_line - 1 + ofs;
 	
-	++__idl_nwarnings;
+	++idl_nwarnings;
 	
-	if (__idl_cb)
-		(*__idl_cb)(IDL_WARNING, __idl_nwarnings, line, __idl_cur_filename, s);
+	if (idl_msgcb)
+		(*idl_msgcb)(IDL_WARNING, idl_nwarnings, line, __IDL_cur_filename, s);
 	else
 		fprintf(stderr, "%s:%d: warning [%d], %s\n",
-			__idl_cur_filename, line, __idl_nwarnings, s);
+			__IDL_cur_filename, line, idl_nwarnings, s);
 }
 
 void yyerror(const char *s)
@@ -686,30 +740,88 @@ void yywarning(const char *s)
 	yywarningl(s, 0);
 }
 
-void __idl_do_pragma(const char *s)
+static void namespace_prefix(const char *s)
 {
-	char *fmt = "unknown pragma: %s";
-	char *msg = (char *)malloc(strlen(fmt) + strlen(s) - 2 + 1);
-	sprintf(msg, fmt, s);
-	yywarning(msg);
-	free(msg);
+	fprintf(stderr, "install namespace prefix: '%s'\n", s);
 }
 
-static void do_escapes(char *s)
+void __IDL_do_pragma(const char *s)
 {
-	char *os = s;
+	int n;
+	char directive[256];
 
-	assert(s != NULL);
+	if (!s)
+		return;
+
+	if (sscanf(s, "%255s%n", directive, &n) < 0)
+		return;
+	s += n;
+	while (isspace(*s)) ++s;
+
+	if (strcmp(directive, "prefix") == 0)
+		namespace_prefix(s);
+}
+
+#define C_ESC(a,b)				case a: *p++ = b; ++s; break
+char *IDL_do_escapes(const char *s)
+{
+	char *p, *q;
+
+	if (!s)
+		return NULL;
+
+	p = q = (char *)malloc(strlen(s) + 1);
+	
 	while (*s) {
-		if ('\\' != *s++)
+		if (*s != '\\') {
+			*p++ = *s++;
 			continue;
-
-		yywarning("unknown escape sequence");
+		}
+		++s;		
+		if (*s == 'x') {
+			char hex[3];
+			int n;
+			hex[0] = 0;
+			++s;
+			sscanf(s, "%2[0-9a-fA-F]", hex);
+ 			s += strlen(hex);
+			sscanf(hex, "%x", &n);
+			*p++ = n;
+			continue;
+		}
+		if (*s >= '0' && *s <= '7') {
+			char oct[4];
+			int n;
+			oct[0] = 0;
+			sscanf(s, "%3[0-7]", oct);
+ 			s += strlen(oct);
+			sscanf(oct, "%o", &n);
+			*p++ = n;
+			continue;
+		}
+		switch (*s) {
+			C_ESC('n','\n');
+			C_ESC('t','\t');
+			C_ESC('v','\v');
+			C_ESC('b','\b');
+			C_ESC('r','\r');
+			C_ESC('f','\f');
+			C_ESC('a','\a');
+			C_ESC('\\','\\');
+			C_ESC('?','?');
+			C_ESC('\'','\'');
+			C_ESC('"','"');
+		}
 	}
+	*p = 0;
+
+	return q;
 }
 
-void __idl_print_tree(IDL_tree p)
+void __IDL_print_tree(IDL_tree p)
 {
+	IDL_tree q, r;
+
 	if (p == NULL)
 		return;
 
@@ -717,13 +829,26 @@ void __idl_print_tree(IDL_tree p)
 	case IDLN_LIST:
 		printf("IDL list\n");
 		while (p) {
-			__idl_print_tree(IDL_LIST(p).data);
+			__IDL_print_tree(IDL_LIST(p).data);
 			p = IDL_LIST(p).next;
 		}
 		break;
 
+	case IDLN_GENTREE:
+		__IDL_print_tree(IDL_GENTREE(p).data);
+		__IDL_print_tree(IDL_GENTREE(p).children);
+
+		q = IDL_GENTREE(p).siblings;
+		while (q != NULL) {
+			r = IDL_GENTREE(q).siblings;
+			__IDL_print_tree(IDL_GENTREE(q).data);
+			__IDL_print_tree(IDL_GENTREE(q).children);
+			q = r;
+		}
+		break;
+
 	case IDLN_INTEGER:
-		printf("IDL integer: %d\n", IDL_INTEGER(p).value);
+		printf("IDL integer: %ld\n", IDL_INTEGER(p).value);
 		break;
 		
 	case IDLN_STRING:
@@ -753,53 +878,53 @@ void __idl_print_tree(IDL_tree p)
 		
 	case IDLN_MEMBER:
 		printf("IDL member declaration\n");
-		__idl_print_tree(IDL_MEMBER(p).type_spec);
-		__idl_print_tree(IDL_MEMBER(p).dcls);
+		__IDL_print_tree(IDL_MEMBER(p).type_spec);
+		__IDL_print_tree(IDL_MEMBER(p).dcls);
 		break;
 		
 	case IDLN_TYPE_DCL:
 		printf("IDL type declaration\n");
-		__idl_print_tree(IDL_TYPE_DCL(p).type_spec);
-		__idl_print_tree(IDL_TYPE_DCL(p).dcls);
+		__IDL_print_tree(IDL_TYPE_DCL(p).type_spec);
+		__IDL_print_tree(IDL_TYPE_DCL(p).dcls);
 		break;
 
 	case IDLN_CONST_DCL:
 		printf("IDL const declaration\n");
-		__idl_print_tree(IDL_CONST_DCL(p).const_type);
-		__idl_print_tree(IDL_CONST_DCL(p).ident);
-		__idl_print_tree(IDL_CONST_DCL(p).const_exp);
+		__IDL_print_tree(IDL_CONST_DCL(p).const_type);
+		__IDL_print_tree(IDL_CONST_DCL(p).ident);
+		__IDL_print_tree(IDL_CONST_DCL(p).const_exp);
 		break;
 		
 	case IDLN_EXCEPT_DCL:
 		printf("IDL exception declaration\n");
-		__idl_print_tree(IDL_EXCEPT_DCL(p).ident);
-		__idl_print_tree(IDL_EXCEPT_DCL(p).members);
+		__IDL_print_tree(IDL_EXCEPT_DCL(p).ident);
+		__IDL_print_tree(IDL_EXCEPT_DCL(p).members);
 		break;
 		
 	case IDLN_ATTR_DCL:
 		printf("IDL attr declaration\n");
-		__idl_print_tree(IDL_ATTR_DCL(p).param_type_spec);
-		__idl_print_tree(IDL_ATTR_DCL(p).simple_declarations);
+		__IDL_print_tree(IDL_ATTR_DCL(p).param_type_spec);
+		__IDL_print_tree(IDL_ATTR_DCL(p).simple_declarations);
 		break;
 		
 	case IDLN_OP_DCL:
 		printf("IDL op declaration\n");
-		__idl_print_tree(IDL_OP_DCL(p).op_type_spec);
-		__idl_print_tree(IDL_OP_DCL(p).ident);
-		__idl_print_tree(IDL_OP_DCL(p).parameter_dcls);
-		__idl_print_tree(IDL_OP_DCL(p).raises_expr);
-		__idl_print_tree(IDL_OP_DCL(p).context_expr);
+		__IDL_print_tree(IDL_OP_DCL(p).op_type_spec);
+		__IDL_print_tree(IDL_OP_DCL(p).ident);
+		__IDL_print_tree(IDL_OP_DCL(p).parameter_dcls);
+		__IDL_print_tree(IDL_OP_DCL(p).raises_expr);
+		__IDL_print_tree(IDL_OP_DCL(p).context_expr);
 		break;
 
 	case IDLN_PARAM_DCL:
 		printf("IDL param declaration: %d\n", IDL_PARAM_DCL(p).attr);
-		__idl_print_tree(IDL_PARAM_DCL(p).param_type_spec);
-		__idl_print_tree(IDL_PARAM_DCL(p).simple_declarator);
+		__IDL_print_tree(IDL_PARAM_DCL(p).param_type_spec);
+		__IDL_print_tree(IDL_PARAM_DCL(p).simple_declarator);
 		break;
 
 	case IDLN_FORWARD_DCL:
 		printf("IDL forward declaration\n");
-		__idl_print_tree(IDL_FORWARD_DCL(p).ident);
+		__IDL_print_tree(IDL_FORWARD_DCL(p).ident);
 		break;
 		
 	case IDLN_TYPE_FLOAT:
@@ -808,8 +933,8 @@ void __idl_print_tree(IDL_tree p)
 
 	case IDLN_TYPE_FIXED:
 		printf("IDL fixed type\n");
-		__idl_print_tree(IDL_TYPE_FIXED(p).positive_int_const);
-		__idl_print_tree(IDL_TYPE_FIXED(p).integer_lit);
+		__IDL_print_tree(IDL_TYPE_FIXED(p).positive_int_const);
+		__IDL_print_tree(IDL_TYPE_FIXED(p).integer_lit);
 		break;
 
 	case IDLN_TYPE_INTEGER:
@@ -820,12 +945,12 @@ void __idl_print_tree(IDL_tree p)
 
 	case IDLN_TYPE_STRING:
 		printf("IDL string type\n");
-		__idl_print_tree(IDL_TYPE_STRING(p).positive_int_const);
+		__IDL_print_tree(IDL_TYPE_STRING(p).positive_int_const);
 		break;
 
 	case IDLN_TYPE_WIDE_STRING:
 		printf("IDL wide string type\n");
-		__idl_print_tree(IDL_TYPE_WIDE_STRING(p).positive_int_const);
+		__IDL_print_tree(IDL_TYPE_WIDE_STRING(p).positive_int_const);
 		break;
 
 	case IDLN_TYPE_CHAR:
@@ -858,53 +983,53 @@ void __idl_print_tree(IDL_tree p)
 
 	case IDLN_TYPE_SEQUENCE:
 		printf("IDL sequence type\n");
-		__idl_print_tree(IDL_TYPE_SEQUENCE(p).simple_type_spec);
-		__idl_print_tree(IDL_TYPE_SEQUENCE(p).positive_int_const);
+		__IDL_print_tree(IDL_TYPE_SEQUENCE(p).simple_type_spec);
+		__IDL_print_tree(IDL_TYPE_SEQUENCE(p).positive_int_const);
 		break;
 
 	case IDLN_TYPE_ARRAY:
 		printf("IDL array type\n");
-		__idl_print_tree(IDL_TYPE_ARRAY(p).ident);
-		__idl_print_tree(IDL_TYPE_ARRAY(p).size_list);
+		__IDL_print_tree(IDL_TYPE_ARRAY(p).ident);
+		__IDL_print_tree(IDL_TYPE_ARRAY(p).size_list);
 		break;
 
 	case IDLN_TYPE_STRUCT:
 		printf("IDL struct type\n");
-		__idl_print_tree(IDL_TYPE_STRUCT(p).ident);
-		__idl_print_tree(IDL_TYPE_STRUCT(p).member_list);
+		__IDL_print_tree(IDL_TYPE_STRUCT(p).ident);
+		__IDL_print_tree(IDL_TYPE_STRUCT(p).member_list);
 		break;
 		
 	case IDLN_TYPE_UNION:
 		printf("IDL union type\n");
-		__idl_print_tree(IDL_TYPE_UNION(p).ident);
-		__idl_print_tree(IDL_TYPE_UNION(p).switch_type_spec);
-		__idl_print_tree(IDL_TYPE_UNION(p).switch_body);
+		__IDL_print_tree(IDL_TYPE_UNION(p).ident);
+		__IDL_print_tree(IDL_TYPE_UNION(p).switch_type_spec);
+		__IDL_print_tree(IDL_TYPE_UNION(p).switch_body);
 		break;
 
 	case IDLN_CASE_LABEL:
-		__idl_print_tree(IDL_CASE_LABEL(p).const_exp);
+		__IDL_print_tree(IDL_CASE_LABEL(p).const_exp);
 		break;
 
 	case IDLN_INTERFACE:
-		__idl_print_tree(IDL_INTERFACE(p).ident);
-		__idl_print_tree(IDL_INTERFACE(p).inheritence_spec);
-		__idl_print_tree(IDL_INTERFACE(p).body);
+		__IDL_print_tree(IDL_INTERFACE(p).ident);
+		__IDL_print_tree(IDL_INTERFACE(p).inheritence_spec);
+		__IDL_print_tree(IDL_INTERFACE(p).body);
 		break;
 
 	case IDLN_MODULE:
-		__idl_print_tree(IDL_MODULE(p).ident);
-		__idl_print_tree(IDL_MODULE(p).definition_list);
+		__IDL_print_tree(IDL_MODULE(p).ident);
+		__IDL_print_tree(IDL_MODULE(p).definition_list);
 		break;		
 
 	case IDLN_BINOP:
 		printf("IDL binop: op %d\n", IDL_BINOP(p).op);
-		__idl_print_tree(IDL_BINOP(p).left);
-		__idl_print_tree(IDL_BINOP(p).right);
+		__IDL_print_tree(IDL_BINOP(p).left);
+		__IDL_print_tree(IDL_BINOP(p).right);
 		break;
 
 	case IDLN_UNARYOP:
 		printf("IDL unary: op %d\n", IDL_UNARYOP(p).op);
-		__idl_print_tree(IDL_UNARYOP(p).operand);
+		__IDL_print_tree(IDL_UNARYOP(p).operand);
 		break;
 		
 	default:
@@ -913,9 +1038,9 @@ void __idl_print_tree(IDL_tree p)
 	}
 }
 
-static void __idl_tree_free(IDL_tree p, int idents)
+static void __IDL_tree_free(IDL_tree p, int idents)
 {
-	IDL_tree q;
+	IDL_tree q, r;
 
 	if (!p)
 		return;
@@ -923,10 +1048,25 @@ static void __idl_tree_free(IDL_tree p, int idents)
 	switch (IDL_NODE_TYPE(p)) {
 	case IDLN_LIST:
 		while (p) {
-			__idl_tree_free(IDL_LIST(p).data, idents);
+			__IDL_tree_free(IDL_LIST(p).data, idents);
 			q = IDL_LIST(p).next;
 			free(p);
 			p = q;
+		}
+		break;
+
+	case IDLN_GENTREE:
+		__IDL_tree_free(IDL_GENTREE(p).data, idents);
+		__IDL_tree_free(IDL_GENTREE(p).children, idents);
+
+		q = IDL_GENTREE(p).siblings;
+		free(p);
+		while (q != NULL) {
+			r = IDL_GENTREE(q).siblings;
+			__IDL_tree_free(IDL_GENTREE(q).data, idents);
+			__IDL_tree_free(IDL_GENTREE(q).children, idents);
+			free(q);
+			q = r;
 		}
 		break;
 
@@ -955,100 +1095,100 @@ static void __idl_tree_free(IDL_tree p, int idents)
 		break;
 
 	case IDLN_MEMBER:
-		__idl_tree_free(IDL_MEMBER(p).type_spec, idents);
-		__idl_tree_free(IDL_MEMBER(p).dcls, idents);
+		__IDL_tree_free(IDL_MEMBER(p).type_spec, idents);
+		__IDL_tree_free(IDL_MEMBER(p).dcls, idents);
 		free(p);
 		break;
 
 	case IDLN_TYPE_ENUM:
-		__idl_tree_free(IDL_TYPE_ENUM(p).ident, idents);
-		__idl_tree_free(IDL_TYPE_ENUM(p).enumerator_list, idents);
+		__IDL_tree_free(IDL_TYPE_ENUM(p).ident, idents);
+		__IDL_tree_free(IDL_TYPE_ENUM(p).enumerator_list, idents);
 		free(p);
 		break;
 
 	case IDLN_TYPE_SEQUENCE:
-		__idl_tree_free(IDL_TYPE_SEQUENCE(p).simple_type_spec, idents);
-		__idl_tree_free(IDL_TYPE_SEQUENCE(p).positive_int_const, idents);
+		__IDL_tree_free(IDL_TYPE_SEQUENCE(p).simple_type_spec, idents);
+		__IDL_tree_free(IDL_TYPE_SEQUENCE(p).positive_int_const, idents);
 		free(p);
 		break;
 
 	case IDLN_TYPE_ARRAY:
-		__idl_tree_free(IDL_TYPE_ARRAY(p).ident, idents);
-		__idl_tree_free(IDL_TYPE_ARRAY(p).size_list, idents);
+		__IDL_tree_free(IDL_TYPE_ARRAY(p).ident, idents);
+		__IDL_tree_free(IDL_TYPE_ARRAY(p).size_list, idents);
 		free(p);
 		break;
 
 	case IDLN_TYPE_STRUCT:
-		__idl_tree_free(IDL_TYPE_STRUCT(p).ident, idents);
-		__idl_tree_free(IDL_TYPE_STRUCT(p).member_list, idents);
+		__IDL_tree_free(IDL_TYPE_STRUCT(p).ident, idents);
+		__IDL_tree_free(IDL_TYPE_STRUCT(p).member_list, idents);
 		free(p);
 		break;
 
 	case IDLN_TYPE_UNION:
-		__idl_tree_free(IDL_TYPE_UNION(p).ident, idents);
-		__idl_tree_free(IDL_TYPE_UNION(p).switch_type_spec, idents);
-		__idl_tree_free(IDL_TYPE_UNION(p).switch_body, idents);
+		__IDL_tree_free(IDL_TYPE_UNION(p).ident, idents);
+		__IDL_tree_free(IDL_TYPE_UNION(p).switch_type_spec, idents);
+		__IDL_tree_free(IDL_TYPE_UNION(p).switch_body, idents);
 		free(p);
 		break;
 				
 	case IDLN_TYPE_DCL:
-		__idl_tree_free(IDL_TYPE_DCL(p).type_spec, idents);
-		__idl_tree_free(IDL_TYPE_DCL(p).dcls, idents);
+		__IDL_tree_free(IDL_TYPE_DCL(p).type_spec, idents);
+		__IDL_tree_free(IDL_TYPE_DCL(p).dcls, idents);
 		free(p);
 		break;
 
 	case IDLN_CONST_DCL:
-		__idl_tree_free(IDL_CONST_DCL(p).const_type, idents);
-		__idl_tree_free(IDL_CONST_DCL(p).ident, idents);
-		__idl_tree_free(IDL_CONST_DCL(p).const_exp, idents);
+		__IDL_tree_free(IDL_CONST_DCL(p).const_type, idents);
+		__IDL_tree_free(IDL_CONST_DCL(p).ident, idents);
+		__IDL_tree_free(IDL_CONST_DCL(p).const_exp, idents);
 		free(p);
 		break;
 
 	case IDLN_EXCEPT_DCL:
-		__idl_tree_free(IDL_EXCEPT_DCL(p).ident, idents);
-		__idl_tree_free(IDL_EXCEPT_DCL(p).members, idents);
+		__IDL_tree_free(IDL_EXCEPT_DCL(p).ident, idents);
+		__IDL_tree_free(IDL_EXCEPT_DCL(p).members, idents);
 		free(p);
 		break;
 		
 	case IDLN_ATTR_DCL:
-		__idl_tree_free(IDL_ATTR_DCL(p).param_type_spec, idents);
-		__idl_tree_free(IDL_ATTR_DCL(p).simple_declarations, idents);
+		__IDL_tree_free(IDL_ATTR_DCL(p).param_type_spec, idents);
+		__IDL_tree_free(IDL_ATTR_DCL(p).simple_declarations, idents);
 		free(p);
 		break;
 		
 	case IDLN_OP_DCL:
-		__idl_tree_free(IDL_OP_DCL(p).op_type_spec, idents);
-		__idl_tree_free(IDL_OP_DCL(p).ident, idents);
-		__idl_tree_free(IDL_OP_DCL(p).parameter_dcls, idents);
-		__idl_tree_free(IDL_OP_DCL(p).raises_expr, idents);
-		__idl_tree_free(IDL_OP_DCL(p).context_expr, idents);
+		__IDL_tree_free(IDL_OP_DCL(p).op_type_spec, idents);
+		__IDL_tree_free(IDL_OP_DCL(p).ident, idents);
+		__IDL_tree_free(IDL_OP_DCL(p).parameter_dcls, idents);
+		__IDL_tree_free(IDL_OP_DCL(p).raises_expr, idents);
+		__IDL_tree_free(IDL_OP_DCL(p).context_expr, idents);
 		free(p);
 		break;
 
 	case IDLN_PARAM_DCL:
-		__idl_tree_free(IDL_PARAM_DCL(p).param_type_spec, idents);
-		__idl_tree_free(IDL_PARAM_DCL(p).simple_declarator, idents);
+		__IDL_tree_free(IDL_PARAM_DCL(p).param_type_spec, idents);
+		__IDL_tree_free(IDL_PARAM_DCL(p).simple_declarator, idents);
 		free(p);
 		break;
 		
 	case IDLN_FORWARD_DCL:
-		__idl_tree_free(IDL_FORWARD_DCL(p).ident, idents);
+		__IDL_tree_free(IDL_FORWARD_DCL(p).ident, idents);
 		free(p);
 		break;
 		
 	case IDLN_TYPE_STRING:
-		__idl_tree_free(IDL_TYPE_STRING(p).positive_int_const, idents);
+		__IDL_tree_free(IDL_TYPE_STRING(p).positive_int_const, idents);
 		free(p);
 		break;
 		
 	case IDLN_TYPE_WIDE_STRING:
-		__idl_tree_free(IDL_TYPE_WIDE_STRING(p).positive_int_const, idents);
+		__IDL_tree_free(IDL_TYPE_WIDE_STRING(p).positive_int_const, idents);
 		free(p);
 		break;
 		
 	case IDLN_TYPE_FIXED:
-		__idl_tree_free(IDL_TYPE_FIXED(p).positive_int_const, idents);
-		__idl_tree_free(IDL_TYPE_FIXED(p).integer_lit, idents);
+		__IDL_tree_free(IDL_TYPE_FIXED(p).positive_int_const, idents);
+		__IDL_tree_free(IDL_TYPE_FIXED(p).integer_lit, idents);
 		free(p);
 		break;
 
@@ -1064,31 +1204,31 @@ static void __idl_tree_free(IDL_tree p, int idents)
 		break;
 
 	case IDLN_CASE_LABEL:
-		__idl_tree_free(IDL_CASE_LABEL(p).const_exp, idents);
+		__IDL_tree_free(IDL_CASE_LABEL(p).const_exp, idents);
 		free(p);
 		break;
 		
 	case IDLN_INTERFACE:
-		__idl_tree_free(IDL_INTERFACE(p).ident, idents);
-		__idl_tree_free(IDL_INTERFACE(p).inheritence_spec, idents);
-		__idl_tree_free(IDL_INTERFACE(p).body, idents);
+		__IDL_tree_free(IDL_INTERFACE(p).ident, idents);
+		__IDL_tree_free(IDL_INTERFACE(p).inheritence_spec, idents);
+		__IDL_tree_free(IDL_INTERFACE(p).body, idents);
 		free(p);
 		break;
 
 	case IDLN_MODULE:
-		__idl_tree_free(IDL_MODULE(p).ident, idents);
-		__idl_tree_free(IDL_MODULE(p).definition_list, idents);
+		__IDL_tree_free(IDL_MODULE(p).ident, idents);
+		__IDL_tree_free(IDL_MODULE(p).definition_list, idents);
 		free(p);
 		break;
 
 	case IDLN_BINOP:
-		__idl_tree_free(IDL_BINOP(p).left, idents);
-		__idl_tree_free(IDL_BINOP(p).right, idents);
+		__IDL_tree_free(IDL_BINOP(p).left, idents);
+		__IDL_tree_free(IDL_BINOP(p).right, idents);
 		free(p);
 		break;
 
 	case IDLN_UNARYOP:
-		__idl_tree_free(IDL_UNARYOP(p).operand, idents);
+		__IDL_tree_free(IDL_UNARYOP(p).operand, idents);
 		free(p);
 		break;		
 		
@@ -1100,19 +1240,20 @@ static void __idl_tree_free(IDL_tree p, int idents)
 
 void IDL_root_free(IDL_tree root)
 {
-	__idl_tree_free(root, IDL_FALSE);
+	__IDL_tree_free(root, IDL_FALSE);
 }
 
 void IDL_symtab_free(IDL_tree symtab)
 {
-	__idl_tree_free(symtab, IDL_TRUE);
+	__IDL_tree_free(symtab, IDL_TRUE);
 }
 
 int IDL_parse_filename(const char *filename, const char *cpp_args,
-		       IDL_callback cb, IDL_tree *tree, IDL_tree *symtab)
+		       IDL_callback cb, IDL_tree *tree, IDL_tree *symtab,
+		       unsigned long parse_flags)
 {
-	extern void __idl_lex_init(void);
-	extern void __idl_lex_cleanup(void);
+	extern void __IDL_lex_init(void);
+	extern void __IDL_lex_cleanup(void);
 	extern FILE *yyin;
 	FILE *input;
 	char *fmt = CPP_PROGRAM " %s %s";
@@ -1121,7 +1262,6 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 
 	if (!filename || !tree) return -EINVAL;
 
-	puts(cmd);
 	cmd = (char *)malloc(strlen(filename) + 
 			     (cpp_args ? strlen(cpp_args) : 0) +
 			     strlen(fmt) - 4 + 1);
@@ -1136,25 +1276,26 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		return errno;
 
 	yyin = input;
-	__idl_cb = cb;
-	__idl_lex_init();
+	idl_msgcb = cb;
+	flags = parse_flags;
+	__IDL_lex_init();
 	rv = yyparse();
-	__idl_lex_cleanup();
-	__idl_cb = NULL;
+	__IDL_lex_cleanup();
+	idl_msgcb = NULL;
 	pclose(input);
 
 	if (rv != 0)
 		return IDL_ERROR;
 
 	if (tree)
-		*tree = __idl_root;
+		*tree = idl_root;
 	else
-		free(__idl_root);
+		free(idl_root);
 	
 	if (symtab)
-		*symtab = __idl_symtab;
+		*symtab = idl_symtab;
 	else
-		free(__idl_symtab);
+		free(idl_symtab);
 
 	return IDL_SUCCESS;
 }
@@ -1162,6 +1303,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 static IDL_tree list_start(IDL_tree a)
 {
 	IDL_tree p = IDL_list_new(a);
+
 	IDL_LIST(p)._tail = p;
 
 	return p;
@@ -1170,6 +1312,7 @@ static IDL_tree list_start(IDL_tree a)
 static IDL_tree list_chain(IDL_tree a, IDL_tree b)
 {
 	IDL_tree p = IDL_list_new(b);
+
 	IDL_LIST(IDL_LIST(a)._tail).next = p;
 	IDL_LIST(a)._tail = p;
 
@@ -1182,6 +1325,35 @@ static IDL_tree zlist_chain(IDL_tree a, IDL_tree b)
 		return list_start(b);
 	else
 		return list_chain(a, b);
+}
+
+IDL_tree IDL_gentree_chain_sibling(IDL_tree from, IDL_tree data)
+{
+	IDL_tree p = IDL_gentree_new(IDL_GENTREE(from).parent, data);
+
+	if (IDL_GENTREE(from).siblings == NULL) {
+		IDL_GENTREE(from).siblings =
+			IDL_GENTREE(from)._siblings_tail = p;
+	} else {
+		IDL_GENTREE(IDL_GENTREE(from)._siblings_tail).siblings = p;
+		IDL_GENTREE(from)._siblings_tail = p;
+	}
+
+	return p;
+}
+
+IDL_tree IDL_gentree_chain_child(IDL_tree from, IDL_tree data)
+{
+	IDL_tree p;
+
+	if (IDL_GENTREE(from).children == NULL) {
+		p = IDL_gentree_new(from, data);
+		IDL_GENTREE(from).children = p;
+	} else {
+		p = IDL_gentree_chain_sibling(IDL_GENTREE(from).children, data);
+	}
+
+	return p;
 }
 
 static IDL_tree IDL_node_new(IDL_tree_type type)
@@ -1201,6 +1373,16 @@ IDL_tree IDL_list_new(IDL_tree data)
 	IDL_tree p = IDL_node_new(IDLN_LIST);
 	
 	IDL_LIST(p).data = data;
+	
+	return p;
+}
+
+IDL_tree IDL_gentree_new(IDL_tree parent, IDL_tree data)
+{
+	IDL_tree p = IDL_node_new(IDLN_GENTREE);
+	
+	IDL_GENTREE(p).parent = parent;
+	IDL_GENTREE(p).data = data;
 	
 	return p;
 }
@@ -1274,6 +1456,16 @@ IDL_tree IDL_boolean_new(unsigned value)
 
 	IDL_BOOLEAN(p).value = value;
 
+	return p;
+}
+
+IDL_tree IDL_ident_new(char *str, IDL_tree data)
+{
+	IDL_tree p = IDL_node_new(IDLN_IDENT);
+	
+	IDL_IDENT(p).str = str;
+	IDL_IDENT(p).data = data;
+	
 	return p;
 }
 
@@ -1361,7 +1553,6 @@ IDL_tree IDL_type_fixed_new(IDL_tree positive_int_const,
 
 	return p;
 }
-
 
 IDL_tree IDL_type_integer_new(unsigned f_signed, enum IDL_integer_type f_type)
 {
@@ -1599,4 +1790,269 @@ IDL_tree IDL_forward_dcl_new(IDL_tree ident)
 	IDL_FORWARD_DCL(p).ident = ident;
 
 	return p;
+}
+
+static int IDL_binop_chktypes(enum IDL_binop op, IDL_tree a, IDL_tree b)
+{
+	if (IDL_NODE_TYPE(a) != IDLN_BINOP &&
+	    IDL_NODE_TYPE(b) != IDLN_BINOP &&
+	    IDL_NODE_TYPE(a) != IDL_NODE_TYPE(b)) {
+		yyerror("invalid mix of types in constant expression");
+		return -1;
+	}
+
+	switch (op) {
+	case IDL_BINOP_MULT:
+	case IDL_BINOP_DIV:
+	case IDL_BINOP_ADD:
+	case IDL_BINOP_SUB:
+		break;
+
+	case IDL_BINOP_MOD:
+	case IDL_BINOP_SHR:
+	case IDL_BINOP_SHL:
+	case IDL_BINOP_AND:
+	case IDL_BINOP_OR:
+	case IDL_BINOP_XOR:
+		if (IDL_NODE_TYPE(a) != IDLN_INTEGER) {
+			yyerror("invalid operation on non-integer value");
+			return -1;
+		}
+		break;
+	}
+
+	return 0;
+}
+
+static int IDL_unaryop_chktypes(enum IDL_unaryop op, IDL_tree a)
+{
+	switch (op) {
+	case IDL_UNARYOP_PLUS:
+	case IDL_UNARYOP_MINUS:
+		break;
+
+	case IDL_UNARYOP_COMPLEMENT:
+		if (IDL_NODE_TYPE(a) == IDLN_INTEGER)
+			break;
+		yyerror("operand to complement must be integer");
+		return -1;
+	}
+
+	return 0;
+}
+
+static IDL_tree IDL_binop_eval_integer(enum IDL_binop op, IDL_tree a, IDL_tree b)
+{
+	IDL_tree p = NULL;
+
+	assert(IDL_NODE_TYPE(a) == IDLN_INTEGER);
+
+	switch (op) {
+	case IDL_BINOP_MULT:
+		p = IDL_integer_new(IDL_INTEGER(a).value * IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_DIV:
+		if (IDL_INTEGER(b).value == 0) {
+			yyerror("divide by zero in constant expression");
+			return NULL;
+		}
+		p = IDL_integer_new(IDL_INTEGER(a).value / IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_ADD:
+		p = IDL_integer_new(IDL_INTEGER(a).value + IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_SUB:
+		p = IDL_integer_new(IDL_INTEGER(a).value - IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_MOD:
+		if (IDL_INTEGER(b).value == 0) {
+			yyerror("modulo by zero in constant expression");
+			return NULL;
+		}
+		p = IDL_integer_new(IDL_INTEGER(a).value % IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_SHR:
+		p = IDL_integer_new(IDL_INTEGER(a).value >> IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_SHL:
+		p = IDL_integer_new(IDL_INTEGER(a).value << IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_AND:
+		p = IDL_integer_new(IDL_INTEGER(a).value & IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_OR:
+		p = IDL_integer_new(IDL_INTEGER(a).value | IDL_INTEGER(b).value);
+		break;
+
+	case IDL_BINOP_XOR:
+		p = IDL_integer_new(IDL_INTEGER(a).value ^ IDL_INTEGER(b).value);
+		break;
+	}
+
+	return p;
+}
+
+static IDL_tree IDL_binop_eval_fixed(enum IDL_binop op, IDL_tree a, IDL_tree b)
+{
+	IDL_tree p = NULL;
+
+	assert(IDL_NODE_TYPE(a) == IDLN_FIXED);
+
+	switch (op) {
+	case IDL_BINOP_MULT:
+		p = IDL_fixed_new(IDL_FIXED(a).value * IDL_FIXED(b).value);
+		break;
+
+	case IDL_BINOP_DIV:
+		if (IDL_FIXED(b).value == 0.0) {
+			yyerror("divide by zero in constant expression");
+			return NULL;
+		}
+		p = IDL_fixed_new(IDL_FIXED(a).value / IDL_FIXED(b).value);
+		break;
+
+	case IDL_BINOP_ADD:
+		p = IDL_fixed_new(IDL_FIXED(a).value + IDL_FIXED(b).value);
+		break;
+
+	case IDL_BINOP_SUB:
+		p = IDL_fixed_new(IDL_FIXED(a).value - IDL_FIXED(b).value);
+		break;
+
+	default:
+		break;
+	}
+
+	return p;
+}
+
+static IDL_tree IDL_binop_eval_float(enum IDL_binop op, IDL_tree a, IDL_tree b)
+{
+	IDL_tree p = NULL;
+
+	assert(IDL_NODE_TYPE(a) == IDLN_FLOAT);
+
+	switch (op) {
+	case IDL_BINOP_MULT:
+		p = IDL_float_new(IDL_FLOAT(a).value * IDL_FLOAT(b).value);
+		break;
+
+	case IDL_BINOP_DIV:
+		if (IDL_FLOAT(b).value == 0.0) {
+			yyerror("divide by zero in constant expression");
+			return NULL;
+		}
+		p = IDL_float_new(IDL_FLOAT(a).value / IDL_FLOAT(b).value);
+		break;
+
+	case IDL_BINOP_ADD:
+		p = IDL_float_new(IDL_FLOAT(a).value + IDL_FLOAT(b).value);
+		break;
+
+	case IDL_BINOP_SUB:
+		p = IDL_float_new(IDL_FLOAT(a).value - IDL_FLOAT(b).value);
+		break;
+
+	default:
+		break;
+	}
+
+	return p;
+}
+
+static IDL_tree IDL_binop_eval(enum IDL_binop op, IDL_tree a, IDL_tree b)
+{
+	assert(IDL_NODE_TYPE(a) == IDL_NODE_TYPE(b));
+
+	switch (IDL_NODE_TYPE(a)) {
+	case IDLN_INTEGER: return IDL_binop_eval_integer(op, a, b);
+	case IDLN_FIXED: return IDL_binop_eval_fixed(op, a, b);
+	case IDLN_FLOAT: return IDL_binop_eval_float(op, a, b);
+	default: return NULL;
+	}
+}
+
+static IDL_tree IDL_unaryop_eval_integer(enum IDL_unaryop op, IDL_tree a)
+{
+	IDL_tree p = NULL;
+
+	assert(IDL_NODE_TYPE(a) == IDLN_INTEGER);
+
+	switch (op) {
+	case IDL_UNARYOP_PLUS:
+		p = IDL_integer_new(IDL_INTEGER(a).value);
+		break;
+
+	case IDL_UNARYOP_MINUS:
+		p = IDL_integer_new(-IDL_INTEGER(a).value);
+		break;
+
+	case IDL_UNARYOP_COMPLEMENT:
+		p = IDL_integer_new(~IDL_INTEGER(a).value);
+		break;
+	}
+       
+	return p;
+}
+
+static IDL_tree IDL_unaryop_eval_fixed(enum IDL_unaryop op, IDL_tree a)
+{
+	IDL_tree p = NULL;
+
+	assert(IDL_NODE_TYPE(a) == IDLN_FIXED);
+
+	switch (op) {
+	case IDL_UNARYOP_PLUS:
+		p = IDL_fixed_new(IDL_FIXED(a).value);
+		break;
+
+	case IDL_UNARYOP_MINUS:
+		p = IDL_fixed_new(-IDL_FIXED(a).value);
+		break;
+
+	default:
+		break;
+	}
+       
+	return p;
+}
+
+static IDL_tree IDL_unaryop_eval_float(enum IDL_unaryop op, IDL_tree a)
+{
+	IDL_tree p = NULL;
+
+	assert(IDL_NODE_TYPE(a) == IDLN_FLOAT);
+
+	switch (op) {
+	case IDL_UNARYOP_PLUS:
+		p = IDL_float_new(IDL_FLOAT(a).value);
+		break;
+
+	case IDL_UNARYOP_MINUS:
+		p = IDL_float_new(-IDL_FLOAT(a).value);
+		break;
+
+	default:
+		break;
+	}
+       
+	return p;
+}
+
+static IDL_tree IDL_unaryop_eval(enum IDL_unaryop op, IDL_tree a)
+{
+	switch (IDL_NODE_TYPE(a)) {
+	case IDLN_INTEGER: return IDL_unaryop_eval_integer(op, a);
+	case IDLN_FIXED: return IDL_unaryop_eval_fixed(op, a);
+	case IDLN_FLOAT: return IDL_unaryop_eval_float(op, a);
+	default: return NULL;
+	}
 }

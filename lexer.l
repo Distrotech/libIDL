@@ -26,13 +26,14 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include "idl.h"
 #include "rename.h"
 #include "util.h"
 #include "parser.h"
 
-extern void		__idl_do_pragma(const char *s);
+extern void		__IDL_do_pragma(const char *s);
 %}
 
 whitespace		[ \t]*
@@ -50,21 +51,27 @@ dqstring		\"[^\"\n]*[\"\n]
 
 %%
 
-{cpp_pragma}		{ __idl_do_pragma(yytext); }
+{cpp_pragma}		{
+	int n;
+	char *s = yytext;
+
+	sscanf(yytext, "#%*6s%n", &n); s += n;
+	while (isspace(*s)) ++s;
+	__IDL_do_pragma(s);
+}
 {cpp_status}		{
-	int line;
 	char *filename = (char *)malloc(strlen(yytext) + 1);
 
-	sscanf(yytext, "# %d %s", &__idl_cur_line, filename);
-	if (__idl_cur_filename)
-		free(__idl_cur_filename);
-	__idl_cur_filename = strdup(filename + 1);
-	__idl_cur_filename[strlen(filename) - 2] = 0;
+	sscanf(yytext, "# %d %s", &__IDL_cur_line, filename);
+	if (__IDL_cur_filename)
+		free(__IDL_cur_filename);
+	__IDL_cur_filename = strdup(filename + 1);
+	__IDL_cur_filename[strlen(filename) - 2] = 0;
 	free(filename);
 }
 {whitespace}
 {b8_int}		{
-	sscanf(yytext, "%o", &yylval.integer);
+	sscanf(yytext, "%lo", &yylval.integer);
 	return TOK_INTEGER;
 }
 {b10_int}		{
@@ -72,7 +79,7 @@ dqstring		\"[^\"\n]*[\"\n]
 	return TOK_INTEGER;
 }
 {b16_int}		{
-	sscanf(yytext + 2, "%x", &yylval.integer);
+	sscanf(yytext + 2, "%lx", &yylval.integer);
 	return TOK_INTEGER;
 }
 {fixed_lit}		{
@@ -137,21 +144,21 @@ wstring			{ return TOK_WSTRING; }
 	yylval.str[strlen(yytext) - 2] = 0;
 	return TOK_DQSTRING;
 }
-{newline}		{ ++__idl_cur_line; }
+{newline}		{ ++__IDL_cur_line; }
 .			{ return yytext[0]; }
 
 %%
 
-void __idl_lex_init(void)
+void __IDL_lex_init(void)
 {
-	__idl_cur_line = 0;
-	__idl_cur_filename = NULL;
+	__IDL_cur_line = 0;
+	__IDL_cur_filename = NULL;
 }
 
-void __idl_lex_cleanup(void)
+void __IDL_lex_cleanup(void)
 {
-	if (__idl_cur_filename) {
-		free(__idl_cur_filename);
-		__idl_cur_filename = NULL;
+	if (__IDL_cur_filename) {
+		free(__IDL_cur_filename);
+		__IDL_cur_filename = NULL;
 	}
 }

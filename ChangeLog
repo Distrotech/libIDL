@@ -1,5 +1,7 @@
 1998-06-23  Andrew Veliath  <andrewtv@usa.net>
 
+	* Implement constant evaluation
+
 	* Almost all tree generation stuff added
 
 	* Implement const_dcl and const_exp

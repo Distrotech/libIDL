@@ -31,12 +31,16 @@
 extern "C" {
 #endif
 
+/* miscellaneous constants */
 #define IDL_FALSE			0
 #define IDL_TRUE			1
 
 #define IDL_SUCCESS			0
 #define IDL_ERROR			1
 #define IDL_WARNING			2
+
+/* parse flags for IDL_parse_filename */
+#define IDLF_EVAL_CONST			(1UL<<0)
 
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
@@ -48,6 +52,21 @@ struct _IDL_LIST {
 };
 #define IDL_LIST(a)			((a)->u.idl_list)
 IDL_tree				IDL_list_new(IDL_tree data);
+
+struct _IDL_GENTREE {
+	IDL_tree parent;
+	IDL_tree data;
+	IDL_tree siblings, _siblings_tail;
+	IDL_tree children;
+};
+#define IDL_GENTREE(a)			((a)->u.idl_gentree)
+IDL_tree				IDL_gentree_new(IDL_tree parent,
+							IDL_tree data);
+IDL_tree				IDL_gentree_chain_sibling(IDL_tree from,
+								  IDL_tree data);
+IDL_tree				IDL_gentree_chain_child(IDL_tree from,
+								IDL_tree data);
+
 
 struct _IDL_INTEGER {
 	long value;
@@ -99,8 +118,10 @@ IDL_tree				IDL_boolean_new(unsigned value);
 
 struct _IDL_IDENT {
 	char *str;
+	IDL_tree data;
 };
 #define IDL_IDENT(a)			((a)->u.idl_ident)
+IDL_tree				IDL_ident_new(char *str, IDL_tree data);
 IDL_tree				IDL_ident_get(IDL_tree *table, char *s_ident,
 						      int add, int *added);
 struct _IDL_TYPE_FLOAT {
@@ -323,6 +344,7 @@ IDL_tree				IDL_unaryop_new(enum IDL_unaryop op, IDL_tree operand);
 typedef enum {
 	IDLN_NONE,
 	IDLN_LIST,
+	IDLN_GENTREE,
 	IDLN_INTEGER,
 	IDLN_STRING,
 	IDLN_WIDE_STRING,
@@ -367,6 +389,7 @@ struct _IDL_tree_node {
 	IDL_tree_type type;
 	union {
 		struct _IDL_LIST idl_list;
+		struct _IDL_GENTREE idl_gentree;
 		struct _IDL_INTEGER idl_integer;
 		struct _IDL_STRING idl_string;
 		struct _IDL_WIDE_STRING idl_wide_string;
@@ -406,11 +429,14 @@ struct _IDL_tree_node {
 typedef int				(*IDL_callback)(int level, int num, int line,
 							const char *filename, const char *s);
 
-extern int				IDL_parse_filename(const char *filename, const char *cpp_args,
+extern int				IDL_parse_filename(const char *filename,
+							   const char *cpp_args,
 							   IDL_callback cb,
-							   IDL_tree *tree, IDL_tree *symtab);
+							   IDL_tree *tree, IDL_tree *symtab,
+							   unsigned long parse_flags);
 extern void				IDL_root_free(IDL_tree root);
 extern void				IDL_symtab_free(IDL_tree symtab);
+extern char *				IDL_do_escapes(const char *s);
 
 #ifdef __cplusplus
 }
