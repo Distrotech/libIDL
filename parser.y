@@ -88,7 +88,7 @@ static int			idl_is_parsing = IDL_FALSE;
 %union {
 	IDL_tree tree;
 	char *str;
-	long integer;
+	IDL_long_t integer;
 	double floatp;
 	double fixedp;
 	enum IDL_unaryop unaryop;
@@ -722,6 +722,7 @@ ns_prev_ident:		ident				{
 	$$ = p;
 }
 	;
+
 ns_new_or_prev_ident:	ident				{
 	IDL_tree p;
 
@@ -1805,7 +1806,7 @@ IDL_tree IDL_gentree_new(IDL_tree parent, IDL_tree data)
 	return p;
 }
 
-IDL_tree IDL_integer_new(long value)
+IDL_tree IDL_integer_new(IDL_long_t value)
 {
 	IDL_tree p = IDL_node_new(IDLN_INTEGER);
 

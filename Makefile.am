@@ -13,7 +13,7 @@ CFLAGS = -g -O2 -DYYDEBUG=1 -DIDL_LIBRARY \
 	-DLIBIDL_VERSION="\"@LIBIDL_VERSION@\"" \
 	-DCPP_PROGRAM="\"@CPP_PROGRAM@\""
 YFLAGS = -d -v
-#LFLAGS = @LFLAGS@
+LFLAGS = @LFLAGS@
 # we don't want the lex library
 LIBS =
 

@@ -77,15 +77,15 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 {whitespace}
 {b8_int}		{
-	sscanf(yytext, "%lo", &yylval.integer);
+	sscanf(yytext, IDL_B8_FMT, &yylval.integer);
 	return TOK_INTEGER;
 }
 {b10_int}		{
-	yylval.integer = atoi(yytext);
+	sscanf(yytext, IDL_UB10_FMT, &yylval.integer);
 	return TOK_INTEGER;
 }
 {b16_int}		{
-	sscanf(yytext + 2, "%lx", &yylval.integer);
+	sscanf(yytext + 2, IDL_B16_FMT, &yylval.integer);
 	return TOK_INTEGER;
 }
 {fixed_lit}		{

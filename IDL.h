@@ -67,12 +67,25 @@ IDL_tree				IDL_gentree_chain_sibling(IDL_tree from,
 IDL_tree				IDL_gentree_chain_child(IDL_tree from,
 								IDL_tree data);
 
+#ifdef __GNUC__
+typedef long long			IDL_long_t;
+#define IDL_B8_FMT			"%llo"
+#define IDL_UB10_FMT			"%llu"
+#define IDL_SB10_FMT			"%lld"
+#define IDL_B16_FMT			"%llx"
+#else
+typedef long				IDL_long_t;
+#define IDL_B8_FMT			"%lo"
+#define IDL_UB10_FMT			"%lu"
+#define IDL_SB10_FMT			"%ld"
+#define IDL_B16_FMT			"%lx"
+#endif
 
 struct _IDL_INTEGER {
-	long value;
+	IDL_long_t value;
 };
 #define IDL_INTEGER(a)			((a)->u.idl_integer)
-IDL_tree				IDL_integer_new(long value);
+IDL_tree				IDL_integer_new(IDL_long_t value);
 
 struct _IDL_STRING {
 	char *value;
