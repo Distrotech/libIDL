@@ -132,12 +132,14 @@ static int		do_token_error			(IDL_tree p,
 %token			TOK_TYPEDEF
 %token			TOK_UNION
 %token			TOK_UNSIGNED
+%token			TOK_VARARGS
 %token			TOK_VOID
 %token			TOK_WCHAR
 %token			TOK_WSTRING
 %token <floatp>		TOK_FLOATP
 %token <integer>	TOK_INTEGER
-%token <str>		TOK_DECLSPEC TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
+%token <str>		TOK_IDENT TOK_IID_IDENT
+%token <str>		TOK_DECLSPEC TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
 %token			TOK_TYPECODE
 
 /* Non-Terminals */
@@ -179,11 +181,12 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		fixed_pt_type
 %type <tree>		floating_pt_lit
 %type <tree>		floating_pt_type
-%type <tree>		ident
+%type <tree>		ident iid_ident
 %type <tree>		illegal_ident
 %type <tree>		integer_lit
 %type <tree>		integer_type
 %type <tree>		interface
+%type <tree>		interface_iid
 %type <tree>		interface_body
 %type <tree>		interface_catch_ident
 %type <tree>		is_context_expr
@@ -357,8 +360,13 @@ interface_catch_ident:	new_or_prev_scope
 interface_declspec:	z_declspec TOK_INTERFACE
 	;
 
+interface_iid:		/* empty */			{ $$ = NULL; }
+|			'[' iid_ident ']'		{ $$ = $2; }
+	;
+
 interface:		interface_declspec
 			interface_catch_ident
+			interface_iid
 			pop_scope
 			z_inheritance			{
 	assert ($2 != NULL);
@@ -381,16 +389,26 @@ interface:		interface_declspec
 		$2->_file = __IDL_cur_filename;
 		$2->_line = __IDL_cur_line;
 	}
-	IDL_GENTREE (IDL_IDENT_TO_NS ($2))._import = $4;
+	IDL_GENTREE (IDL_IDENT_TO_NS ($2))._import = $5;
 	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($2));
-	if (IDL_ns_check_for_ambiguous_inheritance ($2, $4))
+	if (IDL_ns_check_for_ambiguous_inheritance ($2, $5))
 		__IDL_is_okay = FALSE;
 }
 			'{'
 				interface_body
 			'}' pop_scope			{
-	$$ = IDL_interface_new ($2, $4, $7);
+ 	$$ = IDL_interface_new ($2, $5, $8);
 	IDL_NODE_DECLSPEC ($$) = $1;
+
+	/* Check for XPIDL interface IID tag */
+	if ($3 != NULL) {
+		if (__IDL_flags & IDLF_XPIDL)
+			IDL_INTERFACE ($$).iid = $3;
+		else {
+			yyerrornv ($3, "Cannot have IID interface tag when XPIDL syntax is not enabled");
+			IDL_tree_free ($3);
+		}
+	}
 }
 |			interface_declspec
 			interface_catch_ident pop_scope	{
@@ -888,6 +906,10 @@ fixed_array_size_list:	fixed_array_size		{ $$ = list_start ($1, TRUE); }
 fixed_array_size:	'[' 
 			positive_int_const 
 			']'				{ $$ = $2; }
+	;
+
+iid_ident:		TOK_IID_IDENT			{ $$ = IDL_ident_new ($1); }
+|			ident
 	;
 
 ident:			TOK_IDENT			{ $$ = IDL_ident_new ($1); }

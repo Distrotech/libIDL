@@ -46,7 +46,8 @@ extern "C" {
 #define IDLF_NO_EVAL_CONST		(1UL << 0)
 #define IDLF_COMBINE_REOPENED_MODULES	(1UL << 1)
 #define IDLF_PREFIX_FILENAME		(1UL << 2)
-#define IDLF_XPIDL			(1UL << 3)
+#define IDLF_TYPECODES			(1UL << 3)
+#define IDLF_XPIDL			(1UL << 4)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
@@ -225,6 +226,7 @@ extern IDL_tree		IDL_type_octet_new		(void);
 extern IDL_tree		IDL_type_any_new		(void);
 extern IDL_tree		IDL_type_object_new		(void);
 extern IDL_tree		IDL_type_typecode_new		(void);
+extern IDL_tree		IDL_type_varargs_new		(void);
 
 struct _IDL_TYPE_STRING {
 	IDL_tree positive_int_const;
@@ -372,6 +374,7 @@ extern IDL_tree		IDL_case_stmt_new		(IDL_tree labels,
 
 struct _IDL_INTERFACE {
 	IDL_tree ident;
+	IDL_tree iid;		/* XPIDL extension */
 	IDL_tree inheritance_spec;
 	IDL_tree body;
 };
@@ -463,6 +466,7 @@ typedef enum {
 	IDLN_TYPE_ANY,
 	IDLN_TYPE_OBJECT,
 	IDLN_TYPE_TYPECODE,
+	IDLN_TYPE_VARARGS,
 	IDLN_TYPE_ENUM,
 	IDLN_TYPE_SEQUENCE,
 	IDLN_TYPE_ARRAY,

@@ -1,3 +1,26 @@
+1998-11-28  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* util.c (IDL_tree_free): Update for interface iid, and varargs.
+	(IDL_tree_walk_in_order): Same.
+	(IDL_type_varargs_new): New function.
+
+	* Makefile.am: Add G_LOG_DOMAIN for libIDL.
+
+	* lexer.l: Add XPIDL conditional token scan for TOK_VARARGS
+	(...).  Add token scan for iid_ident, which is an extended version
+	of a standard IDL identifier, for XPIDL IIDs.
+
+	* parser.y: Add XPIDL IID interface tagging
+	support. (interface_iid) New production, update (interface) to
+	handle it. Generate error if XPIDL syntax is not enabled and an
+	IID is provided. New token, TOK_IID_IDENT, iid_ident rule.
+
+	* lexer.l: Only recognize TypeCode when IDLF_TYPECODES syntax
+	flag is present.
+
+	* IDL.h (IDLF_TYPECODES): New flag; IDLF_TYPECODES.  New type
+	IDLN_TYPE_VARARGS, eventually for use with XPIDL.
+
 1998-11-27  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* libIDL.def: New file.

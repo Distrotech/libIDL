@@ -77,6 +77,7 @@ declspec		__declspec{whitespace}\({whitespace}[A-Za-z]*{whitespace}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
+iid_ident		[A-Za-z0-9_\-]+
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
@@ -187,6 +188,7 @@ switch			tokreturn (TOK_SWITCH);
 typedef			tokreturn (TOK_TYPEDEF);
 union			tokreturn (TOK_UNION);
 unsigned		tokreturn (TOK_UNSIGNED);
+<XPIDL>\.\.\.		tokreturn (TOK_VARARGS);
 void			tokreturn (TOK_VOID);
 wchar			tokreturn (TOK_WCHAR);
 wstring			tokreturn (TOK_WSTRING);
@@ -200,10 +202,10 @@ wstring			tokreturn (TOK_WSTRING);
 	tokreturn (TOK_DECLSPEC);
 }
 {happy_ident}		{
-	if ((*yytext == 'O' || *yytext == 'o') &&
-	    IDL_strcase_equal (yytext + 1, "bject"))
+	if (IDL_strcase_equal (yytext, "Object"))
 		tokreturn (TOK_OBJECT);
-	if (IDL_strcase_equal (yytext, "TypeCode"))
+	else if (__IDL_flags & IDLF_TYPECODES &&
+		 IDL_strcase_equal (yytext, "TypeCode"))
 		tokreturn (TOK_TYPECODE);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
@@ -223,6 +225,10 @@ wstring			tokreturn (TOK_WSTRING);
 	}
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
+}
+{iid_ident}		{
+	yylval.str = g_strdup (yytext);
+	tokreturn (TOK_IID_IDENT);
 }
 {sqstring}		{
 	yylval.str = g_strdup (yytext + 1);
