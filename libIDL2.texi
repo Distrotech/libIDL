@@ -4,8 +4,10 @@
 @setchapternewpage odd
 
 @ifinfo
-This file documents the GNOME Interface Definition Language parsing
-library, libIDL.
+@dircategory Libraries
+@direntry
+* libIDL: (libIDL).     Interface Definition Language parsing library.
+@end direntry
 
 Copyright 1998 Andrew T. Veliath
 @end ifinfo
