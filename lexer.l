@@ -176,25 +176,38 @@ dqstring		\"[^\"\n]*[\"\n]
 <*>{cpp_status}						{
 	char *starttext;
 	char *filename;
-	char *filename2;
+	char *tmp;
 	int line;
 
 	starttext = yytext;
 	while (isspace ((int)*starttext)) ++starttext;
-	filename = g_malloc (strlen (starttext) + 1);
+	tmp = g_malloc (strlen (starttext) + 1);
 
-	sscanf (starttext, "# %d %s", &line, filename);
+	if (sscanf (starttext, "# %d %s", &line, tmp) == 2) {
+		if (tmp [0] == '"') {
+			filename = g_strdup (tmp + 1);
+			filename [strlen (tmp) - 2] = '\0';
+			g_free (tmp);
+		}
+		else 
+			filename = tmp;
 
-	if (*filename == '"') {
-		filename2 = g_strdup (filename + 1);
-		filename2[strlen (filename) - 2] = 0;
+		if (*filename == '<' && 
+		    (!strcmp (filename, "<builtin>") ||
+		     !strcmp (filename, "<stdin>")   ||
+		     !strcmp (filename, "<command line>")))
+
+			yylval.tree = IDL_file_set ("", line);
+		else
+			yylval.tree = IDL_file_set (filename, line);
+
 		g_free (filename);
-	} else
-		filename2 = filename;
+	}
+	else {
+		g_free (filename);
+		yylval.tree = IDL_file_set ("", line);
+	}
 
-	yylval.tree = IDL_file_set (filename2, line);
-
-	g_free (filename2);
 	if ( yylval.tree )
 	 	tokreturn (TOK_SRCFILE);
 }

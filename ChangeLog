@@ -1,3 +1,10 @@
+2001-09-19  Mark McLoughlin <mark@skynet.ie>
+
+	Fixes Bugs #60728 and 58458
+
+	* lexer.l: merged patches from Raja R Harinath and 
+	Takayuki Tamura.
+
 2001-09-03  Mark McLoughlin <mark@skynet.ie>
 
 	Fixes Bug #59824: the time to parse a union seemed to grow 
