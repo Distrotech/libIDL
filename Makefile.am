@@ -72,6 +72,6 @@ libIDLConf.sh: libIDLConf.sh.in Makefile
 		< $(srcdir)/libIDLConf.sh.in > libIDLConf.tmp \
 		&& mv libIDLConf.tmp libIDLConf.sh
 
-pkgconfigdir = $(libexecdir)/pkgconfig
+pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= libIDL.pc
 

@@ -4,7 +4,7 @@
 
 	* configure.in: Create libIDL.pc from libIDL.pc.in.
 	* Makefile.am (pkgconfig_DATA): Install the libIDL.pc
-	script in `$(libexecdir)/pkgconfig'.
+	script in `$(libdir)/pkgconfig'.
 
 2000-07-14  Michael Meeks  <michael@helixcode.com>
 
