@@ -30,7 +30,7 @@ parser.h: stamp-parser
 MOSTLYCLEANFILES	= parser.output y.output
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
-			  Makefile.msc README.win32 \
+			  Makefile.msc README.win32 libIDL-zip.in \
 			  libIDL.def libIDL.spec \
 			  HACKING MAINTAINERS
 

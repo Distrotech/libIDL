@@ -1,3 +1,14 @@
+2005-02-22  Tor Lillqvist  <tml@novell.com>
+
+	* libIDL-zip.in: New file, for building libIDL zipfiles for Win32.
+	
+	* Makefile.am (EXTRA_DIST)
+	* configure.in: Expand and distribute it.
+
+	* util.c (IDL_parse_filename): Don't use 2>/dev/null on
+	Win32. Instead, just do a bit of file descriptor acrobatics with
+	dup() and dup2() for the duration of the popen().
+
 2005-02-05  Gustavo J. A. M. Carneiro  <gjc@gnome.org>
 
 	* configure.in: Post-release version bump to 0.8.6.

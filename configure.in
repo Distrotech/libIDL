@@ -96,7 +96,7 @@ AC_SUBST(HAVE_WCSTR_H)
 AC_CHECK_FUNCS(popen symlink access)
 
 dnl glib requires a 64-bit type
-dnl to support win32 add __int64
+dnl to support MSVC add __int64
 AC_CHECK_SIZEOF(long long)
 
 AC_MSG_CHECKING(for format to printf and scanf a guint64)
@@ -140,6 +140,7 @@ AC_SUBST(WARN_CFLAGS)
 AC_CONFIG_FILES([
 Makefile
 Makefile.msc
+libIDL-zip
 include/Makefile
 include/libIDL/Makefile
 include/libIDL/IDL.h

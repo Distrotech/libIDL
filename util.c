@@ -31,8 +31,13 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
+
 #include "rename.h"
 #include "util.h"
+
+#ifdef G_OS_WIN32
+#include <fcntl.h>
+#endif
 
 IDL_EXPORT const char *IDL_tree_type_names[] = {
 	"IDLN_NONE",
@@ -228,8 +233,13 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	char cwd[2048];
 	gchar *linkto;
 #endif
+
+#ifndef G_OS_WIN32
 	char *cpperrs = (parse_flags & IDLF_SHOW_CPP_ERRORS) 
 	  ? "" : "2>/dev/null";
+#else
+	char *cpperrs = "";
+#endif
 	GSList *slist;
 	int rv;
 
@@ -330,11 +340,26 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 
        /* Many versions of cpp do evil translating internal
         * strings, producing bogus output, so clobber LC_ALL */
-       putenv ("LC_ALL=C");
+	putenv ("LC_ALL=C");
 
 #ifdef HAVE_POPEN
-	input = popen (cmd, "r");
+#ifdef G_OS_WIN32
+	if (!(parse_flags & IDLF_SHOW_CPP_ERRORS)) {
+		int save_stderr = dup (2);
+		int null = open ("NUL:", O_WRONLY);
+		dup2 (null, 2);
+		input = popen (cmd, "r");
+		close (2);
+		close (null);
+		dup2 (save_stderr, 2);
+		close (save_stderr);
+	} else
+		input = popen (cmd, "r");
 #else
+	input = popen (cmd, "r");
+#endif
+#else
+	/* Surely this doesn't make any sense? */	
 	input = fopen (cmd, "r");
 #endif
 	g_free (cmd);
