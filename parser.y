@@ -77,7 +77,7 @@ static void			assign_up_node(IDL_tree up, IDL_tree node);
 static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
-static int			do_prev_token_error(IDL_tree p, const char *message);
+static int			do_token_error(IDL_tree p, const char *message, int prev);
 static int			get_error_strings(IDL_tree p, char **who, char **what);
 
 #ifndef HAVE_CPP_PIPE_STDIN
@@ -130,7 +130,7 @@ static int			idl_is_parsing;
 %type <tree>			switch_type_spec switch_body struct_type union_type
 %type <tree>			interface interface_dcl forward_dcl scoped_name_list
 %type <tree>			interface_body z_inheritance export_list export module
-%type <tree>			const_type new_ident
+%type <tree>			const_type new_ident illegal_ident
 /*
 %type <tree>			prev_ident new_or_prev_ident global_ident ns_new_or_prev_ident 
 */
@@ -141,7 +141,7 @@ static int			idl_is_parsing;
 %type <tree>			case_stmt case_label case_label_list fixed_array_size_list
 %type <tree>			case_stmt_list fixed_array_size positive_int_const
 %type <tree>			ns_scoped_name ns_prev_ident ns_new_ident ns_global_ident
-%type <tree>			cur_ns_new_or_prev_ident
+%type <tree>			cur_ns_new_or_prev_ident useless_semicolon
 %type <tree>			param_type_spec op_type_spec parameter_dcls
 %type <tree>			is_raises_expr is_context_expr param_dcl_list
 %type <tree>			param_dcl raises_expr context_expr element_spec
@@ -185,15 +185,27 @@ definition_list:	definition			{ $$ = list_start($1); }
 
 check_semicolon:	';'
 |			/* empty */			{
-	if (do_prev_token_error($<tree>0, "Missing semicolon after"))
+	if (do_token_error($<tree>0, "Missing semicolon after", 1))
 		YYABORT;
+}
+	;
+
+useless_semicolon:		';'			{
+	yyerror("Dangling semicolon has no effect");
+	$$ = NULL;
 }
 	;
 
 check_comma:		','
 |			/* empty */			{
-	if (do_prev_token_error($<tree>0, "Missing comma after"))
+	if (do_token_error($<tree>0, "Missing comma after", 1))
 		YYABORT;
+}
+	;
+
+illegal_ident:		scoped_name			{
+	assert(IDL_NODE_UP($1) != NULL);
+	do_token_error(IDL_NODE_UP($1), "Illegal context for", 0);
 }
 	;
 
@@ -202,6 +214,8 @@ definition:		type_dcl check_semicolon
 |			except_dcl check_semicolon
 |			interface check_semicolon
 |			module check_semicolon
+|			illegal_ident
+|			useless_semicolon
 	;
 
 interface:		interface_dcl
@@ -272,6 +286,7 @@ export:			type_dcl check_semicolon
 |			op_dcl check_semicolon
 |			attr_dcl check_semicolon
 |			const_dcl check_semicolon
+|			useless_semicolon
 	;
 
 type_dcl:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
@@ -1109,7 +1124,7 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 	return curitem;
 }
 
-static int do_prev_token_error(IDL_tree p, const char *message)
+static int do_token_error(IDL_tree p, const char *message, int prev)
 {
 	int dienow;
 	char *what = NULL, *who = NULL;
@@ -1122,11 +1137,11 @@ static int do_prev_token_error(IDL_tree p, const char *message)
 	
 	if (who && *who)
 		yyerrorlv("%s %s `%s'",
-			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
 			  message, what, who);
 	else
 		yyerrorlv("%s %s",
-			  __IDL_prev_token_line - __IDL_cur_token_line,
+			  prev ? __IDL_prev_token_line - __IDL_cur_token_line : 0,
 			  message, what);
 	
 	return dienow;
@@ -2184,7 +2199,12 @@ static void assign_up_node(IDL_tree up, IDL_tree node)
 
 static IDL_tree list_start(IDL_tree a)
 {
-	IDL_tree p = IDL_list_new(a);
+	IDL_tree p;
+
+	if (!a)
+		return NULL;
+
+	p = IDL_list_new(a);
 
 	IDL_LIST(p)._tail = p;
 
@@ -2193,7 +2213,15 @@ static IDL_tree list_start(IDL_tree a)
 
 static IDL_tree list_chain(IDL_tree a, IDL_tree b)
 {
-	IDL_tree p = IDL_list_new(b);
+	IDL_tree p;
+
+	if (!b)
+		return a;
+
+	if (!a)
+		return list_start(b);
+
+	p = IDL_list_new(b);
 
 	IDL_LIST(IDL_LIST(a)._tail).next = p;
 	IDL_LIST(a)._tail = p;
