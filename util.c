@@ -3122,7 +3122,7 @@ void IDL_tree_to_IDL (IDL_tree p, IDL_ns ns, FILE *output, unsigned long flags)
 	IDL_output_data data;
 
 	g_return_if_fail (output != NULL);
-	
+
 	data.ns = ns;
 	data.o = output;
 	data.flags = flags;
