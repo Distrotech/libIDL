@@ -19,6 +19,7 @@ parser.c parser.h: $(srcdir)/parser.y
 	test -f y.tab.h && mv -f y.tab.h parser.h
 
 MOSTLYCLEANFILES	= parser.output y.output
+DISTCLEANFILES		= IDL.h
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
