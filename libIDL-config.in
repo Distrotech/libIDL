@@ -46,13 +46,11 @@ while test $# -gt 0; do
       echo_exec_prefix=yes
       ;;
     --version)
-      echo @LIBIDL_LIBRARY_VERSION@
+      echo @LIBIDL_VERSION@
       exit 0
       ;;
     --cflags)
-      if test "@includedir@" != /usr/include ; then
-        includes="-I@includedir@"
-      fi
+      includes="-I@includedir@/libIDL-2.0"
       echo_cflags=yes
       ;;
     --libs)

@@ -1,3 +1,7 @@
+2001-10-05  Abel Cheung  <maddog@linux.org.hk>
+
+	* libIDL-config.in: Fix output of --version and --cflags.
+
 2001-09-26  Mark McLoughlin <mark@skynet.ie>
 
 	* configure.in: add --enable-compile-warnings option.
