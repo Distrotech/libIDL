@@ -1624,11 +1624,12 @@ char *IDL_ns_ident_to_qstring(IDL_tree ns_ident, const char *join)
 		return NULL;
 	}
 
-	s[0] = 0;
+	s[0] = '\0';
 
 	for (q = l; q != NULL; q = IDL_LIST(q).next) {
 		IDL_tree i = IDL_LIST(q).data;
-		strcat(s, join);
+		if(s[0] != '\0')
+			strcat(s, join);
 		strcat(s, IDL_IDENT(i).str);
 	}
 
