@@ -294,6 +294,7 @@ extern IDL_tree		IDL_member_new			(IDL_tree type_spec,
 
 struct _IDL_NATIVE {
 	IDL_tree ident;
+	char *user_type;		/* XPIDL extension */
 };
 #define IDL_NATIVE(a)			IDL_CHECK_CAST(a, IDLN_NATIVE, idl_native)
 extern IDL_tree		IDL_native_new			(IDL_tree ident);
@@ -336,6 +337,7 @@ extern IDL_tree		IDL_attr_dcl_new		(unsigned f_readonly,
 							 IDL_tree simple_declarations);
 
 struct _IDL_OP_DCL {
+	unsigned f_noscript		: 1;
 	unsigned f_oneway		: 1;
 	IDL_tree op_type_spec;
 	IDL_tree ident;

@@ -114,6 +114,7 @@ static int		do_token_error			(IDL_tree p,
 %token			TOK_LONG
 %token			TOK_MODULE
 %token			TOK_NATIVE
+%token			TOK_NOSCRIPT
 %token			TOK_OBJECT
 %token			TOK_OCTET
 %token			TOK_ONEWAY
@@ -139,7 +140,8 @@ static int		do_token_error			(IDL_tree p,
 %token			TOK_WSTRING
 %token <floatp>		TOK_FLOATP
 %token <integer>	TOK_INTEGER
-%token <str>		TOK_DECLSPEC TOK_PROP_KEY TOK_PROP_VALUE
+%token <str>		TOK_DECLSPEC TOK_PROP_KEY
+%token <str>		TOK_PROP_VALUE TOK_NATIVE_TYPE
 %token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
 
 /* Non-Terminals */
@@ -245,7 +247,8 @@ static int		do_token_error			(IDL_tree p,
 
 %type <declspec>	z_declspec module_declspec
 %type <hash_table>	z_props prop_hash
-%type <integer>		signed_int unsigned_int is_readonly is_oneway
+%type <integer>		signed_int unsigned_int
+%type <integer>		is_readonly is_oneway is_noscript
 %type <paramattr>	param_attribute
 %type <str>		sqstring dqstring dqstring_cat
 %type <unaryop>		unary_op
@@ -495,6 +498,22 @@ type_dcl:		TOK_TYPEDEF type_declarator	{ $$ = $2; }
 |			union_type
 |			enum_type
 |			TOK_NATIVE simple_declarator	{ $$ = IDL_native_new ($2); }
+|			TOK_NATIVE simple_declarator
+			'('				{
+	/* Enable native type scanning */
+	if (__IDL_flags & IDLF_XPIDL)
+		__IDL_flagsi |= IDLFP_XPIDL_NATIVE;
+	else {
+		yyerror ("XPIDL syntax not enabled, cannot specify native extension");
+		YYABORT;
+	}
+}			TOK_NATIVE_TYPE			{
+	/* Disable native type scanning */
+	if (__IDL_flags & IDLF_XPIDL)
+		__IDL_flagsi &= ~IDLFP_XPIDL_NATIVE;
+	$$ = IDL_native_new ($2);
+	IDL_NATIVE ($$).user_type = $5;
+}
 	;
 
 type_declarator:	type_spec declarator_list	{ $$ = IDL_type_dcl_new ($1, $2); }
@@ -587,14 +606,23 @@ param_type_spec:	base_type_spec
 |			scoped_name
 	;
 
+is_noscript:		/* empty */			{ $$ = FALSE; }
+|			TOK_NOSCRIPT			{ $$ = TRUE; }
+	;
+
 is_oneway:		/* empty */			{ $$ = FALSE; }
 |			TOK_ONEWAY			{ $$ = TRUE; }
 	;
 
-op_dcl:			is_oneway op_type_spec
+op_dcl:			is_noscript
+			is_oneway
+			op_type_spec
 			new_scope parameter_dcls pop_scope
 			is_raises_expr
-			is_context_expr			{ $$ = IDL_op_dcl_new ($1, $2, $3, $4, $6, $7); }
+			is_context_expr			{
+	$$ = IDL_op_dcl_new ($2, $3, $4, $5, $7, $8);
+	IDL_OP_DCL ($$).f_noscript = $1;
+}
 	;
 
 op_type_spec:		param_type_spec
@@ -1128,7 +1156,7 @@ z_props:		/* empty */			{ $$ = NULL; }
 	if (__IDL_flags & IDLF_XPIDL)
 		__IDL_flagsi |= IDLFP_XPIDL_PROPERTY;
 	else {
-		yyerror ("XPIDL syntax not enabled");
+		yyerror ("XPIDL syntax not enabled, cannot specify interface properties");
 		YYABORT;
 	}
 }			prop_hash

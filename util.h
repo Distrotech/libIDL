@@ -41,6 +41,7 @@
 
 /* internal parse flags */
 #define IDLFP_XPIDL_PROPERTY	(1UL << 0)
+#define IDLFP_XPIDL_NATIVE	(1UL << 1)
 
 typedef struct {
 	unsigned long flags;

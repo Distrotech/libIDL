@@ -1613,6 +1613,10 @@ static void IDL_tree_free_real (IDL_tree p)
 		g_slist_free (IDL_IDENT (p).comments);
 		break;
 
+	case IDLN_NATIVE:
+		free (IDL_NATIVE (p).user_type);
+		break;
+
 	case IDLN_INTERFACE:
 		if (IDL_INTERFACE (p).properties)
 			__IDL_free_properties (IDL_INTERFACE (p).properties);

@@ -33,7 +33,12 @@ gboolean print_repo_id (IDL_tree p, gpointer user_data)
 		const char *val;
 
 		val = IDL_interface_get_property (p, "IID");
-		if (val) printf("\tIID:\"%s\"\n", val);
+		if (val) printf("\tXPIDL IID:\"%s\"\n", val);
+	}
+
+	if (IDL_NODE_TYPE (p) == IDLN_NATIVE) {
+		if (IDL_NATIVE (p).user_type)
+			g_message ("XPIDL native type: \"%s\"", IDL_NATIVE (p).user_type);
 	}
 	
 	return TRUE;

@@ -79,20 +79,25 @@ err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
 prop_key		{happy_ident}
 prop_value		\([^\)]+\)
+native_type		[^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
 %s XPIDL
-%x XPIDLX
+%x XPIDLPROP
+%x XPIDLNATIVE
 
 %%
 	if (__IDL_flags & IDLF_XPIDL)
 		BEGIN(XPIDL);
 
 	if (__IDL_flagsi & IDLFP_XPIDL_PROPERTY)
-		BEGIN(XPIDLX);
-		
-<*>{cpp_pragma}		{
+		BEGIN(XPIDLPROP);
+
+	if (__IDL_flagsi & IDLFP_XPIDL_NATIVE)
+		BEGIN(XPIDLNATIVE);
+
+<*>{cpp_pragma}						{
 	int n;
 	char *p = yytext;
 	char *s;
@@ -104,7 +109,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	__IDL_do_pragma (s);
 }
-<*>{cpp_status}		{
+<*>{cpp_status}						{
 	char *filename = (char *) malloc (strlen (yytext) + 1);
 	char *orig;
 	IDL_fileinfo *fi;
@@ -139,27 +144,27 @@ dqstring		\"[^\"\n]*[\"\n]
 	}
 }
 <*>{whitespace}
-{b8_int}		{
+{b8_int}						{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
-{b10_int}		{
+{b10_int}						{
 	sscanf (yytext, "%" IDL_LL "d", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
-{b10_uint}		{
+{b10_uint}						{
 	sscanf (yytext, "%" IDL_LL "u", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
-{b16_int}		{
+{b16_int}						{
 	sscanf (yytext + 2, "%" IDL_LL "x", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
-{fixed_lit}		{
+{fixed_lit}						{
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_FIXEDP);
 }
-{float_lit}		{
+{float_lit}						{
 	yylval.floatp = atof (yytext);
 	tokreturn (TOK_FLOATP);
 }
@@ -184,6 +189,7 @@ interface		tokreturn (TOK_INTERFACE);
 long			tokreturn (TOK_LONG);
 module			tokreturn (TOK_MODULE);
 native			tokreturn (TOK_NATIVE);
+<XPIDL>noscript		tokreturn (TOK_NOSCRIPT);
 octet			tokreturn (TOK_OCTET);
 oneway			tokreturn (TOK_ONEWAY);
 out			tokreturn (TOK_OUT);
@@ -204,13 +210,13 @@ wstring			tokreturn (TOK_WSTRING);
 ::			tokreturn (TOK_OP_SCOPE);
 \>\>			tokreturn (TOK_OP_SHR);
 \<\<			tokreturn (TOK_OP_SHL);
-{declspec}		{
+{declspec}						{
 	char *s = g_strdup (yytext);
 	sscanf (yytext, "__declspec %*[(] %[A-Za-z_] %*[)]", s);
 	yylval.str = s;
 	tokreturn (TOK_DECLSPEC);
 }
-{happy_ident}		{
+{happy_ident}						{
 	if (IDL_strcase_equal (yytext, "Object"))
 		tokreturn (TOK_OBJECT);
 	else if (__IDL_flags & IDLF_TYPECODES &&
@@ -219,13 +225,13 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-{err1_ident}		{
+{err1_ident}						{
 	yyerrorv ("`%s' is not a valid identifier in IDL", yytext);
 	yyerror ("(Identifiers cannot start with an underscore)");
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-{warn1_ident}		{
+{warn1_ident}						{
 	if (!warn_underscores) {
 		yywarningv (IDL_WARNING2,
 			   "`%s' underscores within identifiers are discouraged for use "
@@ -235,21 +241,26 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-<XPIDLX>{prop_key}	{
+<XPIDLPROP>{prop_key}					{
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_PROP_KEY);
 }
-<XPIDLX>{prop_value}	{
+<XPIDLPROP>{prop_value}					{
 	yylval.str = g_strdup (yytext + 1);
 	yylval.str[strlen (yylval.str) - 1] = 0;
 	tokreturn (TOK_PROP_VALUE);
 }
-{sqstring}		{
+<XPIDLNATIVE>{native_type}				{
+	yylval.str = g_strdup (yytext);
+	yylval.str[strlen (yylval.str) - 1] = 0;
+	tokreturn (TOK_NATIVE_TYPE);
+}
+{sqstring}						{
 	yylval.str = g_strdup (yytext + 1);
 	yylval.str[strlen (yytext) - 2] = 0;
 	tokreturn (TOK_SQSTRING);
 }
-{dqstring}		{
+{dqstring}						{
 	yylval.str = g_strdup (yytext + 1);
 	yylval.str[strlen (yytext) - 2] = 0;
 	tokreturn (TOK_DQSTRING);
