@@ -631,7 +631,7 @@ op_dcl:			is_noscript
 			is_context_expr			{
 	$$ = IDL_op_dcl_new ($2, $3, $4, $5.tree, $7, $8);
 	IDL_OP_DCL ($$).f_noscript = $1;
-	IDL_OP_DCL ($$).f_varargs = (gboolean) $5.data;
+	IDL_OP_DCL ($$).f_varargs = (gboolean) GPOINTER_TO_INT ($5.data);
 }
 	;
 
@@ -652,11 +652,11 @@ parameter_dcls:		'('
 			is_cvarargs
 			')'				{
 	$$.tree = $2;
-	$$.data = (gpointer) $3;
+	$$.data = GINT_TO_POINTER ($3);
 }
 |			'(' is_varargs ')'		{
 	$$.tree = NULL;
-	$$.data = (gpointer) $2;
+	$$.data = GINT_TO_POINTER ($2);
 }
 	;
 
