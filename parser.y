@@ -188,9 +188,7 @@ check_semicolon:	';'
 	int dienow = 0;
 
 	dienow = do_prev_token_error($<tree>0, "Missing semicolon after");
-		
 	idl_is_okay = IDL_FALSE;
-
 	if (dienow)
 		YYABORT;
 }
@@ -201,9 +199,7 @@ check_comma:		','
 	int dienow = 0;
 
 	dienow = do_prev_token_error($<tree>0, "Missing comma after");
-
 	idl_is_okay = IDL_FALSE;
-
 	if (dienow)
 		YYABORT;
 }
@@ -223,6 +219,12 @@ interface:		interface_dcl
 module:			TOK_MODULE new_or_prev_scope '{'
 				definition_list
 			'}' pop_scope			{ $$ = IDL_module_new($2, $4); }
+|			TOK_MODULE new_or_prev_scope '{'
+			'}' pop_scope			{
+	yyerrorv("Empty module declaration `%s' is not legal IDL", IDL_IDENT($2).str);
+	$$ = IDL_module_new($2, NULL);
+	idl_is_okay = IDL_FALSE;
+}
 	;
 
 interface_dcl:		TOK_INTERFACE new_or_prev_scope
@@ -406,10 +408,11 @@ param_dcl:		param_attribute
 param_attribute:	TOK_IN				{ $$ = IDL_PARAM_IN; }
 |			TOK_OUT				{ $$ = IDL_PARAM_OUT; }
 |			TOK_INOUT			{ $$ = IDL_PARAM_INOUT; }
-|			ident				{
+|			param_type_spec			{
 	yyerrorv("Missing parameter direction attribute (in, out, inout) before `%s'",
 		 IDL_IDENT($1).str);
 	IDL_tree_free($1);
+	idl_is_okay = IDL_FALSE;
 }
 	;
 
