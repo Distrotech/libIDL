@@ -1311,6 +1311,7 @@ positive_int_const:	const_exp			{
 
 	if ((literal = IDL_resolve_const_exp ($1, IDLN_INTEGER))) {
 		assert (IDL_NODE_TYPE (literal) == IDLN_INTEGER);
+		++IDL_NODE_REFS (literal);
 		value = IDL_INTEGER (literal).value;
 		IDL_tree_free ($1);
 	}
