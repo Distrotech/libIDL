@@ -63,6 +63,7 @@ extern "C" {
 #define IDLF_PEDANTIC			(1UL << 5)
 #define IDLF_INHIBIT_TAG_ONLY		(1UL << 6)
 #define IDLF_INHIBIT_INCLUDES		(1UL << 7)
+#define IDLF_SHOW_CPP_ERRORS		(1UL << 8)
 
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)

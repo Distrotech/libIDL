@@ -202,14 +202,16 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	char *cmd;
 	size_t cmd_len;
 #ifdef HAVE_CPP_PIPE_STDIN
-	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " - %s%s %s < \"%s\" 2>/dev/null";
+	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " - %s%s %s < \"%s\" %s";
 	char *wd = "", *dirend;
 #else
-	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " -I- -I%s %s \"%s\" 2>/dev/null";
+	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " -I- -I%s %s \"%s\" %s";
 	char *s, *tmpfilename;
 	char cwd[2048];
 	gchar *linkto;
 #endif
+	char *cpperrs = (parse_flags & IDLF_SHOW_CPP_ERRORS) 
+	  ? "" : "2>/dev/null";
 	GSList *slist;
 	int rv;
 
@@ -235,6 +237,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 
 	cmd_len = (strlen (filename) + (*wd ? 2 : 0) + strlen (wd) +
 		  (cpp_args ? strlen (cpp_args) : 0) +
+		  strlen(cpperrs) +
 		  strlen (fmt) - 8 + 1);
 	cmd = g_malloc (cmd_len);
 	if (!cmd) {
@@ -243,7 +246,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 
 	g_snprintf (cmd, cmd_len, fmt, *wd ? "-I" : "", wd,
-		    cpp_args ? cpp_args : "", filename);
+		    cpp_args ? cpp_args : "", filename, cpperrs);
 
 	if (dirend)
 		g_free (wd);
@@ -287,6 +290,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 
 	cmd_len = (strlen (tmpfilename) + strlen (cwd) +
 		   (cpp_args ? strlen (cpp_args) : 0) +
+		   strlen(cpperrs) +
 		   strlen (fmt) - 6 + 1);
 	cmd = g_malloc (cmd_len);
 	if (!cmd) {
@@ -296,7 +300,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 
 	g_snprintf (cmd, cmd_len, fmt,
-		    cwd, cpp_args ? cpp_args : "", tmpfilename);
+		    cwd, cpp_args ? cpp_args : "", tmpfilename, cpperrs);
 #endif
 
 #ifndef NO_POPEN
