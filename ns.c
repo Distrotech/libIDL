@@ -242,19 +242,17 @@ void IDL_ns_pop_scope(IDL_ns ns)
 
 IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
 {
-	IDL_tree l = NULL, prev = NULL, tail = NULL;
+	IDL_tree l = NULL, item;
 
 	while (nsid != NULL) {
 		if (IDL_GENTREE(nsid).data == NULL) {
 			nsid = IDL_NODE_UP(nsid);
 			continue;
 		}
-		l = IDL_list_new(IDL_ident_new(g_strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
-		if (tail == NULL)
-			tail = l;
-		IDL_LIST(l).next = prev;
-		IDL_LIST(l)._tail = tail;
-		prev = l;
+		assert(IDL_GENTREE(nsid).data != NULL);
+		assert(IDL_NODE_TYPE(IDL_GENTREE(nsid).data) == IDLN_IDENT);
+		item = IDL_list_new(IDL_ident_new(g_strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
+		l = IDL_list_concat(l, item);
 		nsid = IDL_NODE_UP(nsid);
 	}
 
