@@ -1,6 +1,6 @@
 /**************************************************************************
 
-    IDL.h (IDL AST and namespace components)
+    IDL.h (IDL parse tree and namespace components)
 
     Copyright (C) 1998 Andrew Veliath
 

@@ -39,8 +39,8 @@ This document applies to version 0.1 of libIDL.
 @chapter Overview
 IDL is the object definition language from the CORBA specification from
 the Object Management Group (OMG).  libIDL contains a yacc and lex-based
-parser which generates a C abstract syntax tree (AST) which represents
-the information contained in an IDL file module.
+parser which generates a C parse tree which represents the information
+contained in an IDL file module.
 
 @node Example, Reference, Overview, top
 @chapter Usage
@@ -165,9 +165,9 @@ Function: int IDL_parse_filename(const char *NAME, const char *ARGS,
 IDL_callback CALLBACK, IDL_tree *TREE, IDL_ns *NS, unsigned long FLAGS)
 @findex IDL_parse_filename
 
-Parse an file containing an IDL definition into an abstract syntax tree.
-Returns IDL_SUCCESS if successful, or IDL_ERROR if there was a parse
-error.  If -1 is returned, errno will be set accordingly.
+Parse an file containing an IDL definition into a parse tree.  Returns
+IDL_SUCCESS if successful, or IDL_ERROR if there was a parse error.  If
+-1 is returned, errno will be set accordingly.
 
 @itemize @minus
 @item
