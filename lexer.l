@@ -170,7 +170,8 @@ wstring			tokreturn(TOK_WSTRING);
 	tokreturn(TOK_IDENT);
 }
 {warn1_ident}		{
-	yywarningv("`%s' underscores within identifiers are discouraged for use "
+	yywarningv(IDL_WARNING2,
+		   "`%s' underscores within identifiers are discouraged for use "
 		   "with C-language IDL mappings", yytext);
 	yylval.str = strdup(yytext);
 	tokreturn(TOK_IDENT);

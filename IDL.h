@@ -40,7 +40,10 @@ extern "C" {
 
 #define IDL_SUCCESS			0
 #define IDL_ERROR			1
-#define IDL_WARNING			2
+#define IDL_WARNING1			2
+#define IDL_WARNING2			3
+#define IDL_WARNING3			4
+#define IDL_WARNINGMAX			IDL_WARNING3
 
 /* flags for IDL_parse_filename */
 #define IDLF_EVAL_CONST			(1UL << 0)
@@ -61,7 +64,7 @@ struct _IDL_LIST {
 	IDL_tree _tail;
 };
   
-#define IDL_LIST(a)			IDL_CHECK_CAST(a,IDLN_LIST,idl_list)
+#define IDL_LIST(a)			IDL_CHECK_CAST(a, IDLN_LIST, idl_list)
 extern IDL_tree				IDL_list_new(IDL_tree data);
 extern int				IDL_list_length(IDL_tree list);
 extern IDL_tree                         IDL_list_nth(IDL_tree list,

@@ -1,5 +1,12 @@
 1998-08-05  Andrew Veliath  <andrewtv@usa.net>
 
+	* lexer.l: Change C-language warning level to warning level 2,
+	  all other warnings to level 1
+	
+	* parser.y (yywarning*): Add multiple warning levels
+
+	* IDL.h: Remove IDL_WARNING, add IDL_WARNING1-3 and IDL_WARNINGMAX
+	
 	* IDL.h: Generate a CPP error if glib.h isn't included beforehand.
 	
 	* IDL.h, parser.y: Integrate Sebastian Wilhelm's patch to add type

@@ -910,7 +910,7 @@ string_lit_list:	string_lit			{ $$ = list_start($1, IDL_TRUE); }
 
 positive_int_const:	TOK_INTEGER			{
 	if ($1 < 0) {
-		yywarningv("Cannot use negative value " 
+		yywarningv(IDL_WARNING1, "Cannot use negative value " 
 			   IDL_SB10_FMT ", using " IDL_SB10_FMT, $1, -$1);
 		$$ = IDL_integer_new(-$1);
 	}
@@ -978,7 +978,7 @@ void yyerrorl(const char *s, int ofs)
 		fprintf(stderr, "%s:%d: Error: %s\n", filename, line, s);
 }
 
-void yywarningl(const char *s, int ofs)
+void yywarningl(int level, const char *s, int ofs)
 {
 	int line = __IDL_cur_line - 1 + ofs;
 	gchar *filename = g_basename(__IDL_cur_filename);
@@ -986,7 +986,7 @@ void yywarningl(const char *s, int ofs)
 	++idl_nwarnings;
 	
 	if (idl_msgcb)
-		(*idl_msgcb)(IDL_WARNING, idl_nwarnings, line, filename, s);
+		(*idl_msgcb)(level, idl_nwarnings, line, filename, s);
 	else
 		fprintf(stderr, "%s:%d: Warning: %s\n", filename, line, s);
 }
@@ -996,9 +996,9 @@ void yyerror(const char *s)
 	yyerrorl(s, 0);
 }
 
-void yywarning(const char *s)
+void yywarning(int level, const char *s)
 {
-	yywarningl(s, 0);
+	yywarningl(level, s, 0);
 }
 
 void yyerrorlv(const char *fmt, int ofs, ...)
@@ -1013,14 +1013,14 @@ void yyerrorlv(const char *fmt, int ofs, ...)
 	free(msg);
 }
 
-void yywarninglv(const char *fmt, int ofs, ...)
+void yywarninglv(int level, const char *fmt, int ofs, ...)
 {
 	char *msg = (char *)malloc(strlen(fmt) + 2048);
 	va_list args;
 
 	va_start(args, ofs);
 	vsprintf(msg, fmt, args);
-	yywarningl(msg, ofs);
+	yywarningl(level, msg, ofs);
 	va_end(args);
 	free(msg);
 }
@@ -1037,14 +1037,14 @@ void yyerrorv(const char *fmt, ...)
 	free(msg);
 }
 
-void yywarningv(const char *fmt, ...)
+void yywarningv(int level, const char *fmt, ...)
 {
 	char *msg = (char *)malloc(strlen(fmt) + 2048);
 	va_list args;
 
 	va_start(args, fmt);
 	vsprintf(msg, fmt, args);
-	yywarning(msg);
+	yywarning(level, msg);
 	va_end(args);
 	free(msg);
 }
@@ -1181,7 +1181,7 @@ void IDL_ns_ID(IDL_ns ns, const char *s)
 
 	n = sscanf(s, "%1023s \"%1023s\"", name, id);
 	if (n < 2 && idl_is_parsing) {
-		yywarning("Malformed pragma ID");
+		yywarning(IDL_WARNING1, "Malformed pragma ID");
 		return;
 	}
 	if (id[strlen(id) - 1] == '"')
@@ -1189,7 +1189,7 @@ void IDL_ns_ID(IDL_ns ns, const char *s)
 
 	p = IDL_ns_pragma_parse_name(idl_ns, name);
 	if (!p && idl_is_parsing) {
-		yywarningv("Unknown identifier `%s' in pragma ID", name);
+		yywarningv(IDL_WARNING1, "Unknown identifier `%s' in pragma ID", name);
 		return;
 	}
 
@@ -1213,13 +1213,13 @@ void IDL_ns_version(IDL_ns ns, const char *s)
 
 	n = sscanf(s, "%1023s %u %u", name, &major, &minor);
 	if (n < 3 && idl_is_parsing) {
-		yywarning("Malformed pragma version");
+		yywarning(IDL_WARNING1, "Malformed pragma version");
 		return;
 	}
 
 	p = IDL_ns_pragma_parse_name(idl_ns, name);
 	if (!p && idl_is_parsing) {
-		yywarningv("Unknown identifier `%s' in pragma version", name);
+		yywarningv(IDL_WARNING1, "Unknown identifier `%s' in pragma version", name);
 		return;
 	}
 
@@ -1242,7 +1242,7 @@ void IDL_ns_version(IDL_ns ns, const char *s)
 			IDL_IDENT_REPO_ID(ident) = s->str;
 			g_string_free(s, FALSE);
 		} else if (idl_is_parsing)
-			yywarningv("Cannot find RepositoryID OMG IDL version in ID `%s'",
+			yywarningv(IDL_WARNING1, "Cannot find RepositoryID OMG IDL version in ID `%s'",
 				   IDL_IDENT_REPO_ID(ident));
 	} else
 		IDL_IDENT_REPO_ID(ident) = IDL_ns_ident_make_repo_id(idl_ns, p, NULL, &major, &minor);
@@ -1908,8 +1908,8 @@ static int my_strcmp(const char *a, const char *b)
 	int rv = strcasecmp(a, b);
 	
 	if (idl_is_parsing && rv == 0 && strcmp(a, b) != 0) {
-		yywarningv("Case mismatch between `%s' and `%s' ", a, b);
-		yywarning("(Identifiers should be case-consistent after initial declaration)");
+		yywarningv(IDL_WARNING1, "Case mismatch between `%s' and `%s' ", a, b);
+		yywarning(IDL_WARNING1, "(Identifiers should be case-consistent after initial declaration)");
 	}
 
 	return rv;

@@ -42,12 +42,12 @@ extern char *		strdup(const char *s);
 
 extern void		yyerror(const char *s);
 extern void		yyerrorl(const char *s, int ofs);
-extern void		yywarning(const char *s);
-extern void		yywarningl(const char *s, int ofs);
+extern void		yywarning(int level, const char *s);
+extern void		yywarningl(int level, const char *s, int ofs);
 extern void		yyerrorv(const char *fmt, ...);
 extern void		yyerrorlv(const char *fmt, int ofs, ...);
-extern void		yywarningv(const char *fmt, ...);
-extern void		yywarninglv(const char *fmt, int ofs, ...);
+extern void		yywarningv(int level, const char *fmt, ...);
+extern void		yywarninglv(int level, const char *fmt, int ofs, ...);
 
 #ifndef HAVE_CPP_PIPE_STDIN
 extern char *		__IDL_tmp_filename;
