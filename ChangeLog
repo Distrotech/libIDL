@@ -1,6 +1,16 @@
-1999-04-09  Andrew T. Veliath  <andrewtv@usa.net>
+1999-04-12  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.8.
+
+	* IDL.h.new.in (IDLF_INHIBIT_INCLUDES): New parse flag;
+	automatically inhibits included files.
+
+	* util.h (IDLFP_IN_INCLUDES): Internal flag checked when we are
+	inside an include file.
+
+	* parser.y (assign_declspec): Wrap assignment, and if we are
+	inside an include file check the inhibit include flag.
+	(IDL_file_set): Add detection of include files here.
 
 1999-04-01  Andrew T. Veliath  <andrewtv@usa.net>
 

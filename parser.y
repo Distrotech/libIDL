@@ -57,6 +57,17 @@
 	}						\
 } while (0)
 
+#define assign_declspec(tree,declspec)	do {		\
+	IDL_NODE_DECLSPEC (tree) = declspec;		\
+	if (__IDL_inhibits > 0 ||			\
+	    (__IDL_flags & IDLF_INHIBIT_INCLUDES &&	\
+	     __IDL_flagsi & IDLFP_IN_INCLUDES)) {	\
+		IDL_NODE_DECLSPEC (tree) |=		\
+			IDLF_DECLSPEC_EXIST |		\
+			IDLF_DECLSPEC_INHIBIT;		\
+	}						\
+} while (0)
+
 #define assign_props(tree,props)	do {		\
 	if (__IDL_flags & IDLF_PROPERTIES)		\
 		IDL_NODE_PROPERTIES (tree) = (props);	\
@@ -370,12 +381,7 @@ module:			module_declspec
 		module = IDL_module_new ($2, $5);
 
 	$$ = module;
-	if ($$) {
-		IDL_NODE_DECLSPEC ($$) = $1;	
-		if (__IDL_inhibits > 0)
-			IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST |
-				IDLF_DECLSPEC_INHIBIT;
-	}
+	if ($$) assign_declspec ($$, $1);
 }
 	;
 
@@ -425,9 +431,7 @@ interface:		z_declspec
 				interface_body
 			'}' pop_scope			{
  	$$ = IDL_interface_new ($4, $7, $10);
-	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_inhibits > 0)
-		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 	assign_props (IDL_INTERFACE ($$).ident, $2);
 }
 |			z_declspec
@@ -439,9 +443,7 @@ interface:		z_declspec
 			    "Ignoring properties for forward declaration `%s'",
 			    IDL_IDENT ($4).str);
 	$$ = IDL_forward_dcl_new ($4);
-	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_inhibits > 0)
-		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 }
 	;
 
@@ -515,9 +517,7 @@ export:			type_dcl check_semicolon
 
 type_dcl:		z_declspec type_dcl_def		{
 	$$ = $2;
-	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_inhibits > 0)
- 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 }
 	;
 
@@ -663,9 +663,7 @@ case_label:		TOK_CASE const_exp ':'		{ $$ = $2; }
 
 const_dcl:		z_declspec const_dcl_def	{
 	$$ = $2;
-	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_inhibits > 0)
- 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 }
 	;
 
@@ -678,9 +676,7 @@ const_dcl_def:		TOK_CONST const_type new_ident
 
 except_dcl:		z_declspec except_dcl_def	{
 	$$ = $2;
-	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_inhibits > 0)
- 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 }
 	;
 
@@ -699,9 +695,7 @@ is_readonly:		/* empty */			{ $$ = FALSE; }
 
 attr_dcl:		z_declspec attr_dcl_def		{
 	$$ = $2;
-	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_inhibits > 0)
- 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 }
 	;
 
@@ -721,8 +715,6 @@ attr_dcl_def:		z_props
 		IDL_tree_properties_copy (&node, dcl);
 	}
 	__IDL_free_properties (node.properties);
-	if (__IDL_inhibits > 0)
- 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 }
 	;
 
@@ -759,9 +751,7 @@ is_oneway:		/* empty */			{ $$ = FALSE; }
 
 op_dcl:		z_declspec op_dcl_def			{
 	$$ = $2;
-	IDL_NODE_DECLSPEC ($$) = $1;
-	if (__IDL_inhibits > 0)
- 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 }
 	;
 
@@ -1388,9 +1378,7 @@ boolean_lit:		TOK_TRUE			{ $$ = IDL_boolean_new (TRUE); }
 
 codefrag:		z_declspec TOK_CODEFRAG		{
 	$$ = $2;
-	IDL_NODE_DECLSPEC ($$) = $1;	
-	if (__IDL_inhibits > 0)
-		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	assign_declspec ($$, $1);
 }
 	;
 
@@ -1698,7 +1686,9 @@ void IDL_file_set (const char *filename, int line)
 			) {
 			g_free (__IDL_cur_filename);
 			__IDL_cur_filename = g_strdup (__IDL_real_filename);
-		}
+			__IDL_flagsi &= ~IDLFP_IN_INCLUDES;
+		} else
+			__IDL_flagsi |= IDLFP_IN_INCLUDES;
 
 		if (g_hash_table_lookup_extended (__IDL_filename_hash, __IDL_cur_filename,
 						  (gpointer) &orig, (gpointer) &fi)) {
