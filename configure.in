@@ -23,8 +23,7 @@ else
 fi
 AC_SUBST(LFLAGS)
 AC_PROG_YACC
-
-AC_PROG_RANLIB
+AM_PROG_LIBTOOL
 
 dnl Checks for libraries.
 AC_CHECK_PROG(HAVE_GLIB_CONFIG, glib-config, yes, no)

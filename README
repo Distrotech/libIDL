@@ -8,9 +8,9 @@ different CORBA implementations.  Although the primary use of libIDL
 will be for a tool such as an IDL compiler, future uses may include
 use in an interface repository or interface browsing tool.  Since
 libIDL uses the Unix yacc and lex tools, the resulting library is not
-reentrant and must be linked statically.  However, the yacc and lex
-functions are hidden so that it does not conflict with other yacc
-parsers or lex scanners.
+reentrant and is not thread-safe.  However, the yacc and lex functions
+are hidden so that it does not conflict with other yacc parsers or lex
+scanners.
 
 
 What it Does

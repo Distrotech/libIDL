@@ -17,10 +17,12 @@ lexer.c: lexer.l
 EXTRA_DIST		= BUGS
 #info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
-lib_LIBRARIES		= libIDL.a
+lib_LTLIBRARIES		= libIDL.la
 noinst_HEADERS		= rename.h util.h parser.h
 noinst_PROGRAMS		= tstidl
 
-libIDL_a_SOURCES	= parser.y lexer.l util.c ns.c
+libIDL_la_SOURCES	= parser.y lexer.l util.c ns.c
+libIDL_la_LDFLAGS	= -version-info 3:0:3
+
 tstidl_SOURCES		= tstidl.c
-tstidl_LDADD		= libIDL.a
+tstidl_LDADD		= libIDL.la
