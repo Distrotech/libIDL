@@ -3548,12 +3548,12 @@ is_recursive_walker (IDL_tree_func_data *tfd, gpointer data) {
 		    return FALSE;	/* IDENT that is typespec within type */
 		}
 	    }
-	    g_print("[%d] Begin recursive walk of %s.\n", 
-	      tfd->level, IDL_IDENT(tfd->tree).str);
+	    /* g_print("[%d] Begin recursive walk of %s.\n", 
+	     * tfd->level, IDL_IDENT(tfd->tree).str); */
 	    IDL_tree_walk (def, tfd, IDL_WalkF_TypespecOnly,
 	      /*pre*/is_recursive_walker, /*post*/NULL, info);
-	    g_print("[%d] End recursive walk of %s.\n", 
-	      tfd->level, IDL_IDENT(tfd->tree).str);
+	    /* g_print("[%d] End recursive walk of %s.\n", 
+	     * tfd->level, IDL_IDENT(tfd->tree).str); */
 	}
  	return TRUE;	/* continue walking */
 }
