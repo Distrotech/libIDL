@@ -1497,7 +1497,7 @@ static const char *get_name_token (const char *s, char **tok)
 	if (!s)
 		return NULL;
 
-	while (isspace ((int)*s)) ++s;
+	while (g_ascii_isspace (*s)) ++s;
 	
 	while (1) switch (state) {
 	case 0:		/* Unknown */
@@ -1701,7 +1701,7 @@ void __IDL_do_pragma (const char *s)
 	if (sscanf (s, "%255s%n", directive, &n) < 1)
 		return;
 	s += n;
-	while (isspace ((int)*s)) ++s;
+	while (g_ascii_isspace (*s)) ++s;
 
 	if (strcmp (directive, "prefix") == 0)
 		IDL_ns_prefix (__IDL_root_ns, s);

@@ -96,7 +96,7 @@ whitespace		[ \t\v\f\r]*
 whitespacenl		[ \t\v\f\r\n]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
-cpp_status		^{whitespace}#.*
+cpp_status		^{whitespace}#{whitespace}[0-9][0-9]*.*
 b8_int			0[0-9]*
 b10_uint		[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
@@ -129,7 +129,7 @@ dqstring		\"[^\"\n]*[\"\n]
 <INITIAL,XP,CFRG>^%\{.*					{
 	char *s = yytext + 2;
 
-	while (isspace ((int)*s)) ++s;
+	while (g_ascii_isspace (*s)) ++s;
 	codefrag_desc = g_strdup (s);
 	codefrag_list = codefrag_list_tail = NULL;
 
@@ -163,52 +163,61 @@ dqstring		\"[^\"\n]*[\"\n]
 	char *p = yytext;
 	char *s, *t;
 
-	while (isspace ((int)*p) || *p == '#') ++p;
+	while (g_ascii_isspace (*p) || *p == '#') ++p;
 	s = p;
 	sscanf (p, "%*6s%n", &n); s += n;
-	while (isspace ((int)*s)) ++s;
+	while (g_ascii_isspace (*s)) ++s;
 
 	t = s + strlen(s) - 1;
-	while(isspace((int)*t) && t > s) *(t--) = '\0'; /* Chomp trailing spaces */
+	while(g_ascii_isspace(*t) && t > s) *(t--) = '\0'; /* Chomp trailing spaces */
 
 	__IDL_do_pragma (s);
 }
 <*>{cpp_status}						{
-	char *starttext;
-	char *filename;
-	char *tmp;
-	int line;
+	gchar *mytext = yytext;
+	gint   line;
 
-	starttext = yytext;
-	while (isspace ((int)*starttext)) ++starttext;
-	tmp = g_malloc (strlen (starttext) + 1);
+	while (g_ascii_isspace (*mytext))
+		mytext++;
 
-	if (sscanf (starttext, "# %d %s", &line, tmp) == 2) {
-		if (tmp [0] == '"') {
-			filename = g_strdup (tmp + 1);
-			filename [strlen (tmp) - 2] = '\0';
-			g_free (tmp);
+	g_assert (mytext [0] == '#' && mytext [1] == ' ');
+
+	mytext += 2;
+
+	line = atoi (mytext);
+
+	while (g_ascii_isdigit (*mytext))
+		mytext++;
+
+	if (g_ascii_isspace (*mytext)) {
+		mytext++;
+
+		if (mytext [0] == '"') {
+			gchar *p = ++mytext;
+
+			while (*p && *p != '"') p++;
+
+			*p = '\0';
 		}
-		else 
-			filename = tmp;
 
-		if (*filename == '<' && 
-		    (!strcmp (filename, "<builtin>") ||
-		     !strcmp (filename, "<stdin>")   ||
-		     !strcmp (filename, "<command line>")))
-
+		if (mytext [0] ==  '<' &&
+		    (!strcmp (mytext, "<builtin>") ||
+		     !strcmp (mytext, "<stdin>")   ||
+		     !strcmp (mytext, "<command line>")))
+		    
 			yylval.tree = IDL_file_set ("", line);
-		else
+		else {
+			gchar *filename = g_strdup (mytext);
+
 			yylval.tree = IDL_file_set (filename, line);
 
-		g_free (filename);
+			g_free (filename);
+		}
 	}
-	else {
-		g_free (filename);
+	else
 		yylval.tree = IDL_file_set ("", line);
-	}
 
-	if ( yylval.tree )
+	if (yylval.tree)
 	 	tokreturn (TOK_SRCFILE);
 }
 <*>{whitespace}						;
