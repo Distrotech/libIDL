@@ -786,8 +786,8 @@ fixed_pt_lit:		TOK_FIXEDP			{ $$ = IDL_fixed_new($1); }
 floating_pt_lit:	TOK_FLOATP			{ $$ = IDL_float_new($1); }
 	;
 
-boolean_lit:		"TRUE"				{ $$ = IDL_boolean_new(IDL_TRUE); }
-|			"FALSE"				{ $$ = IDL_boolean_new(IDL_FALSE); }
+boolean_lit:		TOK_TRUE			{ $$ = IDL_boolean_new(IDL_TRUE); }
+|			TOK_FALSE			{ $$ = IDL_boolean_new(IDL_FALSE); }
 	;
 
 dqstring_cat:		dqstring
