@@ -2278,7 +2278,6 @@ static int load_inhibits (IDL_tree_func_data *tfd, GHashTable *table)
 	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_LIST &&
 	    IDL_NODE_DECLSPEC (p) & IDLF_DECLSPEC_INHIBIT &&
 	    !g_hash_table_lookup_extended (table, IDL_NODE_UP (p), NULL, NULL)) {
-
 		list_head = NULL;
 		q = IDL_NODE_UP (IDL_NODE_UP (p));
 		if (q) {
@@ -2298,6 +2297,8 @@ static int load_inhibits (IDL_tree_func_data *tfd, GHashTable *table)
 			}
 		}
 		g_hash_table_insert (table, IDL_NODE_UP (p), list_head);
+
+		return FALSE;
 	}
 
 	return TRUE;
