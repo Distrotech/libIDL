@@ -91,6 +91,8 @@ IDL_ns					__IDL_root_ns;
 int					__IDL_is_okay;
 int					__IDL_is_parsing;
 unsigned long				__IDL_flags;
+gpointer				__IDL_inputcb_user_data;
+IDL_input_callback			__IDL_inputcb;
 static int				__IDL_max_msg_level;
 static int				__IDL_nerrors, __IDL_nwarnings;
 static IDL_msg_callback			__IDL_msgcb;
@@ -338,6 +340,99 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 
 		return IDL_ERROR;
 	}
+
+	if (__IDL_flags & IDLF_PREFIX_FILENAME)
+		IDL_ns_prefix (__IDL_root_ns, filename);
+
+	if (tree)
+		*tree = __IDL_root;
+	else
+		IDL_tree_free (__IDL_root);
+
+	if (ns)
+		*ns = __IDL_root_ns;
+	else
+		IDL_ns_free (__IDL_root_ns);
+
+	return IDL_SUCCESS;
+}
+
+int IDL_parse_filename_with_input (const char *filename,
+				   IDL_input_callback input_cb,
+				   gpointer input_cb_user_data,
+				   IDL_msg_callback msg_cb,
+				   IDL_tree *tree, IDL_ns *ns,
+				   unsigned long parse_flags,
+				   int max_msg_level)
+{
+	extern void __IDL_lex_init (void);
+	extern void __IDL_lex_cleanup (void);
+	extern int yyparse (void);
+	union IDL_input_data data;
+	int rv;
+
+	if (!filename || !input_cb || !tree ||
+	    (tree == NULL && ns != NULL)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	__IDL_max_msg_level = max_msg_level;
+	__IDL_nerrors = __IDL_nwarnings = 0;
+	__IDL_msgcb = msg_cb;
+	__IDL_flags = parse_flags;
+	__IDL_root_ns = IDL_ns_new ();
+
+	__IDL_is_parsing = TRUE;
+	__IDL_is_okay = TRUE;
+	__IDL_lex_init ();
+	__IDL_inputcb = input_cb;
+	__IDL_inputcb_user_data = input_cb_user_data;
+
+	data.init.filename = filename;
+	if ((*__IDL_inputcb) (
+		IDL_INPUT_REASON_INIT, &data, __IDL_inputcb_user_data))
+		return -1;
+	
+	__IDL_real_filename = filename;
+#ifndef HAVE_CPP_PIPE_STDIN
+	__IDL_tmp_filename = tmpfilename;
+#endif
+	__IDL_filename_hash = g_hash_table_new (g_str_hash, g_str_equal);
+	rv = yyparse ();
+	__IDL_is_parsing = FALSE;
+	__IDL_lex_cleanup ();
+	__IDL_real_filename = NULL;
+#ifndef HAVE_CPP_PIPE_STDIN
+	__IDL_tmp_filename = NULL;
+#endif
+
+	if (__IDL_root != NULL) {
+		IDL_tree_optimize (&__IDL_root, __IDL_root_ns);
+
+		if (__IDL_root == NULL)
+			yyerror ("File empty after optimization");
+	}
+
+	__IDL_msgcb = NULL;
+
+	g_hash_table_foreach (__IDL_filename_hash, (GHFunc) g_free, NULL);
+	g_hash_table_destroy (__IDL_filename_hash);
+
+	if (rv != 0 || !__IDL_is_okay) {
+		if (tree)
+			*tree = NULL;
+
+		if (ns)
+			*ns = NULL;
+
+		(*__IDL_inputcb) (
+			IDL_INPUT_REASON_ABORT, NULL, __IDL_inputcb_user_data);
+		
+		return IDL_ERROR;
+	}
+
+	(*__IDL_inputcb) (IDL_INPUT_REASON_FINISH, NULL, __IDL_inputcb_user_data);
 
 	if (__IDL_flags & IDLF_PREFIX_FILENAME)
 		IDL_ns_prefix (__IDL_root_ns, filename);

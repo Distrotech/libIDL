@@ -1,3 +1,20 @@
+1998-11-19  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* tstidl.c (my_input_cb): Provide example of alternate input method.
+
+	* lexer.l (YY_INPUT): Allow stream input from user defined
+	callback. (__IDL_lex_init): Set __IDL_inputcb to NULL.
+
+	* util.c, util.h: Add variables for input callback.
+	(IDL_parse_filename_with_input): New function.
+
+	* IDL.h: Add IDL_input_callback, IDL_input_reason, IDL_input_data.
+	(IDL_parse_filename_with_input): Add prototype.
+
+	* lexer.l: Add XPIDL inclusive start condition.  Activate
+	condition when IDLF_XPIDL is specified in the parse flags before
+	scanning.
+	
 1998-11-16  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* lexer.l: Had b10_int and b10_uint reversed.

@@ -75,5 +75,7 @@ extern IDL_ns				__IDL_root_ns;
 extern int				__IDL_is_okay;
 extern int				__IDL_is_parsing;
 extern unsigned long			__IDL_flags;
+extern gpointer				__IDL_inputcb_user_data;
+extern IDL_input_callback		__IDL_inputcb;
 
 #endif /* __UTIL_H */

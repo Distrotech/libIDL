@@ -36,6 +36,53 @@ gboolean print_const_dcls (IDL_tree p, gpointer user_data)
 	return TRUE;
 }
 
+/* Example input method... simply reads in from some file and passes it along as
+ * is--warning, no actual C preprocessing performed here!  Standard C preprocessor
+ * indicators should also be passed to libIDL, including # <line> "filename" (double
+ * quotes expected), etcetera (do not confuse this with passing #defines to libIDL, this
+ * should not be done). */
+
+/* #define TEST_INPUT_CB */
+
+struct my_input_cb_data {
+	FILE *in;
+};
+
+int my_input_cb (IDL_input_reason reason, union IDL_input_data *cb_data, gpointer user_data)
+{
+	struct my_input_cb_data *my_data = user_data;
+	int rv;
+	
+	switch (reason) {
+	case IDL_INPUT_REASON_INIT:
+		g_message ("my_input_cb: filename: %s", cb_data->init.filename);
+		my_data->in = fopen (cb_data->init.filename, "r");
+		/* If failed, should know that it is implied to libIDL that errno is set
+		 * appropriately by a C library function or otherwise. Return 0 upon
+		 * success. */
+		return my_data->in ? 0 : -1;
+
+	case IDL_INPUT_REASON_FILL:
+		/* Fill the buffer here... return number of bytes read (maximum of
+		   cb_data->fill.max_size), 0 for EOF, negative value upon error. */
+		rv = fread (cb_data->fill.buffer, 1, cb_data->fill.max_size, my_data->in);
+		g_message ("my_input_cb: fill, max size %d, got %d",
+			   cb_data->fill.max_size, rv);
+		if (rv == 0 && ferror (my_data->in))
+			return -1;
+		return rv;
+
+	case IDL_INPUT_REASON_ABORT:
+	case IDL_INPUT_REASON_FINISH:
+		/* Called after parsing to indicate success or failure */
+		g_message ("my_input_cb: abort or finish");
+		fclose (my_data->in);
+		break;
+	}
+	
+	return 0;
+}
+
 int main (int argc, char *argv[])
 {
 	int rv;
@@ -53,9 +100,19 @@ int main (int argc, char *argv[])
 	}
 
 	fn = argv[1];
-
+	
+#ifdef TEST_INPUT_CB
+	{ struct my_input_cb_data input_cb_data;
+	g_message ("IDL_parse_filename_with_input");
+	rv = IDL_parse_filename_with_input (fn, my_input_cb, &input_cb_data,
+					    NULL, &tree, &ns,
+					    argc == 3 ? atoi (argv[2]) : 0, IDL_WARNING1);
+	}
+#else
+	g_message ("IDL_parse_filename");
 	rv = IDL_parse_filename (fn, NULL, NULL, &tree, &ns,
 				 argc == 3 ? atoi (argv[2]) : 0, IDL_WARNING1);
+#endif
 
 	if (rv == IDL_SUCCESS) {
 		printf ("Repository IDs\n");

@@ -545,6 +545,27 @@ struct _IDL_ns {
 };
 #define IDL_NS(a)			(*(a))
 
+typedef enum {
+	IDL_INPUT_REASON_INIT,
+	IDL_INPUT_REASON_FILL,
+	IDL_INPUT_REASON_ABORT,
+	IDL_INPUT_REASON_FINISH
+} IDL_input_reason;
+
+union IDL_input_data {
+	struct {
+		const char *filename;
+	} init;
+	struct {
+		char *buffer;
+		size_t max_size;
+	} fill;
+};
+
+typedef int		(*IDL_input_callback)		(IDL_input_reason reason,
+							 union IDL_input_data *data,
+							 gpointer user_data);
+
 typedef int		(*IDL_msg_callback)		(int level,
 							 int num,
 							 int line,
@@ -566,6 +587,14 @@ extern const char *	IDL_get_IDLver_string		(void);
 
 extern int		IDL_parse_filename		(const char *filename,
 							 const char *cpp_args,
+							 IDL_msg_callback msg_cb,
+							 IDL_tree *tree, IDL_ns *ns,
+							 unsigned long parse_flags,
+							 int max_msg_level);
+
+extern int		IDL_parse_filename_with_input	(const char *filename,
+							 IDL_input_callback input_cb,
+							 gpointer input_cb_user_data,
 							 IDL_msg_callback msg_cb,
 							 IDL_tree *tree, IDL_ns *ns,
 							 unsigned long parse_flags,

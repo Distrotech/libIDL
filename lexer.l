@@ -31,13 +31,24 @@
 #include "util.h"
 #include "parser.h"
 
-#define YY_INPUT(buf,result,max_size)	do {				\
-        if ((result = fread (buf, 1, max_size, yyin)) == 0 &&		\
-	    ferror (yyin))						\
-                YY_FATAL_ERROR( "input in flex scanner failed" );	\
+#define YY_INPUT(buf,result,the_max_size)	do {				\
+	if (__IDL_inputcb == NULL) {						\
+		if ((result = fread (buf, 1, the_max_size, yyin)) == YY_NULL &&	\
+		    ferror (yyin))						\
+			YY_FATAL_ERROR ("input in flex scanner failed");	\
+	} else {								\
+		union IDL_input_data data;					\
+										\
+		data.fill.buffer = buf;						\
+		data.fill.max_size = the_max_size;				\
+		result = (*__IDL_inputcb) (IDL_INPUT_REASON_FILL, &data,	\
+					   __IDL_inputcb_user_data);		\
+		if (result < 0)							\
+			YY_FATAL_ERROR ("input callback returned failure");	\
+	}									\
 } while (0)
 
-#define tokreturn(token)		do {		\
+#define tokreturn(token)			do {	\
 	__IDL_prev_token_line = __IDL_cur_token_line;	\
 	__IDL_cur_token_line = __IDL_cur_line;		\
 	return token;					\
@@ -69,8 +80,12 @@ warn1_ident		[A-Za-z][A-Za-z0-9_]*
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
-%%
+%s XPIDL
 
+%%
+	if (__IDL_flags & IDLF_XPIDL)
+		BEGIN(XPIDL);
+		
 {cpp_pragma}		{
 	int n;
 	char *p = yytext;
@@ -224,6 +239,7 @@ wstring			tokreturn (TOK_WSTRING);
 
 void __IDL_lex_init (void)
 {
+	__IDL_inputcb = NULL;
 	__IDL_cur_line = 0;
 	__IDL_cur_token_line = 0;
 	__IDL_prev_token_line = 0;

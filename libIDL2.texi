@@ -138,9 +138,9 @@ A semi-opaque structure which encapsulates the IDL module namespace.
 Must be freed with IDL_ns_free (@xref{Functions}).
 
 @item
-IDL_callback
+IDL_msg_callback
 
-Defined as typedef int (*IDL_callback)(int LEVEL, int NUM, int LINE,
+Defined as typedef int (*IDL_msg_callback)(int LEVEL, int NUM, int LINE,
 const char *NAME, const char *ERR).  A function of this type can be
 optionally passed to IDL_parse_filename to be called when a parse
 warning or error occurs.
@@ -160,7 +160,7 @@ traverse the tree.
 @itemize @bullet
 @item
 Function: int IDL_parse_filename (const char *NAME, const char *CPP_ARGS,
-IDL_callback CALLBACK, IDL_tree *TREE, IDL_ns *NS, unsigned long FLAGS,
+IDL_msg_callback CALLBACK, IDL_tree *TREE, IDL_ns *NS, unsigned long FLAGS,
 int MAX_MESSAGE_LEVEL)
 @findex IDL_parse_filename
 
