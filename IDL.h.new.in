@@ -671,11 +671,14 @@ typedef int		(*IDL_msg_callback)		(int level,
 typedef struct _IDL_tree_func_state	IDL_tree_func_state;
 typedef struct _IDL_tree_func_data	IDL_tree_func_data;
 
+#define IDL_WalkF_TypespecOnly	(1<<0)
+
 /* Traversal state data.  Recursive walks chain states. */
 struct _IDL_tree_func_state {
 	IDL_tree_func_state *up;
 	IDL_tree start;
 	IDL_tree_func_data *bottom;
+	glong	flags;
 };
 
 /* This holds a list of the up hierarchy traversed, beginning from traversal.  This is
@@ -687,6 +690,7 @@ struct _IDL_tree_func_data {
 	IDL_tree tree;
 	gint step;
 	gpointer data;		/* Application data */
+	gint level;
 };
 
 typedef gboolean	(*IDL_tree_func)		(IDL_tree_func_data *tnfd,
@@ -777,6 +781,7 @@ extern void		IDL_tree_remove_inhibits	(IDL_tree *tree,
 
 extern void		IDL_tree_walk			(IDL_tree p,
 							 IDL_tree_func_data *current,
+							 glong flags,
 							 IDL_tree_func pre_tree_func,
 							 IDL_tree_func post_tree_func,
 							 gpointer user_data);
