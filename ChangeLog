@@ -1,3 +1,8 @@
+2002-06-06  jacob berkman  <jacob@ximian.com>
+
+	* IDL.h.new.in: 
+	* configure.in: use %q rather than %ll on bsd (fixes bug #80439)
+
 2002-06-03  Mark McLoughlin  <mark@skynet.ie>
 
 	* configure.in: Version 0.8.0.

@@ -103,20 +103,10 @@ extern "C" {
 			    __FILE__, __LINE__,			\
 			    G_GNUC_PRETTY_FUNCTION)->u.name)
 
-#ifdef G_HAVE_GINT64
-#  if G_MAXLONG > 0xffffffffUL
-#    define IDL_LL			"l"
-#  else
-#    define IDL_LL			"ll"
-#  endif
-typedef gint64				IDL_longlong_t;
-typedef guint64				IDL_ulonglong_t;
-#else
-#  define IDL_LL			"l"
-typedef long				IDL_longlong_t;
-typedef unsigned long			IDL_ulonglong_t;
-#  warning 64-bit integer type not available, using 32-bit instead
-#endif /* G_HAVE_GINT64 */
+/* GLib 2.0 requires 64-bit types */
+#define IDL_LL		@IDL_LL@
+typedef gint64		IDL_longlong_t;
+typedef guint64		IDL_ulonglong_t;
 
 typedef unsigned int			IDL_declspec_t;
 typedef struct _IDL_tree_node 		IDL_tree_node;
