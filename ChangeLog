@@ -1,3 +1,7 @@
+Sat Apr 10 21:15:05 1999  ape@lrdpf.spacetec.no  (Asbjorn Pettersen)
+
+	* util.c (IDL_parse_filename): Open pipe in TEXT mode.
+
 1999-04-09  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.8.

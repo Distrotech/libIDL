@@ -297,7 +297,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		    cwd, cpp_args ? cpp_args : "", tmpfilename);
 #endif
 
-	input = popen (cmd, "r");
+	input = popen (cmd, "rt");
 	g_free (cmd);
 
 	if (input == NULL || ferror (input)) {
