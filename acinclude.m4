@@ -15,9 +15,7 @@ AC_DEFUN(AC_PROG_PLAIN_CPP,
 			if [[ -z "$PLAIN_CPP" ]]; then
 				AC_MSG_WARN([could not find a C preprocessor, specify --with-plain-cpp=PROGRAM])
 			fi])
-			ac_prog_plain_cpp="$PLAIN_CPP"])
-		CPP_PROGRAM="$PLAIN_CPP"
-		AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$PLAIN_CPP")])
+			ac_prog_plain_cpp="$PLAIN_CPP"])]))
 
 AC_DEFUN(AC_PROG_PLAIN_CPP_EXEC,
 	[AC_MSG_CHECKING([the C preprocessor])
