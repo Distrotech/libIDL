@@ -260,6 +260,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		wide_char_type
 %type <tree>		wide_string_type
 %type <tree>		xor_expr
+%type <tree>		z_definition_list
 %type <tree>		z_inheritance
 %type <tree>		typecode_type
 
@@ -277,6 +278,10 @@ static int		do_token_error			(IDL_tree p,
 
 specification:		/* empty */			{ yyerror ("Empty file"); YYABORT; }
 |			definition_list			{ __IDL_root = $1; }
+	;
+
+z_definition_list:	/* empty */			{ $$ = NULL; }
+|			definition_list
 	;
 
 definition_list:	definition			{ $$ = list_start ($1, TRUE); }
@@ -325,54 +330,45 @@ definition:		type_dcl check_semicolon
 module_declspec:	z_declspec TOK_MODULE
 	;
 
-module:			module_declspec new_or_prev_scope '{'
-				definition_list
+module:			module_declspec
+			new_or_prev_scope		{
+	if (IDL_NODE_UP ($2) != NULL &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
+		yyerror ("Module definition conflicts");
+		do_token_error (IDL_NODE_UP ($2), "with", FALSE);
+		YYABORT;
+	}
+}			'{'
+				z_definition_list
 			'}' pop_scope			{
 	IDL_tree module;
 
-	if (IDL_NODE_UP ($2) != NULL &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
-		do_token_error (IDL_NODE_UP ($2), "Module definition conflicts with", FALSE);
-		IDL_tree_error ($2, "Previous declaration");
-		YYABORT;
+	if ($5 == NULL) {
+		yyerrorv ("Empty module declaration `%s' is not legal IDL",
+			  IDL_IDENT ($2).str);
+		module = NULL;
 	}
 
 	if (__IDL_flags & IDLF_COMBINE_REOPENED_MODULES) {
 		if (IDL_NODE_UP ($2) == NULL)
-			module = IDL_module_new ($2, $4);
+			module = IDL_module_new ($2, $5);
 		else {
 			module = IDL_NODE_UP ($2);
-			
+
 			IDL_MODULE (module).definition_list =
-				IDL_list_concat (IDL_MODULE (module).definition_list, $4);
+				IDL_list_concat (IDL_MODULE (module).definition_list, $5);
 
 			module = NULL;
 		}
 	} else
-		module = IDL_module_new ($2, $4);
+		module = IDL_module_new ($2, $5);
 
 	$$ = module;
-	IDL_NODE_DECLSPEC ($$) = $1;	
-	if (__IDL_inhibits > 0)
-		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
-}
-|			module_declspec new_or_prev_scope '{'
-			'}' pop_scope			{
-	if (IDL_NODE_UP ($2) != NULL &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($2)) != IDLN_MODULE) {
-		do_token_error (IDL_NODE_UP ($2), "Module definition conflicts with", FALSE);
-		IDL_tree_error ($2, "Previous declaration");
-		YYABORT;
-	}
-	yywarningv (IDL_WARNING1,
-		   "Empty module declaration `%s' is not legal IDL",
-		   IDL_IDENT ($2).str);
-
-	$$ = IDL_NODE_UP ($2) ? NULL : IDL_module_new ($2, NULL);
 	if ($$) {
-		IDL_NODE_DECLSPEC ($$) = $1;
+		IDL_NODE_DECLSPEC ($$) = $1;	
 		if (__IDL_inhibits > 0)
-			IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+			IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST |
+				IDLF_DECLSPEC_INHIBIT;
 	}
 }
 	;

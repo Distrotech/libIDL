@@ -2,6 +2,8 @@
 
 	* Update version to 0.6.0.
 
+	* parser.y: Improve module identifier conflict error message.
+
 	* IDL.h.new.in: Improved version codes.
 
 	* parser.y: Allow inhibits on codefrags, operations and
