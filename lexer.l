@@ -47,7 +47,7 @@ int			__IDL_cur_token_line;
 static int		warn_underscores;
 %}
 
-whitespace		[ \t]*
+whitespace		[ \t\f\r]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^#.*
