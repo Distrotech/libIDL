@@ -1564,6 +1564,28 @@ static int identcmp(IDL_tree a, IDL_tree b)
 	return my_strcmp(IDL_IDENT(a).str, IDL_IDENT(b).str);
 }
 
+static char *IDL_string_sanitize(const char *s)
+{
+	char *rv, *p;
+
+	if (!s)
+		return;
+
+	p = rv = strdup(s);
+	
+	if (!p)
+		return p;
+
+	for (; *p; ++p) {
+		if ((isalnum(*p) || *p == '_') &&
+		    !(p == rv && isdigit(*p)))
+			continue;
+		*p = '_';
+	}
+
+	return rv;
+}
+
 int IDL_ns_prefix(IDL_ns ns, const char *s)
 {
 	IDL_tree p;
@@ -1576,9 +1598,9 @@ int IDL_ns_prefix(IDL_ns ns, const char *s)
 		return IDL_FALSE;
 	
 	if (*s == '"')
-		r = strdup(s + 1);
+		r = IDL_string_sanitize(s + 1);
 	else
-		r = strdup(s);
+		r = IDL_string_sanitize(s);
 
 	l = strlen(r);
 	if (r[l - 1] == '"')
