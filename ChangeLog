@@ -1,3 +1,7 @@
+1998-08-09  Andrew Veliath  <andrewtv@usa.net>
+
+	* parser.y: enum_type: Don't generate a nested scope.
+
 1998-08-06  Andrew Veliath  <andrewtv@usa.net>
 
 	* Allow for redefinition of certain items in inheritance
