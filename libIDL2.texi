@@ -24,7 +24,7 @@ Copyright @copyright{} 1998 Andrew Veliath
 This file documents the Interface Definition Language (IDL) parsing
 library, libIDL.
 
-This document applies to version 0.1 of libIDL.
+This document applies to version 0.5 of libIDL.  It is still incomplete.
 @end ifinfo
 
 @menu
@@ -37,75 +37,77 @@ This document applies to version 0.1 of libIDL.
 
 @node Overview, Example, top, top
 @chapter Overview
-IDL is the object definition language from the CORBA specification from
-the Object Management Group (OMG).  libIDL contains a yacc and lex-based
-parser which generates a C parse tree which represents the information
-contained in an IDL file module.
+libIDL is a small library for creating parse trees of CORBA v2.2
+compliant Interface Definition Language (IDL) files, which is a
+specification for defining interfaces which can be used between
+different CORBA implementations.  Although the primary use of libIDL
+will be for a tool such as an IDL compiler, future uses may include use
+in an interface repository or interface browsing tool.  Since libIDL
+uses the Unix yacc and lex tools, the resulting library is not reentrant
+and is not thread-safe.  However, the yacc and lex functions are hidden
+so that it does not conflict with other yacc parsers or lex scanners.
+
+By calling IDL_parse_filename, libIDL performs compilation phases from
+lexical analysis to nearly full semantic analysis and some optimization,
+and will attempt to generate meaningful errors and warnings for invalid
+or deprecated features, which can be redirected using callbacks.  libIDL
+supports some extensions to standard IDL, including declarations spec
+tags which can assign attributions to certain IDL constructs.
 
 @node Example, Reference, Overview, top
 @chapter Usage
-The following ANSI C program will parse an IDL file and print out all of
-the identifiers in the namespace of the file.
+The following C program using libIDL will parse an IDL file and print
+the Repository IDs of the interfaces in the IDL module.
 
 @example
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <glib.h>
 #include <libIDL/IDL.h>
-     
-void walk_ns(IDL_tree p)
+
+gboolean
+print_repo_id (IDL_tree p, gpointer user_data)
 @{
-	if (p == NULL)
-		return;
+	char *repo_id = NULL;
 
-	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
+	assert (p != NULL);
 
-	while (p != NULL) @{
-		if (IDL_GENTREE(p).children == NULL) @{
-			char *s = IDL_ns_ident_to_qstring(p, "::");
-			
-			if (s != NULL)
-				puts(s);
+	if (IDL_NODE_TYPE (p) == IDLN_INTERFACE)
+		repo_id = IDL_IDENT_REPO_ID (IDL_INTERFACE (p).ident);
 
-			free(s);
-		@} else
-			walk_ns(IDL_GENTREE(p).children);
-		p = IDL_GENTREE(p).siblings;
-	@}
+	if (repo_id)
+		printf ("%s\n", repo_id);
+
+	return TRUE;
 @}
-     
-int main(int argc, char *argv[])
+
+int 
+main (int argc, char *argv[])
 @{
-     	IDL_tree tree;
-     	IDL_ns ns;
-     	int rv;
-     	char *fn;
-     
-     	if (argc != 2) @{
-     		fprintf(stderr, "usage: idlns <filename>\n");
-     		exit(1);
-     	@}
-     
-     	fn = argv[1];
-     
-     	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, 0);
-     
-     	if (rv == IDL_SUCCESS) @{
-     		walk_ns(IDL_NS(ns).global);
-     		IDL_tree_free(tree);
-     		IDL_ns_free(ns);
-     	@}
-     	else if (rv == IDL_ERROR) @{
-     		fprintf(stderr, "idlns: IDL_parse_filename: IDL_ERROR\n");
-     		exit(1);
-     	@}
-     	else if (rv < 0) @{
-     		fprintf(stderr, "idlns: IDL_parse_filename: ");
-     		perror(fn);
-     		exit(1);
-     	@}
-     
-     	return 0;
+	IDL_tree tree;
+	IDL_ns ns;
+	char *fn;
+	int rv;
+
+	if (argc < 2) @{
+		fprintf (stderr, "usage: %s <file>\n", argv[0]);
+		exit (1);
+	@}
+	fn = argv[1];
+
+	rv = IDL_parse_filename (fn, NULL, NULL, &tree, &ns, IDLF_EVAL_CONST, IDL_WARNING1);
+
+	if (rv == IDL_ERROR || rv < 0) @{
+		if (rv < 0)
+			perror (fn);
+		exit (1);
+	@}
+	IDL_tree_walk_in_order (tree, (IDL_tree_func) print_repo_id, NULL);
+	IDL_ns_free (ns);
+	IDL_tree_free (tree);
+
+	return 0;
 @}
 @end example
 
@@ -115,6 +117,7 @@ int main(int argc, char *argv[])
 @menu
 * Data Types::                Constructed data types used.
 * Functions::                 Functions provided.
+* Extensions::                Extensions provided to standard IDL.
 * Tree Structure::            The C IDL tree representation.
 @end menu
 
@@ -125,8 +128,14 @@ int main(int argc, char *argv[])
 @item
 IDL_tree
 
-An opaque tree which encapsulates an IDL tree node.  Must be freed with
-IDL_tree_free (@xref{Functions}).
+A semi-opaque tree which encapsulates an IDL tree node.  Must be freed
+with IDL_tree_free (@xref{Functions}).
+
+@item
+IDL_ns
+
+A semi-opaque structure which encapsulates the IDL module namespace.
+Must be freed with IDL_ns_free (@xref{Functions}).
 
 @item
 IDL_callback
@@ -137,19 +146,21 @@ optionally passed to IDL_parse_filename to be called when a parse
 warning or error occurs.
 
 @item
-IDL_ns
+IDL_tree_func
+Defined as typedef gboolean (*IDL_tree_func)(IDL_tree TREE, gpointer
+DATA).  A function of this type is passed to IDL_tree_walk_in_order to
+traverse the tree.
 
-An opaque structure which encapsulates the IDL module namespace.  Must
-be freed with IDL_ns_free (@xref{Functions}).
 @end itemize
 
-@node Functions, Tree Structure, Data Types, Reference
+@node Functions, Extensions, Data Types, Reference
 @chapter Functions
 
 @itemize @bullet
 @item
-Function: int IDL_parse_filename(const char *NAME, const char *ARGS,
-IDL_callback CALLBACK, IDL_tree *TREE, IDL_ns *NS, unsigned long FLAGS)
+Function: int IDL_parse_filename(const char *NAME, const char *CPP_ARGS,
+IDL_callback CALLBACK, IDL_tree *TREE, IDL_ns *NS, unsigned long FLAGS,
+int MAX_MESSAGE_LEVEL)
 @findex IDL_parse_filename
 
 Parse an file containing an IDL definition into a parse tree.  Returns
@@ -161,14 +172,17 @@ IDL_SUCCESS if successful, or IDL_ERROR if there was a parse error.  If
 NAME: required, specifies the filename to be parsed.
 
 @item
-ARGS: optional, if non-NULL, specifies extra arguments to pass to the C
-preprocessor.  The most common type of string would be in the form of
--I<dir> to include additional directories for file inclusion search.
+CPP_ARGS: optional, if non-NULL, specifies extra arguments to pass to
+the C preprocessor.  The most common type of string would be in the form
+of -I<dir> to include additional directories for file inclusion search,
+or defines in the form of -D<define>=<value>.
 
 @item
 CALLBACK: optional, if non-NULL, this function will be called when a
 warning or error is generated (@xref{Data Types}).  If not given,
-warnings and errors will be sent to stderr.
+warnings and errors will be sent to stderr.  All errors and warning,
+including callbacks, are subject to MAX_MESSAGE_LEVEL as described
+below.
 
 @item
 TREE: optional, if non-NULL, points to an IDL_tree * to return the
@@ -190,10 +204,45 @@ possible flags:
 IDLF_EVAL_CONST: instructs the parser to evaluate constant expressions.
 
 @item
+IDLF_COMBINE_REOPENED_MODULES: instructs the parser to combine modules
+defined later in the IDL code in the first module node in the tree.
+
+@item
 IDLF_PREFIX_FILENAME: instructs the parser to prefix the filename to the
 namespace.
 
 @end itemize
+
+@item
+MAX_MESSAGE_LEVEL:
+
+This specifies the maximum message level to display.  Possible values
+are -1 or no messages, IDL_ERROR for errors only, or IDL_WARNING1,
+IDL_WARNING2 and IDL_WARNING3.  A typical value is IDL_WARNING1, which
+will limit verbosity.  IDL_WARNINGMAX is defined as the value in which
+all messages will be displayed.
+
+@end itemize
+
+@item
+Function: void IDL_tree_walk_in_order(IDL_tree ROOT, IDL_tree_func
+FUNC, gpointer DATA)
+@findex IDL_tree_walk_in_order
+
+Walks an IDL_tree, calling FUNC for every node.  If the FUNC returns
+TRUE for a particular node, that particular node will also be traversed,
+if FALSE is returned, that particular node will be skipped, in the
+assumption that the function has taken care of it.
+
+@itemize @minus
+@item
+ROOT: required, specifies the IDL_tree to traverse.
+
+@item
+FUNC: required, specifies the callback function (@xref{Data Types}).
+
+@item
+DATA: optional, specifies the callback data.
 
 @end itemize
 
@@ -211,7 +260,34 @@ Frees the memory associated with NS.
 
 @end itemize
 
-@node Tree Structure, , Functions, Reference
+@node Extensions, Tree Structure, Functions, Reference
+@chapter Extensions
+This page documents extensions to standard IDL which libIDL will
+understand.  To maintain portability, it is recommended that these
+extensions are only used with some sort of C preprocessor define so they
+can be conditionally omitted.
+
+@itemize @bullet
+@item
+__declspec (<spec>)
+
+This token assigns special attributions to particular IDL constructs.
+
+@itemize @minus
+@item
+inhibit
+
+If __declspec (inhibit) is placed before a module or interface keyword,
+that module or interface definition will be removed from the tree.  The
+tree is only deleted when the IDL_ns component is freed, so it can be
+traversed from the namespace component for extended information, but
+will be omitted from the primary tree.
+
+@end itemize
+
+@end itemize
+
+@node Tree Structure, , Extensions, Reference
 @chapter Tree Structure
 
 @node Function Index, , Reference, top

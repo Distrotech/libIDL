@@ -556,7 +556,8 @@ extern int				IDL_parse_filename(const char *filename,
 							   const char *cpp_args,
 							   IDL_callback cb,
 							   IDL_tree *tree, IDL_ns *ns,
-							   unsigned long parse_flags);
+							   unsigned long parse_flags,
+							   int max_msg_level);
 
 extern int				IDL_ns_prefix(IDL_ns ns,
 						      const char *s);

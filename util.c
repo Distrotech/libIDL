@@ -92,6 +92,7 @@ IDL_ns				__IDL_root_ns;
 int				__IDL_is_okay;
 int				__IDL_is_parsing;
 unsigned long			__IDL_flags;
+static int			__IDL_max_msg_level;
 static int			__IDL_nerrors, __IDL_nwarnings;
 static IDL_callback		__IDL_msgcb;
 
@@ -176,7 +177,7 @@ static void IDL_tree_optimize(IDL_tree *p, IDL_ns ns)
 
 int IDL_parse_filename(const char *filename, const char *cpp_args,
 		       IDL_callback cb, IDL_tree *tree, IDL_ns *ns,
-		       unsigned long parse_flags)
+		       unsigned long parse_flags, int max_msg_level)
 {
 	extern void __IDL_lex_init(void);
 	extern void __IDL_lex_cleanup(void);
@@ -273,6 +274,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		return IDL_ERROR;
 	}
 
+	__IDL_max_msg_level = max_msg_level;
 	__IDL_nerrors = __IDL_nwarnings = 0;
 	__IDL_in = input;
 	__IDL_msgcb = cb;
@@ -351,7 +353,11 @@ void yyerrorl(const char *s, int ofs)
 
 	++__IDL_nerrors;
 	__IDL_is_okay = FALSE;
-	
+
+	/* Errors are counted, even if not printed */
+	if (__IDL_max_msg_level < IDL_ERROR)
+		return;
+
 	if (__IDL_msgcb)
 		(*__IDL_msgcb)(IDL_ERROR, __IDL_nerrors, line, filename, s);
 	else {
@@ -367,13 +373,17 @@ void yywarningl(int level, const char *s, int ofs)
 	int line = __IDL_cur_line - 1 + ofs;
 	gchar *filename = NULL;
 
+	/* Unprinted warnings are not counted */
+	if (__IDL_max_msg_level < level)
+		return;
+	
 	if (__IDL_cur_filename)
 		filename = g_basename(__IDL_cur_filename);
 	else
 		line = -1;
-	
+
 	++__IDL_nwarnings;
-	
+
 	if (__IDL_msgcb)
 		(*__IDL_msgcb)(level, __IDL_nwarnings, line, filename, s);
 	else {

@@ -17,13 +17,12 @@ What it Does
 ~~~~~~~~~~~~~
 
 By calling IDL_parse_filename, libIDL performs compilation phases from
-lexical analysis to nearly full semantic analysis, and will attempt to
-generate meaningful errors and warnings for invalid or deprecated
-features, which can be redirected using callbacks.  A parse tree of
-the resulting IDL file is returned, and libIDL supports declarations
-specs which can tag attributes to certain interfaces (the main use is
-to not generate tree nodes or stub information for particular
-interfaces).
+lexical analysis to nearly full semantic analysis and some
+optimization, and will attempt to generate meaningful errors and
+warnings for invalid or deprecated features, which can be redirected
+using callbacks.  libIDL supports some extensions to standard IDL,
+including declarations spec tags which can assign attributions to
+certain IDL constructs.
 
 
 Emacs Syntax Highlighting for IDL Code

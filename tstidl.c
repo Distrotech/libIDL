@@ -43,7 +43,8 @@ int main(int argc, char *argv[])
 
 	fn = argv[1];
 
-	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns, argc == 3 ? atoi(argv[2]) : 0);
+	rv = IDL_parse_filename(fn, NULL, NULL, &tree, &ns,
+				argc == 3 ? atoi(argv[2]) : 0, IDL_WARNING1);
 
 	if (rv == IDL_SUCCESS) {
 		IDL_tree_walk_in_order(tree, print_repo_id, NULL);
