@@ -855,7 +855,7 @@ void yywarning(const char *s)
 
 char *IDL_get_libver_string(void)
 {
-	return VERSION;
+	return LIBIDL_VERSION;
 }
 
 char *IDL_get_IDLver_string(void)
@@ -1622,7 +1622,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	int yyparse(void);
 	extern FILE *__IDL_in;
 	FILE *input;
-	char *fmt = CPP_PROGRAM " %s %s";
+	char *fmt = CPP " %s %s";
 	char *cmd;
 	int rv;
 
