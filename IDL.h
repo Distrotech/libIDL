@@ -492,6 +492,9 @@ extern IDL_tree				IDL_ns_pop_scope(IDL_ns ns);
 
 extern IDL_tree				IDL_ns_qualified_ident_new(IDL_tree nsid);
 
+extern char *				IDL_ns_ident_to_qstring(IDL_tree ns_ident,
+								const char *join);
+
 #ifdef __cplusplus
 }
 #endif

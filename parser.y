@@ -1609,8 +1609,7 @@ IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
 			nsid = IDL_GENTREE(nsid).parent;
 			continue;
 		}
-		l = IDL_list_new(
-			IDL_ident_new(strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
+		l = IDL_list_new(IDL_ident_new(strdup(IDL_IDENT(IDL_GENTREE(nsid).data).str)));
 		if (tail == NULL)
 			tail = l;
 		IDL_LIST(l).next = prev;
@@ -1620,6 +1619,52 @@ IDL_tree IDL_ns_qualified_ident_new(IDL_tree nsid)
 	}
 
 	return l;
+}
+
+char *IDL_ns_ident_to_qstring(IDL_tree ns_ident, const char *join)
+{
+	IDL_tree l, q;
+	int len, joinlen;
+	char *s;
+
+	assert(IDL_NODE_TYPE(ns_ident) == IDLN_GENTREE);
+
+	if (ns_ident == NULL)
+		return NULL;
+
+	l = IDL_ns_qualified_ident_new(ns_ident);
+
+	if (l == NULL)
+		return NULL;
+
+	if (join == NULL)
+		join = "";
+
+	joinlen = strlen(join);
+	for (len = 0, q = l; q != NULL; q = IDL_LIST(q).next) {
+		IDL_tree i = IDL_LIST(q).data;
+		assert(IDL_NODE_TYPE(q) == IDLN_LIST);
+		assert(IDL_NODE_TYPE(i) == IDLN_IDENT);
+		if (IDL_IDENT(i).str != NULL)
+			len += strlen(IDL_IDENT(i).str) + joinlen;
+	}
+
+	s = (char *)malloc(len + 1);
+	
+	if (!s)
+		return NULL;
+
+	s[0] = 0;
+
+	for (q = l; q != NULL; q = IDL_LIST(q).next) {
+		IDL_tree i = IDL_LIST(q).data;
+		strcat(s, join);
+		strcat(s, IDL_IDENT(i).str);
+	}
+
+	IDL_tree_free(l);
+
+	return s;
 }
 
 int IDL_parse_filename(const char *filename, const char *cpp_args,
