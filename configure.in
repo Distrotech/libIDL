@@ -107,3 +107,4 @@ if [[ "$ac_cv_cpp_pipe_stdin" = "yes" ]]; then
 else
     echo "  Using symlink method."
 fi
+echo

@@ -57,5 +57,4 @@ done
 echo "Running ./configure --enable-maintainer-mode" "$@"
 $srcdir/configure --enable-maintainer-mode "$@"
 
-echo 
 echo "Now type 'make' to compile libIDL."
