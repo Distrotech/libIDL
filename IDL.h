@@ -61,14 +61,14 @@ extern "C" {
 			    __FILE__, __LINE__,			\
 			    G_GNUC_PRETTY_FUNCTION)->u.name)
 
-#ifdef HAVE_GINT64
+#ifdef G_HAVE_GINT64
 typedef gint64				IDL_longlong_t;
 typedef guint64				IDL_ulonglong_t;
 #else
 typedef long				IDL_longlong_t;
 typedef unsigned long			IDL_ulonglong_t;
 #  warning 64-bit integer type not available, using 32-bit instead
-#endif /* HAVE_GINT64 */
+#endif /* G_HAVE_GINT64 */
 
 #if (SIZEOF_LONG_LONG == 8)
 #  define IDL_B8_FMT			"%llo"
