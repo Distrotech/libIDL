@@ -2,7 +2,7 @@
 #
 # libIDL Makefile.am
 #
-INCLUDES		= -DYYDEBUG=1 -DIDL_LIBRARY @GLIB_CFLAGS@
+INCLUDES		= -DYYDEBUG=1 -DYYERROR_VERBOSE=1 -DIDL_LIBRARY @GLIB_CFLAGS@
 YFLAGS			= -d -v 2>/dev/null
 LFLAGS			= @LFLAGS@
 LIBS			= @GLIB_LIBS@
@@ -30,4 +30,5 @@ libIDL_la_SOURCES	= parser.c parser.h lexer.c ns.c util.c util.h rename.h
 libIDL_la_LDFLAGS	= -version-info 5:4:5
 
 tstidl_SOURCES		= tstidl.c
+tstidl_LDFLAGS		= -static
 tstidl_LDADD		= libIDL.la
