@@ -302,8 +302,11 @@ check_comma:		','
 	;
 
 illegal_ident:		scoped_name			{
-	assert (IDL_NODE_UP ($1) != NULL);
-	do_token_error (IDL_NODE_UP ($1), "Illegal context for", FALSE);
+	if (IDL_NODE_UP ($1))
+	    do_token_error (IDL_NODE_UP ($1), "Illegal context for", FALSE);
+	else
+		yyerror ("Illegal context for identifier");
+	YYABORT;
 }
 	;
 
