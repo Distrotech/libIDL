@@ -49,7 +49,11 @@ extern "C" {
 #define IDLF_EVAL_CONST			(1UL << 0)
 #define IDLF_PREFIX_FILENAME		(1UL << 1)
 
-/* type cast check */
+/* type casting checks */
+#define IDL_check_cast_enable(boolean)	do {	\
+	extern int __IDL_check_type_casts;	\
+	__IDL_check_type_casts = (boolean);	\
+} while (0) 
 #define IDL_CHECK_CAST(tree, thetype, name)			\
 	(IDL_check_type_cast(tree, thetype,			\
 			    __FILE__, __LINE__,			\
