@@ -140,6 +140,7 @@ struct _IDL_IDENT {
 };
 #define IDL_IDENT(a)			((a)->u.idl_ident)
 #define IDL_IDENT_TO_NS(a)		((a)->u.idl_ident._ns_ref)
+#define IDL_IDENT_REPO_ID(a)		((a)->u.idl_ident.repo_id)
 extern IDL_tree				IDL_ident_new(char *str);
 
 struct _IDL_TYPE_FLOAT {

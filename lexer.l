@@ -32,12 +32,11 @@
 #include "IDL.h"
 #include "parser.h"
 
-#define tokreturn(token)					\
-	do {							\
-		__IDL_prev_token_line = __IDL_cur_token_line;	\
-		__IDL_cur_token_line = __IDL_cur_line;		\
-		return token;					\
-	} while (0)
+#define tokreturn(token)	do {			\
+	__IDL_prev_token_line = __IDL_cur_token_line;	\
+	__IDL_cur_token_line = __IDL_cur_line;		\
+	return token;					\
+} while (0)
 
 extern void		__IDL_do_pragma(const char *s);
 #ifdef YYDEBUG

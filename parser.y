@@ -1197,10 +1197,10 @@ void IDL_ns_ID(IDL_ns ns, const char *s)
 	assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
 	ident = IDL_GENTREE(p).data;
 
-	if (IDL_IDENT(ident).repo_id != NULL)
-		free(IDL_IDENT(ident).repo_id);
+	if (IDL_IDENT_REPO_ID(ident) != NULL)
+		free(IDL_IDENT_REPO_ID(ident));
 
-	IDL_IDENT(ident).repo_id = strdup(id);
+	IDL_IDENT_REPO_ID(ident) = strdup(id);
 }
 
 void IDL_ns_version(IDL_ns ns, const char *s)
@@ -1227,23 +1227,23 @@ void IDL_ns_version(IDL_ns ns, const char *s)
 	assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
 	ident = IDL_GENTREE(p).data;
 
-	if (IDL_IDENT(ident).repo_id != NULL) {
-		char *v = strrchr(IDL_IDENT(ident).repo_id, ':');
+	if (IDL_IDENT_REPO_ID(ident) != NULL) {
+		char *v = strrchr(IDL_IDENT_REPO_ID(ident), ':');
 		if (v) {
 			GString *s;
 
 			*v = 0;
 			s = g_string_new(NULL);
 			g_string_sprintf(s, "%s:%d.%d",
-					 IDL_IDENT(ident).repo_id, major, minor);
-			free(IDL_IDENT(ident).repo_id);
-			IDL_IDENT(ident).repo_id = s->str;
+					 IDL_IDENT_REPO_ID(ident), major, minor);
+			free(IDL_IDENT_REPO_ID(ident));
+			IDL_IDENT_REPO_ID(ident) = s->str;
 			g_string_free(s, FALSE);
 		} else if (idl_is_parsing)
 			yywarningv("Cannot find RepositoryID OMG IDL version in ID `%s'",
-				   IDL_IDENT(ident).repo_id);
+				   IDL_IDENT_REPO_ID(ident));
 	} else
-		IDL_IDENT(ident).repo_id = IDL_ns_ident_make_repo_id(idl_ns, p, NULL, &major, &minor);
+		IDL_IDENT_REPO_ID(ident) = IDL_ns_ident_make_repo_id(idl_ns, p, NULL, &major, &minor);
 }
 
 void __IDL_do_pragma(const char *s)
@@ -1520,7 +1520,7 @@ void __IDL_tree_print(IDL_tree p)
 	case IDLN_IDENT:
 		printf("IDL ident: %s (repo_id \"%s\")\n",
 		       IDL_IDENT(p).str,
-		       IDL_IDENT(p).repo_id ? IDL_IDENT(p).repo_id : "<NONE>");
+		       IDL_IDENT_REPO_ID(p) ? IDL_IDENT_REPO_ID(p) : "<NONE>");
 		break;
 		
 	case IDLN_MEMBER:
@@ -1745,7 +1745,7 @@ static void __IDL_tree_free(IDL_tree p)
 	case IDLN_IDENT:
 		if (--IDL_IDENT(p)._refs <= 0) {
 			free(IDL_IDENT(p).str);
-			free(IDL_IDENT(p).repo_id);
+			free(IDL_IDENT_REPO_ID(p));
 			free(p);
 		}
 		break;
@@ -2028,8 +2028,8 @@ static int IDL_ns_check_for_ambiguous_inheritance(IDL_tree interface_ident, IDL_
 {
 	/* We use a sorted heap to check for namespace collisions,
 	   since we must do case-insensitive collision checks.
-	   visited_interfaces is a hash of common ancestors, which we
-	   must check twice */
+	   visited_interfaces is a hash of visited interface nodes, so
+	   we only visit common ancestors once. */
 	GTree *ident_heap;
 	GHashTable *visited_interfaces;
 	int is_ambiguous = 0;
@@ -2234,7 +2234,7 @@ IDL_tree IDL_ns_place_new(IDL_ns ns, IDL_tree ident)
 	assert(IDL_NODE_UP(IDL_IDENT_TO_NS(ident)) == IDL_NS(ns).current);
 
 	/* Make default repository ID */
-	IDL_IDENT(ident).repo_id = IDL_ns_ident_make_repo_id(idl_ns, p, NULL, NULL, NULL);
+	IDL_IDENT_REPO_ID(ident) = IDL_ns_ident_make_repo_id(idl_ns, p, NULL, NULL, NULL);
 
 	return p;
 }
