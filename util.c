@@ -435,11 +435,9 @@ int IDL_tree_get_node_info(IDL_tree p, char **what, char **who)
 	case IDLN_LIST:
 		if (!IDL_LIST(p).data)
 			break;
-#if 0
 		assert(IDL_LIST(p)._tail != NULL);
 		if (!IDL_LIST(IDL_LIST(p)._tail).data)
 			break;
-#endif
 		dienow = IDL_tree_get_node_info(IDL_LIST(IDL_LIST(p)._tail).data, what, who);
 		break;
 	case IDLN_ATTR_DCL:
