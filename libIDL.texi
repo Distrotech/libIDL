@@ -93,8 +93,8 @@ void IDL_ns_rcs_traverse(IDL_tree p)
 		if (IDL_GENTREE(p).children == NULL) @{
 			/* node is a leaf */
 			IDL_ns_print_qualified(p);
-		@}
-		IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
+		@} else
+			IDL_ns_rcs_traverse(IDL_GENTREE(p).children);
 		p = IDL_GENTREE(p).siblings;
 	@}
 @}
