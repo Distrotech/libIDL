@@ -55,11 +55,18 @@ AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 
 AM_PROG_LEX
 if [[ "$LEX" != "flex" ]]; then
-	AC_MSG_WARN(flex is required to create the libIDL scanner)
+	AC_MSG_ERROR(flex is required to create the libIDL scanner)
 fi
 LFLAGS="-8"
 AC_SUBST(LFLAGS)
+
 AC_PROG_YACC
+dnl determine if a usable yacc is available on this system
+AC_CHECK_PROG(HAVE_YACC, $YACC, yes, no)
+if [[ "$HAVE_YACC" = "no" ]]; then
+	AC_MSG_ERROR($YACC is not usable as yacc - consider using bison)
+fi
+
 AM_PROG_LIBTOOL
 AM_MAINTAINER_MODE
 
