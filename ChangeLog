@@ -2,6 +2,9 @@
 
 	* Update version to 0.6.4.
 
+	* parser.y: Error out with better message if one tries to use a
+	void type in an attribute or parameter.
+
 	* util.c (IDL_tree_to_IDL*): If IDL_ns is NULL, output flag
 	IDLF_OUTPUT_NO_QUALIFY_IDENTS is enabled automatically.
 

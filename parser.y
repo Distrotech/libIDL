@@ -226,6 +226,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		octet_type
 %type <tree>		op_dcl
 %type <tree>		op_dcl_def
+%type <tree>		op_param_type_spec
 %type <tree>		op_type_spec
 %type <tree>		or_expr
 %type <tree>		param_dcl
@@ -704,7 +705,14 @@ attr_dcl_def:		z_props
 }
 	;
 
-param_type_spec:	base_type_spec
+param_type_spec:	op_param_type_spec
+|			TOK_VOID			{
+	yyerrorv ("Cannot have void type here");
+	$$ = NULL;
+}
+	;
+
+op_param_type_spec:	base_type_spec
 |			string_type
 |			wide_string_type
 |			fixed_pt_type
@@ -719,7 +727,7 @@ is_oneway:		/* empty */			{ $$ = FALSE; }
 |			TOK_ONEWAY			{ $$ = TRUE; }
 	;
 
-op_dcl:		z_declspec op_dcl_def		{
+op_dcl:		z_declspec op_dcl_def			{
 	$$ = $2;
 	IDL_NODE_DECLSPEC ($$) = $1;
 	if (__IDL_inhibits > 0)
@@ -741,7 +749,7 @@ op_dcl_def:		z_props
 }
 	;
 
-op_type_spec:		param_type_spec
+op_type_spec:		op_param_type_spec
 |			TOK_VOID			{ $$ = NULL; }
 	;
 
