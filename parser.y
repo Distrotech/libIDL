@@ -942,7 +942,7 @@ void yyerrorl(const char *s, int ofs)
 	if (idl_msgcb)
 		(*idl_msgcb)(IDL_ERROR, idl_nerrors, line, filename, s);
 	else
-		fprintf(stderr, "%s:%d: %s\n", filename, line, s);
+		fprintf(stderr, "%s:%d: Error: %s\n", filename, line, s);
 }
 
 void yywarningl(const char *s, int ofs)
@@ -1026,6 +1026,195 @@ const char *IDL_get_IDLver_string(void)
 	return "2.2";
 }
 
+static const char *IDL_ns_get_cur_prefix(IDL_ns ns)
+{
+	IDL_tree p;
+
+	p = IDL_NS(ns).current;
+
+	assert(p != NULL);
+
+	while (p && !IDL_GENTREE(p)._cur_prefix)
+		p = IDL_NODE_UP(p);
+
+	return p ? IDL_GENTREE(p)._cur_prefix : NULL;
+}
+
+char *IDL_ns_ident_make_repo_id(IDL_ns ns, IDL_tree p,
+				const char *p_prefix, int *major, int *minor)
+{
+	GString *s = g_string_new(NULL);
+	const char *prefix;
+	char *q;
+
+	assert(p != NULL);
+	
+	if (IDL_NODE_TYPE(p) == IDLN_IDENT)
+		p = IDL_IDENT_TO_NS(p);
+
+	assert(p != NULL);
+
+	prefix = p_prefix ? p_prefix : IDL_ns_get_cur_prefix(ns);
+
+	q = IDL_ns_ident_to_qstring(p, "/", 0);
+	g_string_sprintf(s, "IDL:%s%s%s:%d.%d",
+			 prefix ? prefix : "",
+			 prefix && *prefix ? "/" : "",
+			 q,
+			 major ? *major : 1,
+			 minor ? *minor : 0);
+	free(q);
+
+	q = s->str;
+	g_string_free(s, FALSE);
+
+	return q;
+}
+
+static const char *get_name_token(const char *s, char **tok)
+{
+	const char *begin = s;
+	int state = 0;
+
+	if (!s)
+		return NULL;
+
+	while (isspace(*s)) ++s;
+	
+	while (1) switch (state) {
+	case 0:		/* Unknown */
+		if (*s == ':')
+			state = 1;
+		else if (isalnum(*s) || *s == '_') {
+			begin = s;
+			state = 2;
+		} else
+			return NULL;
+		break;
+	case 1:		/* Scope */
+		if (strncmp(s, "::", 2) == 0) {
+			char *r = (char *)malloc(3);
+			strcpy(r, "::");
+			*tok = r;
+			return s + 2;
+		} else	/* Invalid */
+			return NULL;
+		break;
+	case 2:
+		if (isalnum(*s) || *s == '_')
+			++s;
+		else {
+			char *r = (char *)malloc(s - begin + 1);
+			strncpy(r, begin, s - begin + 1);
+			r[s - begin] = 0;
+			*tok = r;
+			return s;
+		}
+		break;
+	}
+}
+
+static IDL_tree IDL_ns_pragma_parse_name(IDL_ns ns, const char *s)
+{
+	IDL_tree p = IDL_NS(ns).current;
+	int start = 1;
+	char *tok;
+
+	while (p && *s && (s = get_name_token(s, &tok))) {
+		if (tok == NULL)
+			return NULL;
+		if (strcmp(tok, "::") == 0) {
+			if (start) {
+				/* Globally scoped */
+				p = IDL_NS(ns).file;
+			}
+			free(tok);
+		} else {
+			IDL_tree ident = IDL_ident_new(tok);
+			p = IDL_ns_lookup_this_scope(idl_ns, p, ident);
+			IDL_tree_free(ident);
+		}
+		start = 0;
+	}
+	
+	return p;
+}
+
+void IDL_ns_ID(IDL_ns ns, const char *s)
+{
+	char name[1024], id[1024];
+	IDL_tree p, ident;
+	int n;
+
+	n = sscanf(s, "%1023s \"%1023s\"", name, id);
+	if (n < 2 && idl_is_parsing) {
+		yywarning("Malformed pragma ID");
+		return;
+	}
+	if (id[strlen(id) - 1] == '"')
+		id[strlen(id) - 1] = 0;
+
+	p = IDL_ns_pragma_parse_name(idl_ns, name);
+	if (!p && idl_is_parsing) {
+		yywarningv("Unknown identifier `%s' in pragma ID", name);
+		return;
+	}
+
+	/* We have resolved the identifier, so assign the repo id */
+	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
+	assert(IDL_GENTREE(p).data != NULL);
+	assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
+	ident = IDL_GENTREE(p).data;
+
+	if (IDL_IDENT(ident).repo_id != NULL)
+		free(IDL_IDENT(ident).repo_id);
+
+	IDL_IDENT(ident).repo_id = strdup(id);
+}
+
+void IDL_ns_version(IDL_ns ns, const char *s)
+{
+	char name[1024];
+	int n, major, minor;
+	IDL_tree p, ident;
+
+	n = sscanf(s, "%1023s %u %u", name, &major, &minor);
+	if (n < 3 && idl_is_parsing) {
+		yywarning("Malformed pragma version");
+		return;
+	}
+
+	p = IDL_ns_pragma_parse_name(idl_ns, name);
+	if (!p && idl_is_parsing) {
+		yywarningv("Unknown identifier `%s' in pragma version", name);
+		return;
+	}
+
+	/* We have resolved the identifier, so assign the repo id */
+	assert(IDL_NODE_TYPE(p) == IDLN_GENTREE);
+	assert(IDL_GENTREE(p).data != NULL);
+	assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
+	ident = IDL_GENTREE(p).data;
+
+	if (IDL_IDENT(ident).repo_id != NULL) {
+		char *v = strrchr(IDL_IDENT(ident).repo_id, ':');
+		if (v) {
+			GString *s;
+
+			*v = 0;
+			s = g_string_new(NULL);
+			g_string_sprintf(s, "%s:%d.%d",
+					 IDL_IDENT(ident).repo_id, major, minor);
+			free(IDL_IDENT(ident).repo_id);
+			IDL_IDENT(ident).repo_id = s->str;
+			g_string_free(s, FALSE);
+		} else if (idl_is_parsing)
+			yywarningv("Cannot find RepositoryID OMG IDL version in ID `%s'",
+				   IDL_IDENT(ident).repo_id);
+	} else
+		IDL_IDENT(ident).repo_id = IDL_ns_ident_make_repo_id(idl_ns, p, NULL, &major, &minor);
+}
+
 void __IDL_do_pragma(const char *s)
 {
 	int n;
@@ -1039,10 +1228,12 @@ void __IDL_do_pragma(const char *s)
 	s += n;
 	while (isspace(*s)) ++s;
 
-#if 0
 	if (strcmp(directive, "prefix") == 0)
 		IDL_ns_prefix(idl_ns, s);
-#endif
+	else if (strcmp(directive, "ID") == 0)
+		IDL_ns_ID(idl_ns, s);
+	else if (strcmp(directive, "version") == 0)
+		IDL_ns_version(idl_ns, s);
 }
 
 #define C_ESC(a,b)				case a: *p++ = b; ++s; break
@@ -1295,7 +1486,9 @@ void __IDL_tree_print(IDL_tree p)
 		break;
 		
 	case IDLN_IDENT:
-		printf("IDL ident: %s\n", IDL_IDENT(p).str);
+		printf("IDL ident: %s (repo_id \"%s\")\n",
+		       IDL_IDENT(p).str,
+		       IDL_IDENT(p).repo_id ? IDL_IDENT(p).repo_id : "<NONE>");
 		break;
 		
 	case IDLN_MEMBER:
@@ -1490,6 +1683,7 @@ static void __IDL_tree_free(IDL_tree p)
 			r = IDL_GENTREE(q).siblings;
 			__IDL_tree_free(IDL_GENTREE(q).data);
 			__IDL_tree_free(IDL_GENTREE(q).children);
+			free(IDL_GENTREE(q)._cur_prefix);
 			free(q);
 			q = r;
 		}
@@ -1519,6 +1713,7 @@ static void __IDL_tree_free(IDL_tree p)
 	case IDLN_IDENT:
 		if (--IDL_IDENT(p)._refs <= 0) {
 			free(IDL_IDENT(p).str);
+			free(IDL_IDENT(p).repo_id);
 			free(p);
 		}
 		break;
@@ -1697,7 +1892,7 @@ void IDL_ns_free(IDL_ns ns)
 	assert(ns != NULL);
 
 	__IDL_tree_free(IDL_NS(ns).global);
-	
+
 	free(ns);
 }
 
@@ -1730,31 +1925,8 @@ static int identcmp(IDL_tree a, IDL_tree b)
 	return my_strcmp(IDL_IDENT(a).str, IDL_IDENT(b).str);
 }
 
-static char *IDL_string_sanitize(const char *s)
-{
-	char *rv, *p;
-
-	if (!s)
-		return NULL;
-
-	p = rv = strdup(s);
-	
-	if (!p)
-		return p;
-
-	for (; *p; ++p) {
-		if ((isalnum(*p) || *p == '_') &&
-		    !(p == rv && isdigit(*p)))
-			continue;
-		*p = '_';
-	}
-
-	return rv;
-}
-
 int IDL_ns_prefix(IDL_ns ns, const char *s)
 {
-	IDL_tree p;
 	char *r;
 	int l;
 
@@ -1762,20 +1934,20 @@ int IDL_ns_prefix(IDL_ns ns, const char *s)
 
 	if (s == NULL)
 		return IDL_FALSE;
-	
+
 	if (*s == '"')
-		r = IDL_string_sanitize(s + 1);
+		r = strdup(s + 1);
 	else
-		r = IDL_string_sanitize(s);
+		r = strdup(s);
 
 	l = strlen(r);
 	if (r[l - 1] == '"')
 		r[l - 1] = 0;
 
-	p = IDL_gentree_new(IDL_ident_new(r));
-	IDL_GENTREE(p).children = IDL_NS(ns).global;
-	IDL_NODE_UP(IDL_NS(ns).global) = p;
-	IDL_NS(ns).global = p;
+	if (IDL_GENTREE(IDL_NS(ns).current)._cur_prefix)
+		free(IDL_GENTREE(IDL_NS(ns).current)._cur_prefix);
+
+	IDL_GENTREE(IDL_NS(ns).current)._cur_prefix = r;
 
 	return IDL_TRUE;
 }
@@ -1887,6 +2059,9 @@ IDL_tree IDL_ns_place_new(IDL_ns ns, IDL_tree ident)
 	IDL_IDENT_TO_NS(ident) = p;
 
 	assert(IDL_NODE_UP(IDL_IDENT_TO_NS(ident)) == IDL_NS(ns).current);
+
+	/* Make default repository ID */
+	IDL_IDENT(ident).repo_id = IDL_ns_ident_make_repo_id(idl_ns, p, NULL, NULL, NULL);
 
 	return p;
 }

@@ -49,7 +49,7 @@ int			__IDL_cur_token_line;
 
 whitespace		[ \t]*
 newline			\n
-cpp_pragma		^#{whitespace}pragma{whitespace}.*
+cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^#.*
 b8_int			0[0-9]*
 b10_int			\-?[1-9][0-9]*
@@ -64,9 +64,12 @@ dqstring		\"[^\"\n]*[\"\n]
 
 {cpp_pragma}		{
 	int n;
-	char *s = yytext;
+	char *p = yytext;
+	char *s;
 
-	sscanf(yytext, "#%*6s%n", &n); s += n;
+	while (isspace(*p) || *p == '#') ++p;
+	s = p;
+	sscanf(p, "%*6s%n", &n); s += n;
 	while (isspace(*s)) ++s;
 #ifdef YYDEBUG
 	if (yydebug)

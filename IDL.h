@@ -61,6 +61,7 @@ struct _IDL_GENTREE {
 	IDL_tree siblings, _siblings_tail;
 	IDL_tree children;
 	IDL_tree _import;		/* Internal use, do not recurse */
+	char *_cur_prefix;		/* Internal use */
 };
 #define IDL_GENTREE(a)			((a)->u.idl_gentree)
 extern IDL_tree				IDL_gentree_new(IDL_tree data);
@@ -133,6 +134,7 @@ extern IDL_tree				IDL_boolean_new(unsigned value);
 
 struct _IDL_IDENT {
 	char *str;
+	char *repo_id;
 	int _refs;
 	IDL_tree _ns_ref;		/* Internal use, do not recurse */
 };
@@ -492,6 +494,15 @@ extern int				IDL_parse_filename(const char *filename,
 							   IDL_tree *tree, IDL_ns *ns,
 							   unsigned long parse_flags);
 
+extern int				IDL_ns_prefix(IDL_ns ns,
+						      const char *s);
+
+extern void				IDL_ns_ID(IDL_ns ns,
+						  const char *s);
+	
+extern void				IDL_ns_version(IDL_ns ns,
+						       const char *s);
+
 extern IDL_tree				IDL_get_parent_node(IDL_tree p,
 							    IDL_tree_type type,
 							    int *scope_levels);
@@ -503,8 +514,6 @@ extern char *				IDL_do_escapes(const char *s);
 extern IDL_ns				IDL_ns_new(void);
 
 extern void				IDL_ns_free(IDL_ns ns);
-
-extern int				IDL_ns_prefix(IDL_ns ns, const char *s);
 
 extern IDL_tree				IDL_ns_resolve_this_scope_ident(IDL_ns ns,
 									IDL_tree scope,
@@ -532,6 +541,13 @@ extern IDL_tree				IDL_ns_qualified_ident_new(IDL_tree nsid);
 extern char *				IDL_ns_ident_to_qstring(IDL_tree ns_ident,
 								const char *join,
 								int scope_levels);
+
+extern char *				IDL_ns_ident_make_repo_id(IDL_ns ns,
+								  IDL_tree p,
+								  const char *p_prefix,
+								  int *major,
+								  int *minor);
+
 
 #ifdef __cplusplus
 }

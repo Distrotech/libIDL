@@ -1,3 +1,13 @@
+1998-08-04  Andrew Veliath  <andrewtv@usa.net>
+
+	* Implement pragmas for prefix, ID and version
+	
+	* First cut at Repository ID generation
+
+1998-08-03  Andrew Veliath  <andrewtv@usa.net>
+
+	* parser.y: Add many new error messages.
+
 1998-07-28  Andrew Veliath  <andrewtv@usa.net>
 
 	* acinclude.m4 (revive): Create AC_CPP_ACCEPT_IDL and

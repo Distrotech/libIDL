@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
 	if (rv == IDL_SUCCESS) {
 		void __IDL_tree_print(IDL_tree p);
 
+		__IDL_tree_print(tree);
 #if 1
 		IDL_ns_dump_namespace(ns);
 #endif
