@@ -1568,8 +1568,10 @@ static void property_free (char *key, char *value)
 
 void __IDL_free_properties (GHashTable *table)
 {
-	g_hash_table_foreach (table, (GHFunc) property_free, NULL);
-	g_hash_table_destroy (table);
+	if (table) {
+		g_hash_table_foreach (table, (GHFunc) property_free, NULL);
+		g_hash_table_destroy (table);
+	}
 }
 
 /* Free associated node data, regardless of refcounts */
@@ -1624,8 +1626,7 @@ static void IDL_tree_free_real (IDL_tree p)
 		break;
 	}
 
-	if (IDL_NODE_PROPERTIES (p))
-		__IDL_free_properties (IDL_NODE_PROPERTIES (p));
+	__IDL_free_properties (IDL_NODE_PROPERTIES (p));
 	
 	free (p);
 }
