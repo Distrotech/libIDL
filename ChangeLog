@@ -2,7 +2,10 @@
 
 	* Update version to 0.6.0.
 
-	* parser.y: Improve module identifier conflict error message.
+	* Assign many node file and line locations to their identifier.
+
+	* parser.y: Improve module and interface identifier conflict error
+	message.
 
 	* IDL.h.new.in: Improved version codes.
 

@@ -102,7 +102,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 <XPIDL>^%\{.*						{
 	char *s = yytext + 2;
-	
+
 	while (isspace (*s)) ++s;
 	codefrag_desc = g_strdup (s);
 	codefrag_list = codefrag_list_tail = NULL;
@@ -115,7 +115,7 @@ dqstring		\"[^\"\n]*[\"\n]
 <XPIDLCODEFRAGX>.*					{
 	char *s;
 	GSList *slist;
-	
+
 	s = g_strdup (yytext);
 	slist = g_slist_alloc ();
 	slist->data = s;

@@ -114,7 +114,7 @@ int IDL_ns_prefix (IDL_ns ns, const char *s)
 IDL_tree IDL_ns_resolve_this_scope_ident (IDL_ns ns, IDL_tree scope, IDL_tree ident)
 {
 	IDL_tree p, q;
-	
+
 	IDL_NS_ASSERTS;
 
 	p = scope;
@@ -505,18 +505,18 @@ static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree iden
 	/* Add inherited namespace identifiers into heap */
 	for (; q != NULL; q = IDL_LIST (q).next) {
 		int r;
-		
+
 		assert (IDL_LIST (q).data != NULL);
 		assert (IDL_NODE_TYPE (IDL_LIST (q).data) == IDLN_IDENT);
 		assert (IDL_IDENT_TO_NS (IDL_LIST (q).data) != NULL);
 		assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS (IDL_LIST (q).data)) == IDLN_GENTREE);
 		assert (IDL_NODE_TYPE (IDL_NODE_UP (IDL_LIST (q).data)) == IDLN_INTERFACE);
-		
+
 		if (!(r = IDL_ns_load_idents_to_tables (interface_ident, IDL_LIST (q).data,
 							ident_heap, visited_interfaces)))
 			data.insert_conflict = 1;
 	}
-	
+
 	mark_visited_interface (visited_interfaces, scope);
 
 	return data.insert_conflict == 0;

@@ -354,10 +354,8 @@ module:			module_declspec
 			module = IDL_module_new ($2, $5);
 		else {
 			module = IDL_NODE_UP ($2);
-
 			IDL_MODULE (module).definition_list =
 				IDL_list_concat (IDL_MODULE (module).definition_list, $5);
-
 			module = NULL;
 		}
 	} else
@@ -387,18 +385,18 @@ interface_catch_ident:	new_or_prev_scope
 interface:		z_declspec
 			z_props
 			TOK_INTERFACE
-			interface_catch_ident
-			pop_scope
-			z_inheritance			{
+			interface_catch_ident		{
 	assert ($4 != NULL);
 	assert (IDL_NODE_TYPE ($4) == IDLN_IDENT);
 	assert (IDL_IDENT_TO_NS ($4) != NULL);
 	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($4)) == IDLN_GENTREE);
+
 	if (IDL_NODE_UP ($4) != NULL &&
 	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_INTERFACE &&
 	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
-		do_token_error (IDL_NODE_UP ($4), "Interface definition conflicts with", FALSE);
-		IDL_tree_error ($4, "Previous declaration");
+		yyerrorl ("Interface definition conflicts",
+			  __IDL_prev_token_line - __IDL_cur_token_line);
+		do_token_error (IDL_NODE_UP ($4), "with", FALSE);
 		YYABORT;
 	} else if (IDL_NODE_UP ($4) != NULL &&
 		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
@@ -406,19 +404,19 @@ interface:		z_declspec
 		IDL_tree_error ($4, "Previous declaration of interface `%s'", IDL_IDENT ($4).str);
 		YYABORT;
 	} else if (IDL_NODE_UP ($4) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL) {
-		$4->_file = __IDL_cur_filename;
-		$4->_line = __IDL_cur_line;
-	}
-	IDL_GENTREE (IDL_IDENT_TO_NS ($4))._import = $6;
-	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($4));
-	if (IDL_ns_check_for_ambiguous_inheritance ($4, $6))
-		__IDL_is_okay = FALSE;
+		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL)
+		__IDL_assign_this_location ($4, __IDL_cur_filename, __IDL_cur_line);
 }
-			'{'
+			pop_scope
+			z_inheritance			{
+	IDL_GENTREE (IDL_IDENT_TO_NS ($4))._import = $7;
+	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($4));
+	if (IDL_ns_check_for_ambiguous_inheritance ($4, $7))
+		__IDL_is_okay = FALSE;
+}			'{'
 				interface_body
 			'}' pop_scope			{
- 	$$ = IDL_interface_new ($4, $6, $9);
+ 	$$ = IDL_interface_new ($4, $7, $10);
 	IDL_NODE_DECLSPEC ($$) = $1;
 	if (__IDL_inhibits > 0)
 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
