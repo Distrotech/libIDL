@@ -589,9 +589,9 @@ literal:		integer_lit
 |			boolean_lit
 	;
 
-enum_type:		TOK_ENUM new_scope '{'
+enum_type:		TOK_ENUM new_ident '{'
 				enumerator_list
-			'}' pop_scope			{ $$ = IDL_type_enum_new($2, $4); }
+			'}'				{ $$ = IDL_type_enum_new($2, $4); }
 	;
 
 scoped_name:		ns_scoped_name			{
