@@ -36,6 +36,9 @@
 #  define YY_NEVER_INTERACTIVE 1
 #endif
 
+/* Eliminate warning */
+#define YY_NO_UNPUT 1
+
 #define YY_INPUT(buf,result,the_max_size)	do {				\
 	if (__IDL_inputcb == NULL) {						\
 		if ((result = fread (buf, 1, the_max_size, yyin)) == YY_NULL &&	\
