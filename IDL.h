@@ -229,7 +229,6 @@ extern IDL_tree		IDL_type_octet_new		(void);
 extern IDL_tree		IDL_type_any_new		(void);
 extern IDL_tree		IDL_type_object_new		(void);
 extern IDL_tree		IDL_type_typecode_new		(void);
-extern IDL_tree		IDL_type_varargs_new		(void);
 
 struct _IDL_TYPE_STRING {
 	IDL_tree positive_int_const;
@@ -495,7 +494,6 @@ typedef enum {
 	IDLN_TYPE_ANY,
 	IDLN_TYPE_OBJECT,
 	IDLN_TYPE_TYPECODE,
-	IDLN_TYPE_VARARGS,
 	IDLN_TYPE_ENUM,
 	IDLN_TYPE_SEQUENCE,
 	IDLN_TYPE_ARRAY,
@@ -574,6 +572,24 @@ struct _IDL_tree_node {
 	 IDL_NODE_TYPE(a) == IDLN_FIXED ||		\
 	 IDL_NODE_TYPE(a) == IDLN_FLOAT ||		\
 	 IDL_NODE_TYPE(a) == IDLN_BOOLEAN)
+#define IDL_NODE_IS_TYPE(a)				\
+	(IDL_NODE_TYPE(a) == IDLN_TYPE_INTEGER ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_STRING ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_WIDE_STRING ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_CHAR ||		\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_WIDE_CHAR ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_FIXED ||		\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_FLOAT ||		\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_BOOLEAN ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_OCTET ||		\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_ANY ||		\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_OBJECT ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_TYPECODE ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_ENUM ||		\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_ARRAY ||		\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_SEQUENCE ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_STRUCT ||	\
+	 IDL_NODE_TYPE(a) == IDLN_TYPE_UNION)
 #define IDL_NODE_IS_SCOPED(a)				\
 	(IDL_NODE_TYPE(a) == IDLN_IDENT ||		\
 	 IDL_NODE_TYPE(a) == IDLN_INTERFACE ||		\

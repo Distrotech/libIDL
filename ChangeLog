@@ -1,8 +1,11 @@
 1998-12-04  Andrew T. Veliath  <andrewtv@usa.net>
 
+	* IDL.h (IDL_NODE_IS_TYPE): Add macro.
+
 	* lexer.l, IDL.h, util.c: Add IDL_CODEFRAG type, for XPIDL.
 
-	* parser.y: Integrate XPIDL varargs support into parameter_dcls.
+	* parser.y, IDL.h, util.c: Integrate XPIDL varargs support into
+	parameter_dcls, and remove (now unneeded) VARARGS node type.
 
 1998-12-03  Andrew T. Veliath  <andrewtv@usa.net>
 

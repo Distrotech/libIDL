@@ -67,7 +67,6 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_TYPE_ANY",
 	"IDLN_TYPE_OBJECT",
 	"IDLN_TYPE_TYPECODE",
-	"IDLN_TYPE_VARARGS",
 	"IDLN_TYPE_ENUM",
 	"IDLN_TYPE_SEQUENCE",
 	"IDLN_TYPE_ARRAY",
@@ -1069,11 +1068,6 @@ IDL_tree IDL_type_typecode_new (void)
 	return IDL_node_new (IDLN_TYPE_TYPECODE);
 }
 
-IDL_tree IDL_type_varargs_new (void)
-{
-	return IDL_node_new (IDLN_TYPE_VARARGS);
-}
-
 IDL_tree IDL_type_string_new (IDL_tree positive_int_const)
 {
 	IDL_tree p = IDL_node_new (IDLN_TYPE_STRING);
@@ -1434,7 +1428,6 @@ void IDL_tree_walk_in_order (IDL_tree p, IDL_tree_func tree_func, gpointer user_
 	case IDLN_TYPE_ANY:
 	case IDLN_TYPE_OBJECT:
 	case IDLN_TYPE_TYPECODE:
-	case IDLN_TYPE_VARARGS:
 	case IDLN_TYPE_FLOAT:
 	case IDLN_TYPE_INTEGER:
 	case IDLN_TYPE_CHAR:
@@ -1679,7 +1672,6 @@ void IDL_tree_free (IDL_tree p)
 	case IDLN_TYPE_ANY:
 	case IDLN_TYPE_OBJECT:
 	case IDLN_TYPE_TYPECODE:
-	case IDLN_TYPE_VARARGS:
 	case IDLN_FIXED:
 	case IDLN_STRING:
 	case IDLN_CHAR:
