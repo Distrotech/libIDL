@@ -78,9 +78,11 @@ static IDL_tree			list_start(IDL_tree a);
 static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 
-char *				__IDL_cur_filename = NULL;
-const char *			__IDL_real_filename = NULL;
+#ifndef HAVE_CPP_PIPE_STDIN
 char *				__IDL_tmp_filename = NULL;
+#endif
+const char *			__IDL_real_filename = NULL;
+char *				__IDL_cur_filename = NULL;
 int				__IDL_cur_line;
 static unsigned long		flags;
 static int			idl_nerrors, idl_nwarnings;
@@ -1571,7 +1573,7 @@ static char *IDL_string_sanitize(const char *s)
 	char *rv, *p;
 
 	if (!s)
-		return;
+		return NULL;
 
 	p = rv = strdup(s);
 	
@@ -1866,9 +1868,15 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	int yyparse(void);
 	extern FILE *__IDL_in;
 	FILE *input;
-	char *fmt = CPP_PROGRAM " -I%s %s %s";
-	char *cmd, *s, *tmpfilename;
-	gchar *cwd, *linkto;
+	char *cmd;
+#ifdef HAVE_CPP_PIPE_STDIN
+	char *fmt = CPP_PROGRAM " - %s < \"%s\"";
+#else
+	char *fmt = CPP_PROGRAM " -I- -I%s %s \"%s\"";
+	char *s, *tmpfilename;
+	char cwd[2048];
+	gchar *linkto;
+#endif
 	int rv;
 
 	if (!filename ||
@@ -1881,12 +1889,22 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	if (access(filename, R_OK))
 		return -1;
 
+#ifdef HAVE_CPP_PIPE_STDIN
+	cmd = (char *)malloc(strlen(filename) + 
+			     (cpp_args ? strlen(cpp_args) : 0) +
+			     strlen(fmt) - 4 + 1);
+	if (!cmd) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	sprintf(cmd, fmt, cpp_args ? cpp_args : "", filename);
+#else
 	s = tmpnam(NULL);
 	if (s == NULL)
 		return -1;
 
-	cwd = g_getcwd();
-	if (!cwd)
+	if (!getcwd(cwd, sizeof(cwd)))
 		return -1;
 
 	if (*filename == '/') {
@@ -1928,11 +1946,15 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	}
 
 	sprintf(cmd, fmt, cwd, cpp_args ? cpp_args : "", tmpfilename);
+#endif
+
 	input = popen(cmd, "r");
 	free(cmd);
 
 	if (input == NULL || ferror(input)) {
+#ifndef HAVE_CPP_PIPE_STDIN
 		free(tmpfilename);
+#endif
 		return IDL_ERROR;
 	}
 
@@ -1943,17 +1965,23 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	idl_is_parsing = IDL_TRUE;
 	__IDL_lex_init();
 	__IDL_real_filename = filename;
+#ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = tmpfilename;
+#endif
 	__IDL_cur_filename = strdup(filename);
 	rv = yyparse();
 	idl_is_parsing = IDL_FALSE;
 	__IDL_lex_cleanup();
 	__IDL_real_filename = NULL;
+#ifndef HAVE_CPP_PIPE_STDIN
 	__IDL_tmp_filename = NULL;
+#endif
 	idl_msgcb = NULL;
 	pclose(input);
+#ifndef HAVE_CPP_PIPE_STDIN
 	unlink(tmpfilename);
 	free(tmpfilename);
+#endif
 
 	if (rv != 0) {
 		if (tree)

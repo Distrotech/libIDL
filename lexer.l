@@ -74,7 +74,13 @@ dqstring		\"[^\"\n]*[\"\n]
 	__IDL_cur_filename = strdup(filename + 1);
 	__IDL_cur_filename[strlen(filename) - 2] = 0;
 	free(filename);
-	if (!strcmp(__IDL_cur_filename, __IDL_tmp_filename)) {
+	if (
+#ifdef HAVE_CPP_PIPE_STDIN
+	!strlen(__IDL_cur_filename)
+#else
+	!strcmp(__IDL_cur_filename, __IDL_tmp_filename)
+#endif
+	) {
 		free(__IDL_cur_filename);
 		__IDL_cur_filename = strdup(__IDL_real_filename);
 	}

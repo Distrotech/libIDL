@@ -1,3 +1,16 @@
+1998-07-28  Andrew Veliath  <andrewtv@usa.net>
+
+	* acinclude.m4 (revive): Create AC_CPP_ACCEPT_IDL and
+	AC_CPP_PIPE_STDIN tests
+
+	* configure.in: Add AC_CPP_ACCEPT_IDL and AC_CPP_PIPE_STDIN in
+	configuration
+
+	* util.h, parser.y, lexer.l: If HAVE_CPP_PIPE_STDIN is defined,
+	then compile for piped CPP input, else use the more portable
+	symlink method.  Also use getcwd instead of g_getcwd, since it has
+	been commented out in glib.
+
 1998-07-27  Andrew Veliath  <andrewtv@usa.net>
 
 	* parser.y (IDL_parse_filename): g_getcwd returns a static buffer

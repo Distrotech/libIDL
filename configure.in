@@ -7,6 +7,11 @@ AM_INIT_AUTOMAKE(libIDL, 0.1)
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
+AC_CPP_ACCEPT_IDL
+if [[ "$ac_cv_cpp_accept_idl" = "no" ]]; then
+    AC_MSG_WARN(CPP does not accept IDL)
+fi
+AC_CPP_PIPE_STDIN
 CPP_PROGRAM="$CPP"
 AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 
@@ -46,4 +51,8 @@ echo
 echo libIDL configuration complete
 echo
 echo "  C Preprocessor: \"$CPP_PROGRAM\""
-echo
+if [[ "$ac_cv_cpp_pipe_stdin" = "yes" ]]; then
+    echo "  Standard input supported."
+else
+    echo "  Using symlink method."
+fi

@@ -49,9 +49,11 @@ extern void		yyerrorlv(const char *fmt, int ofs, ...);
 extern void		yywarningv(const char *fmt, ...);
 extern void		yywarninglv(const char *fmt, int ofs, ...);
 
-extern char *		__IDL_cur_filename;
-extern const char *	__IDL_real_filename;
+#ifndef HAVE_CPP_PIPE_STDIN
 extern char *		__IDL_tmp_filename;
+#endif
+extern const char *	__IDL_real_filename;
+extern char *		__IDL_cur_filename;
 extern int		__IDL_cur_line;
 
 #endif /* __UTIL_H */
