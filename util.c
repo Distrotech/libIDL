@@ -595,6 +595,8 @@ static IDL_tree IDL_node_new(IDL_tree_type type)
 	memset(p, 0, sizeof(IDL_tree_node));
 
 	IDL_NODE_TYPE(p) = type;
+	IDL_NODE_REFS(p) = 1;
+
 	p->_file = __IDL_cur_filename;
 	p->_line = __IDL_cur_line;
 
@@ -793,7 +795,6 @@ IDL_tree IDL_ident_new(char *str)
 	IDL_tree p = IDL_node_new(IDLN_IDENT);
 	
 	IDL_IDENT(p).str = str;
-	IDL_IDENT(p)._refs = 1;
 	
 	return p;
 }
@@ -1421,177 +1422,42 @@ static void gentree_free(IDL_tree data, IDL_tree p, gpointer user_data)
 	}
 }
 
-void __IDL_tree_free(IDL_tree p)
+/* Free associated node data, regardless of refcounts */
+static void IDL_tree_free_real(IDL_tree p)
+{
+	assert(p != NULL);
+
+	if (IDL_NODE_TYPE(p) == IDLN_IDENT) {
+		free(IDL_IDENT(p).str);
+		free(IDL_IDENT_REPO_ID(p));
+	}
+
+	free(p);
+}
+
+/* Free node taking into account refcounts */
+static void __IDL_tree_free(IDL_tree p)
 {
 	if (p == NULL)
 		return;
-
-	if (IDL_NODE_TYPE(p) == IDLN_IDENT) {
-		if (--IDL_IDENT(p)._refs <= 0) {
-			free(IDL_IDENT(p).str);
-			free(IDL_IDENT_REPO_ID(p));
-			free(p);
-		}
-	} else
-		free(p);
+	
+	if (--IDL_NODE_REFS(p) <= 0)
+		IDL_tree_free_real(p);
 }
 
+/* Free a set of references of an entire tree */
 void IDL_tree_free(IDL_tree p)
 {
-	GHashTable *hash;
+/*	GHashTable *hash; */
 	IDL_tree q;
 
-	if (!p)
+	if (p == NULL)
 		return;
 
 	switch (IDL_NODE_TYPE(p)) {
-	case IDLN_LIST:
-		while (p) {
-			IDL_tree_free(IDL_LIST(p).data);
-			q = IDL_LIST(p).next;
-			free(p);
-			p = q;
-		}
-		break;
-
-	case IDLN_GENTREE:
-		hash = IDL_GENTREE(p).siblings;
-		g_hash_table_foreach(IDL_GENTREE(p).siblings, (GHFunc)gentree_free, NULL);
-		g_hash_table_destroy(hash);
-		break;
-
-	case IDLN_FIXED:
-		free(IDL_FIXED(p).value);
-		free(p);
-		break;
-
 	case IDLN_INTEGER:
 	case IDLN_FLOAT:
 	case IDLN_BOOLEAN:
-		free(p);
-		break;
-
-	case IDLN_STRING:
-		free(IDL_STRING(p).value);
-		free(p);
-		break;
-
-	case IDLN_CHAR:
-		free(IDL_CHAR(p).value);
-		free(p);
-		break;
-
-	case IDLN_IDENT:
-		if (--IDL_IDENT(p)._refs <= 0) {
-			free(IDL_IDENT(p).str);
-			free(IDL_IDENT_REPO_ID(p));
-			free(p);
-		}
-		break;
-
-	case IDLN_MEMBER:
-		IDL_tree_free(IDL_MEMBER(p).type_spec);
-		IDL_tree_free(IDL_MEMBER(p).dcls);
-		free(p);
-		break;
-
-	case IDLN_NATIVE:
-		IDL_tree_free(IDL_NATIVE(p).ident);
-		free(p);
-		break;
-
-	case IDLN_TYPE_ENUM:
-		IDL_tree_free(IDL_TYPE_ENUM(p).ident);
-		IDL_tree_free(IDL_TYPE_ENUM(p).enumerator_list);
-		free(p);
-		break;
-
-	case IDLN_TYPE_SEQUENCE:
-		IDL_tree_free(IDL_TYPE_SEQUENCE(p).simple_type_spec);
-		IDL_tree_free(IDL_TYPE_SEQUENCE(p).positive_int_const);
-		free(p);
-		break;
-
-	case IDLN_TYPE_ARRAY:
-		IDL_tree_free(IDL_TYPE_ARRAY(p).ident);
-		IDL_tree_free(IDL_TYPE_ARRAY(p).size_list);
-		free(p);
-		break;
-
-	case IDLN_TYPE_STRUCT:
-		IDL_tree_free(IDL_TYPE_STRUCT(p).ident);
-		IDL_tree_free(IDL_TYPE_STRUCT(p).member_list);
-		free(p);
-		break;
-
-	case IDLN_TYPE_UNION:
-		IDL_tree_free(IDL_TYPE_UNION(p).ident);
-		IDL_tree_free(IDL_TYPE_UNION(p).switch_type_spec);
-		IDL_tree_free(IDL_TYPE_UNION(p).switch_body);
-		free(p);
-		break;
-				
-	case IDLN_TYPE_DCL:
-		IDL_tree_free(IDL_TYPE_DCL(p).type_spec);
-		IDL_tree_free(IDL_TYPE_DCL(p).dcls);
-		free(p);
-		break;
-
-	case IDLN_CONST_DCL:
-		IDL_tree_free(IDL_CONST_DCL(p).const_type);
-		IDL_tree_free(IDL_CONST_DCL(p).ident);
-		IDL_tree_free(IDL_CONST_DCL(p).const_exp);
-		free(p);
-		break;
-
-	case IDLN_EXCEPT_DCL:
-		IDL_tree_free(IDL_EXCEPT_DCL(p).ident);
-		IDL_tree_free(IDL_EXCEPT_DCL(p).members);
-		free(p);
-		break;
-		
-	case IDLN_ATTR_DCL:
-		IDL_tree_free(IDL_ATTR_DCL(p).param_type_spec);
-		IDL_tree_free(IDL_ATTR_DCL(p).simple_declarations);
-		free(p);
-		break;
-		
-	case IDLN_OP_DCL:
-		IDL_tree_free(IDL_OP_DCL(p).op_type_spec);
-		IDL_tree_free(IDL_OP_DCL(p).ident);
-		IDL_tree_free(IDL_OP_DCL(p).parameter_dcls);
-		IDL_tree_free(IDL_OP_DCL(p).raises_expr);
-		IDL_tree_free(IDL_OP_DCL(p).context_expr);
-		free(p);
-		break;
-
-	case IDLN_PARAM_DCL:
-		IDL_tree_free(IDL_PARAM_DCL(p).param_type_spec);
-		IDL_tree_free(IDL_PARAM_DCL(p).simple_declarator);
-		free(p);
-		break;
-		
-	case IDLN_FORWARD_DCL:
-		IDL_tree_free(IDL_FORWARD_DCL(p).ident);
-		free(p);
-		break;
-		
-	case IDLN_TYPE_STRING:
-		IDL_tree_free(IDL_TYPE_STRING(p).positive_int_const);
-		free(p);
-		break;
-		
-	case IDLN_TYPE_WIDE_STRING:
-		IDL_tree_free(IDL_TYPE_WIDE_STRING(p).positive_int_const);
-		free(p);
-		break;
-		
-	case IDLN_TYPE_FIXED:
-		IDL_tree_free(IDL_TYPE_FIXED(p).positive_int_const);
-		IDL_tree_free(IDL_TYPE_FIXED(p).integer_lit);
-		free(p);
-		break;
-
 	case IDLN_TYPE_FLOAT:		
 	case IDLN_TYPE_INTEGER:
 	case IDLN_TYPE_CHAR:
@@ -1600,41 +1466,181 @@ void IDL_tree_free(IDL_tree p)
 	case IDLN_TYPE_OCTET:
 	case IDLN_TYPE_ANY:
 	case IDLN_TYPE_OBJECT:
-		free(p);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_LIST:
+		while (p) {
+			IDL_tree_free(IDL_LIST(p).data);
+			q = IDL_LIST(p).next;
+			__IDL_tree_free(p);
+			p = q;
+		}
+		break;
+
+	case IDLN_GENTREE:
+/*
+  FIXME: do correct free
+		hash = IDL_GENTREE(p).siblings;
+		g_hash_table_foreach(IDL_GENTREE(p).siblings, (GHFunc)gentree_free, NULL);
+		g_hash_table_destroy(hash);
+*/
+		break;
+
+	case IDLN_FIXED:
+		free(IDL_FIXED(p).value);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_STRING:
+		free(IDL_STRING(p).value);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_CHAR:
+		free(IDL_CHAR(p).value);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_IDENT:
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_MEMBER:
+		IDL_tree_free(IDL_MEMBER(p).type_spec);
+		IDL_tree_free(IDL_MEMBER(p).dcls);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_NATIVE:
+		IDL_tree_free(IDL_NATIVE(p).ident);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_TYPE_ENUM:
+		IDL_tree_free(IDL_TYPE_ENUM(p).ident);
+		IDL_tree_free(IDL_TYPE_ENUM(p).enumerator_list);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_TYPE_SEQUENCE:
+		IDL_tree_free(IDL_TYPE_SEQUENCE(p).simple_type_spec);
+		IDL_tree_free(IDL_TYPE_SEQUENCE(p).positive_int_const);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_TYPE_ARRAY:
+		IDL_tree_free(IDL_TYPE_ARRAY(p).ident);
+		IDL_tree_free(IDL_TYPE_ARRAY(p).size_list);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_TYPE_STRUCT:
+		IDL_tree_free(IDL_TYPE_STRUCT(p).ident);
+		IDL_tree_free(IDL_TYPE_STRUCT(p).member_list);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_TYPE_UNION:
+		IDL_tree_free(IDL_TYPE_UNION(p).ident);
+		IDL_tree_free(IDL_TYPE_UNION(p).switch_type_spec);
+		IDL_tree_free(IDL_TYPE_UNION(p).switch_body);
+		__IDL_tree_free(p);
+		break;
+				
+	case IDLN_TYPE_DCL:
+		IDL_tree_free(IDL_TYPE_DCL(p).type_spec);
+		IDL_tree_free(IDL_TYPE_DCL(p).dcls);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_CONST_DCL:
+		IDL_tree_free(IDL_CONST_DCL(p).const_type);
+		IDL_tree_free(IDL_CONST_DCL(p).ident);
+		IDL_tree_free(IDL_CONST_DCL(p).const_exp);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_EXCEPT_DCL:
+		IDL_tree_free(IDL_EXCEPT_DCL(p).ident);
+		IDL_tree_free(IDL_EXCEPT_DCL(p).members);
+		__IDL_tree_free(p);
+		break;
+		
+	case IDLN_ATTR_DCL:
+		IDL_tree_free(IDL_ATTR_DCL(p).param_type_spec);
+		IDL_tree_free(IDL_ATTR_DCL(p).simple_declarations);
+		__IDL_tree_free(p);
+		break;
+		
+	case IDLN_OP_DCL:
+		IDL_tree_free(IDL_OP_DCL(p).op_type_spec);
+		IDL_tree_free(IDL_OP_DCL(p).ident);
+		IDL_tree_free(IDL_OP_DCL(p).parameter_dcls);
+		IDL_tree_free(IDL_OP_DCL(p).raises_expr);
+		IDL_tree_free(IDL_OP_DCL(p).context_expr);
+		__IDL_tree_free(p);
+		break;
+
+	case IDLN_PARAM_DCL:
+		IDL_tree_free(IDL_PARAM_DCL(p).param_type_spec);
+		IDL_tree_free(IDL_PARAM_DCL(p).simple_declarator);
+		__IDL_tree_free(p);
+		break;
+		
+	case IDLN_FORWARD_DCL:
+		IDL_tree_free(IDL_FORWARD_DCL(p).ident);
+		__IDL_tree_free(p);
+		break;
+		
+	case IDLN_TYPE_STRING:
+		IDL_tree_free(IDL_TYPE_STRING(p).positive_int_const);
+		__IDL_tree_free(p);
+		break;
+		
+	case IDLN_TYPE_WIDE_STRING:
+		IDL_tree_free(IDL_TYPE_WIDE_STRING(p).positive_int_const);
+		__IDL_tree_free(p);
+		break;
+		
+	case IDLN_TYPE_FIXED:
+		IDL_tree_free(IDL_TYPE_FIXED(p).positive_int_const);
+		IDL_tree_free(IDL_TYPE_FIXED(p).integer_lit);
+		__IDL_tree_free(p);
 		break;
 
 	case IDLN_CASE_STMT:
 		IDL_tree_free(IDL_CASE_STMT(p).labels);
 		IDL_tree_free(IDL_CASE_STMT(p).element_spec);
-		free(p);
+		__IDL_tree_free(p);
 		break;
 		
 	case IDLN_INTERFACE:
 		IDL_tree_free(IDL_INTERFACE(p).ident);
 		IDL_tree_free(IDL_INTERFACE(p).inheritance_spec);
 		IDL_tree_free(IDL_INTERFACE(p).body);
-		free(p);
+		__IDL_tree_free(p);
 		break;
 
 	case IDLN_MODULE:
 		IDL_tree_free(IDL_MODULE(p).ident);
 		IDL_tree_free(IDL_MODULE(p).definition_list);
-		free(p);
+		__IDL_tree_free(p);
 		break;
 
 	case IDLN_BINOP:
 		IDL_tree_free(IDL_BINOP(p).left);
 		IDL_tree_free(IDL_BINOP(p).right);
-		free(p);
+		__IDL_tree_free(p);
 		break;
 
 	case IDLN_UNARYOP:
 		IDL_tree_free(IDL_UNARYOP(p).operand);
-		free(p);
+		__IDL_tree_free(p);
 		break;		
 		
 	default:
-		fprintf(stderr, "warning: free unknown node: %d\n", IDL_NODE_TYPE(p));
+		g_warning("Free unknown node: %d\n", IDL_NODE_TYPE(p));
 		break;
 	}
 }
@@ -1717,13 +1723,13 @@ IDL_tree IDL_list_nth(IDL_tree list, int n)
 	return curitem;
 }
 
-static int load_any_to_table(IDL_tree p, GHashTable *table)
+#if 0
+static int inc_refs(IDL_tree p)
 {
-	if (!g_hash_table_lookup_extended(table, p, NULL, NULL))
-		g_hash_table_insert(table, p, p);
-	
+	++IDL_NODE_REFS(p);
 	return TRUE;
 }
+#endif
 
 struct remove_list_node_data {
 	IDL_tree *root;
@@ -1740,9 +1746,16 @@ static int remove_list_node(IDL_tree p, IDL_tree *list_head, struct remove_list_
 	else
 		*data->root = IDL_list_remove(*data->root, p);
 
-	if (data->removed_nodes)
-		IDL_tree_walk_pre_order(p, (IDL_tree_func)load_any_to_table, data->removed_nodes);
-	else
+	if (data->removed_nodes) {
+		if (!g_hash_table_lookup_extended(data->removed_nodes, p, NULL, NULL))
+			g_hash_table_insert(data->removed_nodes, p, p);
+		/*
+		  We shouldn't need this since we have removed it from the tree,
+		  but we might need it for multiple declspec(inhibits) in the same
+		  subtree.
+		  IDL_tree_walk_pre_order(p, (IDL_tree_func)inc_refs, NULL);
+		*/
+	} else
 		IDL_tree_free(p);
 	
 	return TRUE;

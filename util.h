@@ -59,7 +59,6 @@ extern gint			IDL_ident_equal(gconstpointer a, gconstpointer b);
 extern gint			IDL_ident_cmp(gconstpointer a, gconstpointer b);
 extern int			IDL_tree_get_node_info(struct _IDL_tree_node *tree,
 						       char **who, char **what);
-extern void			__IDL_tree_free(struct _IDL_tree_node *p);
 extern int			IDL_ns_check_for_ambiguous_inheritance(struct _IDL_tree_node *interface_ident,
 								       struct _IDL_tree_node *p);
 extern void			IDL_tree_process_forward_dcls(struct _IDL_tree_node **p, struct _IDL_ns *);

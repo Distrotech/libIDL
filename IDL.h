@@ -175,7 +175,6 @@ extern IDL_tree				IDL_boolean_new(unsigned value);
 struct _IDL_IDENT {
 	char *str;
 	char *repo_id;
-	int _refs;
 	IDL_tree _ns_ref;		/* Internal use, do not recurse */
 	unsigned _flags;		/* Internal use */
 #define IDLF_IDENT_CASE_MISMATCH_HIT	(1UL << 0)
@@ -471,6 +470,7 @@ struct _IDL_tree_node {
 	IDL_tree_type _type;
 	IDL_tree up;			/* Do not recurse */
 	IDL_declspec_t declspec;
+	int refs;
 	char *_file;			/* Internal use */
 	int _line;			/* Internal use */
 	union {
@@ -515,6 +515,7 @@ struct _IDL_tree_node {
 #define IDL_NODE_TYPE_NAME(a)		(IDL_tree_type_names[IDL_NODE_TYPE(a)])
 #define IDL_NODE_UP(a)			((a)->up)
 #define IDL_NODE_DECLSPEC(a)		((a)->declspec)
+#define IDL_NODE_REFS(a)		((a)->refs)
 #define IDL_NODE_IS_SCOPED(a)				\
 	(IDL_NODE_TYPE(a) == IDLN_IDENT ||		\
 	 IDL_NODE_TYPE(a) == IDLN_INTERFACE ||		\

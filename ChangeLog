@@ -1,5 +1,16 @@
 1998-08-25  Andrew Veliath  <andrewtv@usa.net>
 
+	* Makefile.am: Change libtool version to 3:2:3.
+	
+	* parser.y, IDL.h: Changes for global ref counting.
+	
+	* util.c (IDL_tree_free): Instead of ref counting only IDENTS,
+	  ref count all nodes instead (updated __IDL_tree_free, added
+	  IDL_tree_free_real).  Update remove_list_node to reflect this
+	  change.
+
+	* util.h: Remove __IDL_tree_free.
+
 	* util.c (__IDL_tree_free): Ref count IDLN_IDENTS.
 
 Tue Aug 25 01:46:10 1998  Tom Tromey  <tromey@cygnus.com>

@@ -686,7 +686,7 @@ ns_scoped_name:		ns_prev_ident
 		YYABORT;
 	}
 	IDL_tree_free($3);
-	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
+	++IDL_NODE_REFS(IDL_GENTREE(p).data);
 	$$ = p;
 }
 	;
@@ -912,7 +912,7 @@ ns_new_ident:		ident				{
 		YYABORT;
 	}
 	assert(IDL_IDENT($1)._ns_ref == p);
-	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
+	++IDL_NODE_REFS(IDL_GENTREE(p).data);
 	$$ = p;
 }
 	;
@@ -928,7 +928,7 @@ ns_prev_ident:		ident				{
 	IDL_tree_free($1);
 	assert(IDL_GENTREE(p).data != NULL);
 	assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
-	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
+	++IDL_NODE_REFS(IDL_GENTREE(p).data);
 	$$ = p;
 }
 	;
@@ -946,7 +946,7 @@ cur_ns_new_or_prev_ident:
 		assert(IDL_GENTREE(p).data != NULL);
 		assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
 	}
-	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
+	++IDL_NODE_REFS(IDL_GENTREE(p).data);
 	$$ = p;
 }
 	;
@@ -962,7 +962,7 @@ ns_global_ident:	ident				{
 	IDL_tree_free($1);
 	assert(IDL_GENTREE(p).data != NULL);
 	assert(IDL_IDENT(IDL_GENTREE(p).data)._ns_ref == p);
-	++IDL_IDENT(IDL_GENTREE(p).data)._refs;
+	++IDL_NODE_REFS(IDL_GENTREE(p).data);
 	$$ = p;
 }
 	;

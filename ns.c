@@ -61,7 +61,7 @@ void IDL_ns_free(IDL_ns ns)
 {
 	assert(ns != NULL);
 
-	g_hash_table_foreach(IDL_NS(ns).inhibits, (GHFunc)__IDL_tree_free, NULL);
+	g_hash_table_foreach(IDL_NS(ns).inhibits, (GHFunc)IDL_tree_free, NULL);
 	g_hash_table_destroy(IDL_NS(ns).inhibits);
 	IDL_tree_free(IDL_NS(ns).global);
 
