@@ -566,7 +566,7 @@ fixed_pt_type:		TOK_FIXED '<'
 			'>'				{ $$ = IDL_type_fixed_new($3, $5); }
 	;
 
-fixed_pt_const_type:	TOK_FIXED				{ $$ = IDL_type_fixed_new(NULL, NULL); }
+fixed_pt_const_type:	TOK_FIXED			{ $$ = IDL_type_fixed_new(NULL, NULL); }
 	;
 
 integer_type:		signed_int			{ $$ = IDL_type_integer_new(IDL_TRUE, $1); }
