@@ -120,7 +120,7 @@ static int			idl_is_parsing = IDL_FALSE;
 %type <tree>			member member_list member_zlist enumerator_list
 %type <tree>			switch_type_spec switch_body struct_type union_type
 %type <tree>			interface interface_dcl forward_dcl scoped_name_list
-%type <tree>			interface_body z_inheritence export_list export module
+%type <tree>			interface_body z_inheritance export_list export module
 %type <tree>			const_type new_ident prev_ident new_or_prev_ident 
 %type <tree>			global_ident ident floating_pt_type integer_type
 %type <tree>			char_type wide_char_type boolean_type octet_type
@@ -187,7 +187,7 @@ module:			TOK_MODULE new_or_prev_scope '{'
 			'}' pop_scope			{ $$ = IDL_module_new($2, $4); }
 	;
 
-interface_dcl:		TOK_INTERFACE new_or_prev_scope z_inheritence '{'
+interface_dcl:		TOK_INTERFACE new_or_prev_scope z_inheritance '{'
 				interface_body
 			'}' pop_scope			{ $$ = IDL_interface_new($2, $3, $5); }
 	;
@@ -196,7 +196,7 @@ forward_dcl:		TOK_INTERFACE
 			new_or_prev_scope pop_scope	{ $$ = IDL_forward_dcl_new($2); }
 	;
 
-z_inheritence:		/* empty */			{ $$ = NULL; }
+z_inheritance:		/* empty */			{ $$ = NULL; }
 |			':' scoped_name_list		{ $$ = $2; }
 	;
 
@@ -1151,7 +1151,7 @@ void __IDL_tree_print(IDL_tree p)
 
 	case IDLN_INTERFACE:
 		__IDL_tree_print(IDL_INTERFACE(p).ident);
-		__IDL_tree_print(IDL_INTERFACE(p).inheritence_spec);
+		__IDL_tree_print(IDL_INTERFACE(p).inheritance_spec);
 		__IDL_tree_print(IDL_INTERFACE(p).body);
 		break;
 
@@ -1351,7 +1351,7 @@ static void __IDL_tree_free(IDL_tree p, int idents)
 		
 	case IDLN_INTERFACE:
 		__IDL_tree_free(IDL_INTERFACE(p).ident, idents);
-		__IDL_tree_free(IDL_INTERFACE(p).inheritence_spec, idents);
+		__IDL_tree_free(IDL_INTERFACE(p).inheritance_spec, idents);
 		__IDL_tree_free(IDL_INTERFACE(p).body, idents);
 		free(p);
 		break;
@@ -2049,12 +2049,12 @@ IDL_tree IDL_case_label_new(IDL_tree const_exp)
 	return p;
 }
 
-IDL_tree IDL_interface_new(IDL_tree ident, IDL_tree inheritence_spec, IDL_tree body)
+IDL_tree IDL_interface_new(IDL_tree ident, IDL_tree inheritance_spec, IDL_tree body)
 {
 	IDL_tree p = IDL_node_new(IDLN_INTERFACE);
 	
 	IDL_INTERFACE(p).ident = ident;
-	IDL_INTERFACE(p).inheritence_spec = inheritence_spec;
+	IDL_INTERFACE(p).inheritance_spec = inheritance_spec;
 	IDL_INTERFACE(p).body = body;
 
 	return p;

@@ -1,3 +1,12 @@
+1998-07-01  Andrew Veliath  <andrewtv@usa.net>
+
+	* Fix spelling of "inheritance" :)
+	
+	* Add use long long type if __GNUC__ defined
+
+	* Fix scoping rules (scope idents weren't being referenced
+	  properly)
+
 1998-06-29  Andrew Veliath  <andrewtv@usa.net>
 
 	* Create skeleton texinfo file
@@ -13,7 +22,7 @@
 
 	* Warn if identifier appears in different case
 	
-	* Most namespace collision detection added, except for inheritence
+	* Most namespace collision detection added, except for inheritance
 
 	* Use YYDEBUG
 	

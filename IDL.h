@@ -309,12 +309,12 @@ IDL_tree				IDL_case_label_new(IDL_tree const_exp);
 
 struct _IDL_INTERFACE {
 	IDL_tree ident;
-	IDL_tree inheritence_spec;
+	IDL_tree inheritance_spec;
 	IDL_tree body;
 };
 #define IDL_INTERFACE(a)		((a)->u.idl_interface)
 IDL_tree				IDL_interface_new(IDL_tree ident,
-							  IDL_tree inheritence_spec,
+							  IDL_tree inheritance_spec,
 							  IDL_tree body);
 
 struct _IDL_FORWARD_DCL {
