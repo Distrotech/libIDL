@@ -1,3 +1,15 @@
+2001-09-24  Mark McLoughlin <mark@skynet.ie>
+
+	* configure.in: cleanup libtool versioning. Add
+	ACLOCAL_FLAGS caching. Use pkg-config to check for
+	libs.
+
+	* libIDL-2.0.pc.in, libIDL.spec.in, Makefile.am, 
+	  Makefile.msc.in, util.c: update.
+
+	* IDL.h.new.in (LIBIDL_VERSION): rename to 
+	LIBIDL_GEN_VERSION.
+
 2001-09-21  Mark McLoughlin <mark@skynet.ie>
 
 	* lexer.l (cpp_other): implement catch-all rule to get

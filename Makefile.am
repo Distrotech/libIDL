@@ -3,7 +3,7 @@
 # libIDL Makefile.am
 #
 INCLUDES		= -DYYDEBUG=1 -DYYERROR_VERBOSE=1 \
-			  -DIDL_LIBRARY @GLIB_CFLAGS@ \
+			  -DIDL_LIBRARY @LIBIDL_CFLAGS@ \
 			  -DG_LOG_DOMAIN=\"libIDL\"
 YFLAGS			= -d -v 2>/dev/null
 LFLAGS			= @LFLAGS@
@@ -45,11 +45,10 @@ BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h stamp-parser
 
 libIDL_2_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h
-libIDL_2_la_LDFLAGS	= -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)	\
-			  -release $(LT_RELEASE)
+libIDL_2_la_LDFLAGS	= -version-info $(LT_VERSION)
 
 tstidl_SOURCES		= tstidl.c
-tstidl_LDADD		= libIDL-2.la @GLIB_LIBS@
+tstidl_LDADD		= libIDL-2.la @LIBIDL_LIBS@
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= libIDL-2.0.pc

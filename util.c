@@ -175,7 +175,7 @@ gint IDL_ident_cmp (gconstpointer a, gconstpointer b)
 
 const char *IDL_get_libver_string (void)
 {
-	return LIBIDL_LIBRARY_VERSION;
+	return LIBIDL_VERSION;
 }
 
 const char *IDL_get_IDLver_string (void)
