@@ -80,6 +80,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_MODULE",
 	"IDLN_BINOP",
 	"IDLN_UNARYOP",
+	/* IDLN_LAST */
 };
 
 IDL_EXPORT int				__IDL_check_type_casts = FALSE;
@@ -1938,9 +1939,12 @@ void IDL_tree_process_forward_dcls (IDL_tree *p, IDL_ns ns)
 	struct remove_list_node_data data;
 	GHashTable *table = g_hash_table_new (IDL_strcase_hash, IDL_strcase_equal);
 	GHashTable *node_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
+	gint total, resolved;
 
 	IDL_tree_walk_in_order (*p, (IDL_tree_func) load_forward_dcls, table);
+	total = g_hash_table_size (table);
 	IDL_tree_walk_in_order (*p, (IDL_tree_func) resolve_forward_dcls, table);
+	resolved = total - g_hash_table_size (table);
 	g_hash_table_foreach (table, (GHFunc) print_unresolved_forward_dcls, NULL);
 	g_hash_table_foreach (table, (GHFunc) load_forward_dcls_to_node_hash, node_hash);
 	data.root = p;
@@ -1948,6 +1952,8 @@ void IDL_tree_process_forward_dcls (IDL_tree *p, IDL_ns ns)
 	g_hash_table_foreach (node_hash, (GHFunc) remove_list_node, &data);
 	g_hash_table_destroy (node_hash);
 	g_hash_table_destroy (table);
+	if (__IDL_flags & IDLF_VERBOSE)
+		g_message ("Forward declarations resolved: %d of %d", resolved, total);
 }
 
 /* Inhibit Creation Removal */
@@ -1977,12 +1983,16 @@ void IDL_tree_remove_inhibits (IDL_tree *p, IDL_ns ns)
 {
 	struct remove_list_node_data data;
 	GHashTable *table = g_hash_table_new (g_direct_hash, g_direct_equal);
+	gint removed;
 
 	IDL_tree_walk_in_order (*p, (IDL_tree_func) load_inhibits, table);
+	removed = g_hash_table_size (table);
 	data.root = p;
 	data.removed_nodes = IDL_NS (ns).inhibits;
 	g_hash_table_foreach (table, (GHFunc) remove_list_node, &data);
 	g_hash_table_destroy (table);
+	if (__IDL_flags & IDLF_VERBOSE)
+		g_message ("Inhibited nodes removed: %d", removed);
 }
 
 /* Multi-Pass Empty Module Removal */
@@ -2011,6 +2021,7 @@ void IDL_tree_remove_empty_modules (IDL_tree *p, IDL_ns ns)
 {
 	struct remove_list_node_data data;
 	gboolean done = FALSE;
+	gint removed = 0;
 
 	data.root = p;
 	data.removed_nodes = NULL;
@@ -2018,10 +2029,13 @@ void IDL_tree_remove_empty_modules (IDL_tree *p, IDL_ns ns)
 	while (!done) {
 		GHashTable *table = g_hash_table_new (g_direct_hash, g_direct_equal);
 		IDL_tree_walk_in_order (*p, (IDL_tree_func) load_empty_modules, table);
+		removed += g_hash_table_size (table);
 		done = g_hash_table_size (table) == 0;
 		g_hash_table_foreach (table, (GHFunc) remove_list_node, &data);
 		g_hash_table_destroy (table);
 	}
+	if (__IDL_flags & IDLF_VERBOSE)
+		g_message ("Empty modules removed: %d", removed);
 }
 
 /*

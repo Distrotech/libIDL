@@ -42,12 +42,15 @@ extern "C" {
 #define IDL_WARNING3			4
 #define IDL_WARNINGMAX			IDL_WARNING3
 
-/* flags for IDL_parse_filename */
-#define IDLF_NO_EVAL_CONST		(1UL << 0)
-#define IDLF_COMBINE_REOPENED_MODULES	(1UL << 1)
-#define IDLF_PREFIX_FILENAME		(1UL << 2)
-#define IDLF_TYPECODES			(1UL << 3)
-#define IDLF_XPIDL			(1UL << 4)
+/* general parse flags */
+#define IDLF_VERBOSE			(1UL << 0)
+#define IDLF_NO_EVAL_CONST		(1UL << 1)
+#define IDLF_COMBINE_REOPENED_MODULES	(1UL << 2)
+#define IDLF_PREFIX_FILENAME		(1UL << 3)
+
+/* syntax extension parse flags */
+#define IDLF_TYPECODES			(1UL << 16)
+#define IDLF_XPIDL			(1UL << 17)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
@@ -57,7 +60,7 @@ extern "C" {
 #  define IDL_EXPORT			__declspec (dllexport)
 #  define IDL_IMPORT			__declspec (dllimport)
 #else
-#  define IDL_EXPORT			/* Nothing */
+#  define IDL_EXPORT			/* empty */
 #  define IDL_IMPORT			extern
 #endif
 
@@ -433,9 +436,18 @@ struct _IDL_UNARYOP {
 extern IDL_tree		IDL_unaryop_new			(enum IDL_unaryop op,
 							 IDL_tree operand);
 
+/*
+ * IDL_tree_type - Enumerations of node types
+ *
+ * Note this enumerator list is subject to change in the future. A program should not need
+ * more than a recompilation to adjust for a change in this list, so instead of using a
+ * statically initialized jumptable, allocate an array of size IDLN_LAST and assign the
+ * elements manually.
+ */
 typedef enum {
 	IDLN_NONE,
 	IDLN_ANY,
+
 	IDLN_LIST,
 	IDLN_GENTREE,
 	IDLN_INTEGER,
@@ -478,7 +490,9 @@ typedef enum {
 	IDLN_INTERFACE,
 	IDLN_MODULE,
 	IDLN_BINOP,
-	IDLN_UNARYOP
+	IDLN_UNARYOP,
+	
+	IDLN_LAST
 } IDL_tree_type;
 extern const char *			IDL_tree_type_names[];
 

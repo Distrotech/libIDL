@@ -1,3 +1,15 @@
+1998-11-29  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* util.c (IDL_tree_process_forward_dcls): 
+	(IDL_tree_remove_inhibits): 
+	(IDL_tree_remove_empty_modules): Listen to IDLF_VERBOSE.
+
+	* IDL.h: Add note to IDL_tree_type explaining how the enumerator
+	ordering is subject to change, and order should not be hardcoded
+	into programs (alternative is suggested).  Separate parse flags
+	into general and syntax extension parse flags, with the latter
+	starting at bit sixteen.  IDLF_VERBOSE: new parse flag.
+
 1998-11-28  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* lexer.l, parser.y, util.c, IDL.h: Change iid_ident to

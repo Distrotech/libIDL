@@ -37,7 +37,7 @@ IDL_ns IDL_ns_new (void)
 {
 	IDL_ns ns;
 
-	ns = (IDL_ns)malloc (sizeof (struct _IDL_ns));
+	ns = (IDL_ns) malloc (sizeof (struct _IDL_ns));
 	if (ns == NULL) {
 		yyerror ("IDL_ns_new: memory exhausted");
 		return NULL;
@@ -45,8 +45,8 @@ IDL_ns IDL_ns_new (void)
 	memset (ns, 0, sizeof (struct _IDL_ns));
 
 	IDL_NS (ns).global = IDL_gentree_new (IDL_ident_hash,
-					    IDL_ident_equal,
-					    IDL_ident_new (""));
+					      IDL_ident_equal,
+					      IDL_ident_new (""));
 	IDL_NS (ns).file = 
 		IDL_NS (ns).current = IDL_NS (ns).global;
 
@@ -368,7 +368,7 @@ static gboolean heap_insert_ident (IDL_tree interface_ident, GTree *heap, IDL_tr
 		IDL_tree_get_node_info (q, &what2, &who2);
 
 		yyerrorv ("Ambiguous inheritance in interface `%s' from %s `%s' and %s `%s'",
-			 newi, what1, i1, what2, i2);
+			  newi, what1, i1, what2, i2);
 		yyerrornv (p, "%s `%s' conflicts with", what1, i1);
 		yyerrornv (any, "%s `%s'", what2, i2);
 
@@ -433,7 +433,7 @@ static void insert_heap_cb (IDL_tree ident, IDL_tree p, struct insert_heap_cb_da
 
 /* Return true if adds went okay */
 static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree ident_scope,
-					GTree *ident_heap, GHashTable *visited_interfaces)
+					 GTree *ident_heap, GHashTable *visited_interfaces)
 {
 	IDL_tree q, scope;
 	struct insert_heap_cb_data data;
@@ -479,7 +479,7 @@ static int IDL_ns_load_idents_to_tables (IDL_tree interface_ident, IDL_tree iden
 		assert (IDL_NODE_TYPE (IDL_NODE_UP (IDL_LIST (q).data)) == IDLN_INTERFACE);
 		
 		if (!(r = IDL_ns_load_idents_to_tables (interface_ident, IDL_LIST (q).data,
-						       ident_heap, visited_interfaces)))
+							ident_heap, visited_interfaces)))
 			data.insert_conflict = 1;
 	}
 	
@@ -507,7 +507,7 @@ int IDL_ns_check_for_ambiguous_inheritance (IDL_tree interface_ident, IDL_tree p
 	assert (IDL_NODE_TYPE (p) == IDLN_LIST);
 	for (; p;  p = IDL_LIST (p).next) {
 		if (!IDL_ns_load_idents_to_tables (interface_ident, IDL_LIST (p).data,
-						  ident_heap, visited_interfaces))
+						   ident_heap, visited_interfaces))
 			is_ambiguous = 1;
 	}
 
