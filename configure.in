@@ -7,10 +7,8 @@ AM_INIT_AUTOMAKE(libIDL, 0.1)
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
-AC_PROG_PLAIN_CPP
-AC_PROG_PLAIN_CPP_EXEC
-CPP_PROGRAM="$PLAIN_CPP"
-AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$PLAIN_CPP")
+CPP_PROGRAM="$CPP"
+AC_DEFINE_UNQUOTED(CPP_PROGRAM, "$CPP")
 
 AM_PROG_LEX
 if [[ "$LEX" = "flex" ]]; then
@@ -47,14 +45,5 @@ AC_OUTPUT(Makefile)
 echo
 echo libIDL configuration complete
 echo
-echo "  Standalone C Preprocessor: \"$PLAIN_CPP\""
-if [[ "$ac_prog_plain_cpp_exec" = no ]]; then
-    cat <<EOF
-
-  WARNING: Could not execute C preprocessor \`$PLAIN_CPP'; IDL parsing
-           may fail.  GNU cpp is recommended.  Install GNU cpp and
-           rerun configure, with the --with-plain-cpp=PROGRAM argument
-           if necessary.
-EOF
-fi
+echo "  C Preprocessor: \"$CPP_PROGRAM\""
 echo

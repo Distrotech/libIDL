@@ -74,6 +74,10 @@ dqstring		\"[^\"\n]*[\"\n]
 	__IDL_cur_filename = strdup(filename + 1);
 	__IDL_cur_filename[strlen(filename) - 2] = 0;
 	free(filename);
+	if (!strcmp(__IDL_cur_filename, __IDL_tmp_filename)) {
+		free(__IDL_cur_filename);
+		__IDL_cur_filename = strdup(__IDL_real_filename);
+	}
 }
 {whitespace}
 {b8_int}		{

@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 #include "rename.h"
 #include "util.h"
 #include "IDL.h"
@@ -78,6 +79,8 @@ static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 static IDL_tree			zlist_chain(IDL_tree a, IDL_tree b);
 
 char *				__IDL_cur_filename = NULL;
+const char *			__IDL_real_filename = NULL;
+char *				__IDL_tmp_filename = NULL;
 int				__IDL_cur_line;
 static unsigned long		flags;
 static int			idl_nerrors, idl_nwarnings;
@@ -885,29 +888,27 @@ sqstring:		TOK_SQSTRING			{
 void yyerrorl(const char *s, int ofs)
 {
 	int line = __IDL_cur_line - 1 + ofs;
+	gchar *filename = g_basename(__IDL_cur_filename);
 
 	++idl_nerrors;
 	
 	if (idl_msgcb)
-		(*idl_msgcb)(IDL_ERROR, idl_nerrors, line,
-			     __IDL_cur_filename, s);
+		(*idl_msgcb)(IDL_ERROR, idl_nerrors, line, filename, s);
 	else
-		fprintf(stderr, "%s:%d: %s\n", 
-			__IDL_cur_filename, line, s);
+		fprintf(stderr, "%s:%d: %s\n", filename, line, s);
 }
 
 void yywarningl(const char *s, int ofs)
 {
 	int line = __IDL_cur_line - 1 + ofs;
+	gchar *filename = g_basename(__IDL_cur_filename);
 	
 	++idl_nwarnings;
 	
 	if (idl_msgcb)
-		(*idl_msgcb)(IDL_WARNING, idl_nwarnings, line,
-			     __IDL_cur_filename, s);
+		(*idl_msgcb)(IDL_WARNING, idl_nwarnings, line, filename, s);
 	else
-		fprintf(stderr, "%s:%d: Warning: %s\n",
-			__IDL_cur_filename, line, s);
+		fprintf(stderr, "%s:%d: Warning: %s\n", filename, line, s);
 }
 
 void yyerror(const char *s)
@@ -1841,8 +1842,9 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	int yyparse(void);
 	extern FILE *__IDL_in;
 	FILE *input;
-	char *fmt = CPP_PROGRAM " %s %s";
-	char *cmd;
+	char *fmt = CPP_PROGRAM " -I%s %s %s";
+	char *cmd, *s, *tmpfilename;
+	gchar *cwd, *linkto;
 	int rv;
 
 	if (!filename ||
@@ -1852,20 +1854,75 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 		return -1;
 	}
 
-	cmd = (char *)malloc(strlen(filename) + 
-			     (cpp_args ? strlen(cpp_args) : 0) +
-			     strlen(fmt) - 4 + 1);
-	if (!cmd) {
+	if (access(filename, R_OK))
+		return -1;
+
+	s = tmpnam(NULL);
+	if (s == NULL)
+		return -1;
+
+	if (*filename == '/') {
+		linkto = strdup(filename);
+	} else {
+		cwd = g_getcwd();
+		if (!cwd) {
+			errno = ENOMEM;
+			return -1;
+		}
+		linkto = (char *)malloc(strlen(cwd) + strlen(filename) + 1);
+		if (!linkto) {
+			g_free(cwd);
+			errno = ENOMEM;
+			return -1;
+		}
+		strcpy(linkto, cwd);
+		strcat(linkto, "/");
+		strcat(linkto, filename);
+		g_free(cwd);
+	}
+
+	tmpfilename = (char *)malloc(strlen(s) + 3);
+	if (!tmpfilename) {
+		free(linkto);
+		errno = ENOMEM;
+		return -1;
+	}
+	strcpy(tmpfilename, s);
+	strcat(tmpfilename, ".c");
+	if (symlink(linkto, tmpfilename) < 0) {
+		free(linkto);
+		free(tmpfilename);
+		return -1;
+	}
+	free(linkto);
+
+	cwd = g_getcwd();
+	if (!cwd) {
+		free(tmpfilename);
 		errno = ENOMEM;
 		return -1;
 	}
 
-	sprintf(cmd, fmt, cpp_args ? cpp_args : "", filename);
+	cmd = (char *)malloc(strlen(tmpfilename) + 
+			     strlen(cwd) +
+			     (cpp_args ? strlen(cpp_args) : 0) +
+			     strlen(fmt) - 6 + 1);
+	if (!cmd) {
+		g_free(cwd);
+		free(tmpfilename);
+		errno = ENOMEM;
+		return -1;
+	}
+
+	sprintf(cmd, fmt, cwd, cpp_args ? cpp_args : "", tmpfilename);
+	g_free(cwd);
 	input = popen(cmd, "r");
 	free(cmd);
 
-	if (input == NULL || ferror(input))
+	if (input == NULL || ferror(input)) {
+		free(tmpfilename);
 		return IDL_ERROR;
+	}
 
 	__IDL_in = input;
 	idl_msgcb = cb;
@@ -1873,12 +1930,18 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 	idl_ns = IDL_ns_new();
 	idl_is_parsing = IDL_TRUE;
 	__IDL_lex_init();
+	__IDL_real_filename = filename;
+	__IDL_tmp_filename = tmpfilename;
 	__IDL_cur_filename = strdup(filename);
 	rv = yyparse();
 	idl_is_parsing = IDL_FALSE;
 	__IDL_lex_cleanup();
+	__IDL_real_filename = NULL;
+	__IDL_tmp_filename = NULL;
 	idl_msgcb = NULL;
 	pclose(input);
+	unlink(tmpfilename);
+	free(tmpfilename);
 
 	if (rv != 0) {
 		if (tree)
