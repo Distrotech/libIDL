@@ -69,7 +69,8 @@ typedef long				IDL_longlong_t;
 typedef unsigned long			IDL_ulonglong_t;
 #  warning 64-bit integer type not available, using 32-bit instead
 #endif /* HAVE_GINT64 */
-#if (SIZEOF_LONG < 8) && defined(__GNUC__)
+
+#if (SIZEOF_LONG_LONG == 8)
 #  define IDL_B8_FMT			"%llo"
 #  define IDL_UB10_FMT			"%llu"
 #  define IDL_SB10_FMT			"%lld"
@@ -80,6 +81,7 @@ typedef unsigned long			IDL_ulonglong_t;
 #  define IDL_SB10_FMT			"%ld"
 #  define IDL_B16_FMT			"%lx"
 #endif
+	
 typedef unsigned int			IDL_declspec_t;
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
