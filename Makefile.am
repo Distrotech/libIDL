@@ -2,11 +2,15 @@
 #
 # libIDL Makefile.am
 #
-INCLUDES		= -DYYDEBUG=1 -DYYERROR_VERBOSE=1 \
-			  -DIDL_LIBRARY @LIBIDL_CFLAGS@ \
-			  -DG_LOG_DOMAIN=\"libIDL\"
-YFLAGS			= -d -v 2>/dev/null
-LFLAGS			= @LFLAGS@
+INCLUDES =                             \
+	-DYYDEBUG=1                    \
+	-DYYERROR_VERBOSE=1            \
+	-DIDL_LIBRARY                  \
+	$(LIBIDL_CFLAGS)               \
+	-DG_LOG_DOMAIN=\"libIDL\"      \
+	$(WARN_CFLAGS)
+
+YFLAGS = -d -v 2>/dev/null
 
 lexer.c: $(srcdir)/lexer.l parser.h
 	@rm -f $@
