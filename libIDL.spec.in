@@ -1,4 +1,4 @@
-%define version @LIBIDL_VERSION@
+%define version @LIBIDL_LIBRARY_VERSION@
 %define release SNAP
 
 Summary:   IDL parsing library
