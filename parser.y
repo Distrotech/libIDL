@@ -138,6 +138,7 @@ static int		do_token_error			(IDL_tree p,
 %token <floatp>		TOK_FLOATP
 %token <integer>	TOK_INTEGER
 %token <str>		TOK_DECLSPEC TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
+%token			TOK_TYPECODE
 
 /* Non-Terminals */
 %type <tree>		add_expr
@@ -238,6 +239,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		wide_string_type
 %type <tree>		xor_expr
 %type <tree>		z_inheritance
+%type <tree>		typecode_type
 
 %type <declspec>	z_declspec interface_declspec module_declspec
 %type <integer>		signed_int unsigned_int is_readonly is_oneway
@@ -344,6 +346,10 @@ module:			module_declspec new_or_prev_scope '{'
 interface_catch_ident:	new_or_prev_scope
 |			TOK_OBJECT			{
 	yyerror ("Interfaces cannot be named `Object'");
+	YYABORT;
+}
+|			TOK_TYPECODE			{
+	yyerror ("Interfaces cannot be named `TypeCode'");
 	YYABORT;
 }
 	;
@@ -755,6 +761,7 @@ base_type_spec:		floating_pt_type
 |			octet_type
 |			any_type
 |			object_type
+|			typecode_type
 	;
 
 template_type_spec:	sequence_type
@@ -832,6 +839,9 @@ any_type:		TOK_ANY				{ $$ = IDL_type_any_new (); }
 	;
 
 object_type:		TOK_OBJECT			{ $$ = IDL_type_object_new (); }
+	;
+
+typecode_type:		TOK_TYPECODE			{ $$ = IDL_type_typecode_new (); }
 	;
 
 string_type:		TOK_STRING '<'

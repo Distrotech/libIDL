@@ -203,6 +203,8 @@ wstring			tokreturn (TOK_WSTRING);
 	if ((*yytext == 'O' || *yytext == 'o') &&
 	    IDL_strcase_equal (yytext + 1, "bject"))
 		tokreturn (TOK_OBJECT);
+	if (IDL_strcase_equal (yytext, "TypeCode"))
+		tokreturn (TOK_TYPECODE);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }

@@ -216,6 +216,7 @@ extern IDL_tree		IDL_type_boolean_new		(void);
 extern IDL_tree		IDL_type_octet_new		(void);
 extern IDL_tree		IDL_type_any_new		(void);
 extern IDL_tree		IDL_type_object_new		(void);
+extern IDL_tree		IDL_type_typecode_new		(void);
 
 struct _IDL_TYPE_STRING {
 	IDL_tree positive_int_const;
@@ -464,7 +465,8 @@ typedef enum {
 	IDLN_INTERFACE,
 	IDLN_MODULE,
 	IDLN_BINOP,
-	IDLN_UNARYOP
+	IDLN_UNARYOP,
+	IDLN_TYPE_TYPECODE,
 } IDL_tree_type;
 extern const char *			IDL_tree_type_names[];
 

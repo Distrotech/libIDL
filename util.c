@@ -76,6 +76,7 @@ const char *IDL_tree_type_names[] = {
 	"IDLN_MODULE",
 	"IDLN_BINOP",
 	"IDLN_UNARYOP",
+	"IDLN_TYPE_TYPECODE",
 };
 
 int					__IDL_check_type_casts = FALSE;
@@ -1043,6 +1044,11 @@ IDL_tree IDL_type_object_new (void)
 	return IDL_node_new (IDLN_TYPE_OBJECT);
 }
 
+IDL_tree IDL_type_typecode_new (void)
+{
+	return IDL_node_new (IDLN_TYPE_TYPECODE);
+}
+
 IDL_tree IDL_type_string_new (IDL_tree positive_int_const)
 {
 	IDL_tree p = IDL_node_new (IDLN_TYPE_STRING);
@@ -1383,6 +1389,7 @@ void IDL_tree_walk_in_order (IDL_tree p, IDL_tree_func tree_func, gpointer user_
 	case IDLN_TYPE_FLOAT:
 	case IDLN_TYPE_INTEGER:
 	case IDLN_TYPE_CHAR:
+	case IDLN_TYPE_TYPECODE:
 		break;
 		
 	case IDLN_LIST:
@@ -1598,6 +1605,7 @@ void IDL_tree_free (IDL_tree p)
 	case IDLN_STRING:
 	case IDLN_CHAR:
 	case IDLN_IDENT:
+	case IDLN_TYPE_TYPECODE:
 		__IDL_tree_free (p);
 		break;
 
