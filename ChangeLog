@@ -1,3 +1,8 @@
+Tue Aug 25 01:46:10 1998  Tom Tromey  <tromey@cygnus.com>
+
+	* util.c (IDL_strcase_equal): Use g_strcasecmp.
+	(IDL_strcase_cmp): Likewise.
+
 1998-08-24  Andrew Veliath  <andrewtv@usa.net>
 
 	* Save inhibited nodes and free upon IDL_ns_free so that the full
