@@ -1689,7 +1689,6 @@ static int load_nostubs(IDL_tree p, GHashTable *table)
 			IDL_tree *list_head = NULL;
 			
 			if (IDL_NODE_UP(IDL_NODE_UP(p))) {
-				g_message ("adding to definition list");
 				assert(IDL_NODE_TYPE(IDL_NODE_UP(IDL_NODE_UP(p))) == IDLN_MODULE);
 				list_head = &IDL_MODULE(IDL_NODE_UP(IDL_NODE_UP(p))).definition_list;
 			}
