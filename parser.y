@@ -290,6 +290,7 @@ module:			module_declspec new_or_prev_scope '{'
 	if (IDL_NODE_UP($2) != NULL &&
 	    IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_MODULE) {
 		do_token_error(IDL_NODE_UP($2), "Module definition conflicts with", 0);
+		yyerrornv($2, "Previous declaration");
 		YYABORT;
 	}
 
@@ -355,7 +356,12 @@ interface:		interface_declspec
 	} else if (IDL_NODE_UP($2) != NULL &&
 		   IDL_NODE_TYPE(IDL_NODE_UP($2)) != IDLN_FORWARD_DCL) {
 		yyerrorv("Cannot redeclare interface `%s'", IDL_IDENT($2).str);
+		yyerrornv($2, "Previous declaration of interface `%s'", IDL_IDENT($2).str);
 		YYABORT;
+	} else if (IDL_NODE_UP($2) != NULL &&
+		   IDL_NODE_TYPE(IDL_NODE_UP($2)) == IDLN_FORWARD_DCL) {
+		$2->_file = __IDL_cur_filename;
+		$2->_line = __IDL_cur_line;
 	}
 	IDL_GENTREE(IDL_IDENT_TO_NS($2))._import = $4;
 	IDL_ns_push_scope(__IDL_root_ns, IDL_IDENT_TO_NS($2));
@@ -387,13 +393,19 @@ z_inheritance:		/* empty */			{ $$ = NULL; }
 		assert(IDL_LIST(p).data != NULL);
 		assert(IDL_NODE_TYPE(IDL_LIST(p).data) == IDLN_IDENT);
 		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) == IDLN_FORWARD_DCL) {
-			yyerrorv("Interface `%s' hasn't been defined yet",
+			yyerrorv("Incomplete definition of interface `%s'",
+				 IDL_IDENT(IDL_LIST(p).data).str);
+			yyerrornv(IDL_LIST(p).data,
+				 "Previous forward declaration of `%s'",
 				 IDL_IDENT(IDL_LIST(p).data).str);
 			YYABORT;
 		}
 		else if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_LIST(p).data)) != IDLN_INTERFACE) {
 			yyerrorv("`%s' is not an interface",
 				 IDL_IDENT(IDL_LIST(p).data).str);
+			yyerrornv(IDL_LIST(p).data,
+				  "Previous declaration of `%s'",
+				  IDL_IDENT(IDL_LIST(p).data).str);
 			YYABORT;
 		}
 	}
@@ -890,9 +902,10 @@ ns_new_ident:		ident				{
 			if (IDL_NODE_UP(q))
 				q = IDL_NODE_UP(q);
 		
-		if (q)
+		if (q) {
 			do_token_error(q, "Duplicate identifier conflicts with", 0);
-		else
+			yyerrornv(q, "Previous declaration");
+		} else
 			yyerrorv("`%s' duplicate identifier", IDL_IDENT($1).str);
 
 		IDL_tree_free($1);
