@@ -28,14 +28,7 @@ AM_PROG_LIBTOOL
 dnl Checks for libraries.
 AC_CHECK_PROG(HAVE_GLIB_CONFIG, glib-config, yes, no)
 
-if test "$HAVE_GLIB_CONFIG" != "yes"; then
-	echo "You must have glib installed."
-	exit 1
-fi
-GLIB_INCLUDES=`glib-config --cflags`
-GLIB_LIBS=`glib-config --libs`
-AC_SUBST(GLIB_INCLUDES)
-AC_SUBST(GLIB_LIBS)
+AM_PATH_GLIB
 
 AC_ISC_POSIX
 
