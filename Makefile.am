@@ -21,7 +21,7 @@ parser.c parser.h: $(srcdir)/parser.y
 MOSTLYCLEANFILES	= parser.output y.output
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 \
-			  libIDL.def libIDL.spec
+			  libIDL.def libIDL.spec aclocal.m4
 info_TEXINFOS		= libIDL.texi
 pkginclude_HEADERS	= IDL.h
 lib_LTLIBRARIES		= libIDL.la
