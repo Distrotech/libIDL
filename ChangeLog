@@ -1,3 +1,12 @@
+1999-03-18  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* Update version to 0.6.4.
+
+	* lexer.l: Handle independent code fragments.
+
+	* IDL.h.new.in (IDLF_CODEFRAGS): New flag; code frags can be used
+	independently of XPIDL.
+
 1999-03-09  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.6.3.

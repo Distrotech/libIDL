@@ -58,6 +58,7 @@ extern "C" {
 /* syntax extension parse flags */
 #define IDLF_TYPECODES			(1UL << 16)
 #define IDLF_XPIDL			(1UL << 17)
+#define IDLF_CODEFRAGS			(1UL << 18)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)

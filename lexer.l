@@ -86,13 +86,15 @@ native_type		[^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
-%s XPIDL
-%x XPIDLPROP XPIDLNATIVE XPIDLCODEFRAGX
+%s XPIDL CODEFRAG
+%x XPIDLPROP XPIDLNATIVE CODEFRAGX
 
 %%
 	/* Global syntax */
 	if (__IDL_flags & IDLF_XPIDL)
 		BEGIN (XPIDL);
+	else if (__IDL_flags & IDLF_CODEFRAGS)
+		BEGIN (CODEFRAG);
 
 	/* Exclusive parser driven conditions */
 	if (__IDL_flagsi & IDLFP_XPIDL_PROPERTY)
@@ -100,19 +102,19 @@ dqstring		\"[^\"\n]*[\"\n]
 	else if (__IDL_flagsi & IDLFP_XPIDL_NATIVE)
 		BEGIN (XPIDLNATIVE);
 
-<XPIDL>^%\{.*						{
+<XPIDL,CODEFRAG>^%\{.*					{
 	char *s = yytext + 2;
 
 	while (isspace (*s)) ++s;
 	codefrag_desc = g_strdup (s);
 	codefrag_list = codefrag_list_tail = NULL;
-	BEGIN (XPIDLCODEFRAGX);
+	BEGIN (CODEFRAGX);
 }
-<XPIDLCODEFRAGX>^%\}.*					{
+<CODEFRAGX>^%\}.*					{
 	yylval.tree = IDL_codefrag_new (codefrag_desc, codefrag_list);
 	tokreturn (TOK_CODEFRAG);
 }
-<XPIDLCODEFRAGX>.*					{
+<CODEFRAGX>.*						{
 	char *s;
 	GSList *slist;
 
