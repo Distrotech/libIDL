@@ -31,7 +31,7 @@ noinst_PROGRAMS		= tstidl
 
 bin_SCRIPTS		= libIDL-config
 
-BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h libIDL-config
+BUILT_SOURCES		= lexer.c parser.c parser.h IDL.h
 
 libIDL_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h

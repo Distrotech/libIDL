@@ -92,6 +92,7 @@ AC_CHECK_HEADERS(stddef.h wchar.h wcstr.h)
 
 AC_OUTPUT([
 Makefile
+Makefile.msc
 libIDL-config
 libIDL.m4
 libIDL.spec

@@ -12,8 +12,8 @@ GLIB_LIBPATH = c:\Devel\Port\glib
 GLIB_LIB = glib-1.1.lib
 
 # libIDL dll version
-LIBIDL_REALVER = 0.5.10
-LIBIDL_LIBVER = 0.5
+LIBIDL_REALVER = @LIBIDL_VERSION@
+LIBIDL_LIBVER = @LIBIDL_MAJOR_VERSION@.@LIBIDL_MINOR_VERSION@
 
 # Debug build
 LDOPT = /debug:full /debugtype:cv
