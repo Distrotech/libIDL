@@ -24,6 +24,7 @@
 
 %{
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,12 +35,13 @@
 static void			do_escapes(char *s);
 static IDL_tree *		IDL_tree_node_new(void);
 
-IDL_tree			__idl_root, __idl_symtab;
-IDL_callback			__idl_cb = NULL;
+static IDL_tree			__idl_root, __idl_symtab;
+static IDL_callback		__idl_cb = NULL;
 static int			okay;
+static int			__idl_nerrors, __idl_nwarnings;
 
 char *				__idl_cur_filename = NULL;
-int				__idl_cur_line, __idl_nerrors, __idl_nwarnings;
+int				__idl_cur_line;
 
 void				__idl_print_tree(IDL_tree p);
 
@@ -125,6 +127,7 @@ static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 
 idl_init:						{
 	okay = 1;
+	__idl_nerrors = __idl_nwarnings = 0;
 	__idl_symtab = NULL;
 }
 	;
@@ -334,8 +337,7 @@ void yyerrorl(const char *s, int ofs)
 	++__idl_nerrors;
 	
 	if (__idl_cb)
-		(*__idl_cb)(IDL_ERROR, __idl_nerrors, line,
-			    __idl_cur_filename, s);
+		(*__idl_cb)(IDL_ERROR, __idl_nerrors, line, __idl_cur_filename, s);
 	else
 		fprintf(stderr, "%s:%d: error [%d], %s\n", 
 			__idl_cur_filename, line, __idl_nerrors, s);
@@ -348,8 +350,7 @@ void yywarningl(const char *s, int ofs)
 	++__idl_nwarnings;
 	
 	if (__idl_cb)
-		(*__idl_cb)(IDL_WARNING, __idl_nwarnings, line,
-			    __idl_cur_filename, s);
+		(*__idl_cb)(IDL_WARNING, __idl_nwarnings, line, __idl_cur_filename, s);
 	else
 		fprintf(stderr, "%s:%d: warning [%d], %s\n",
 			__idl_cur_filename, line, __idl_nwarnings, s);
@@ -385,6 +386,59 @@ static void do_escapes(char *s)
 
 		yywarning("unknown escape sequence");
 	}
+}
+
+int IDL_parse_filename(const char *filename, const char *cpp_args,
+		       IDL_callback cb, IDL_tree *tree, IDL_tree *symtab)
+{
+	extern void __idl_lex_init(void);
+	extern void __idl_lex_cleanup(void);
+	extern IDL_tree __idl_root, __idl_symtab;
+	extern IDL_callback __idl_cb;
+	extern FILE *yyin;
+	FILE *input;
+	char *fmt = CPP_PROGRAM " %s %s";
+	char *cmd;
+	int rv;
+
+	if (!filename || !tree) return -EINVAL;
+
+	puts(cmd);
+	cmd = (char *)malloc(strlen(filename) + 
+			     (cpp_args ? strlen(cpp_args) : 0) +
+			     strlen(fmt) - 4 + 1);
+	if (!cmd)
+		return -ENOMEM;
+
+	sprintf(cmd, fmt, cpp_args ? cpp_args : "", filename);
+	input = popen(cmd, "r");
+	free(cmd);
+
+	if (input == NULL)
+		return errno;
+
+	yyin = input;
+	__idl_cb = cb;
+	__idl_lex_init();
+	rv = yyparse();
+	__idl_lex_cleanup();
+	__idl_cb = NULL;
+	pclose(input);
+
+	if (rv != 0)
+		return IDL_ERROR;
+
+	if (tree)
+		*tree = __idl_root;
+	else
+		free(__idl_root);
+	
+	if (symtab)
+		*symtab = __idl_symtab;
+	else
+		free(__idl_symtab);
+
+	return IDL_SUCCESS;
 }
 
 void __idl_print_tree(IDL_tree p)

@@ -143,7 +143,7 @@ wstring			{ return TOK_WSTRING; }
 
 void __idl_lex_init(void)
 {
-	__idl_cur_line = __idl_nerrors = __idl_nwarnings = 0;
+	__idl_cur_line = 0;
 	__idl_cur_filename = NULL;
 }
 

@@ -29,6 +29,13 @@
 extern "C" {
 #endif
 
+#define IDL_FALSE			0
+#define IDL_TRUE			1
+
+#define IDL_SUCCESS			0
+#define IDL_ERROR			1
+#define IDL_WARNING			2
+
 typedef struct _IDL_tree_node 		IDL_tree_node;
 typedef struct _IDL_tree_node *		IDL_tree;
 
@@ -50,7 +57,8 @@ struct _IDL_IDENT {
 	char *str;
 };
 #define IDL_IDENT(a)			((a)->u.idl_ident)
-IDL_tree				IDL_ident_get(IDL_tree *table, char *s_ident, int add, int *added);
+IDL_tree				IDL_ident_get(IDL_tree *table, char *s_ident,
+						      int add, int *added);
 
 struct _IDL_TYPE_FLOAT {
 	unsigned f_type			: 2;
@@ -83,14 +91,16 @@ struct _IDL_TYPE_ENUM {
 	IDL_tree enumerator_list;
 };
 #define IDL_TYPE_ENUM(a)		((a)->u.idl_type_enum)
-IDL_tree				IDL_type_enum_new(IDL_tree ident, IDL_tree enumerator_list);
+IDL_tree				IDL_type_enum_new(IDL_tree ident,
+							  IDL_tree enumerator_list);
 
 struct _IDL_TYPE_STRUCT {
 	IDL_tree ident;
 	IDL_tree member_list;
 };
 #define IDL_TYPE_STRUCT(a)		((a)->u.idl_type_struct)
-IDL_tree				IDL_type_struct_new(IDL_tree ident, IDL_tree member_list);
+IDL_tree				IDL_type_struct_new(IDL_tree ident,
+							    IDL_tree member_list);
 
 struct _IDL_TYPE_UNION {
 	IDL_tree ident;
@@ -98,7 +108,9 @@ struct _IDL_TYPE_UNION {
 	IDL_tree switch_body;
 };
 #define IDL_TYPE_UNION(a)		((a)->u.idl_type_union)
-IDL_tree				IDL_type_union_new(IDL_tree ident, IDL_tree switch_type_spec, IDL_tree switch_body);
+IDL_tree				IDL_type_union_new(IDL_tree ident,
+							   IDL_tree switch_type_spec,
+							   IDL_tree switch_body);
 
 struct _IDL_MEMBER {
 	IDL_tree type_spec;
@@ -156,22 +168,12 @@ struct _IDL_tree_node {
 };
 #define IDL_NODE_TYPE(a)		((a)->type)
 
-#define IDL_FALSE			0
-#define IDL_TRUE			1
-
-#define IDL_SUCCESS			0
-#define IDL_ERROR			1
-#define IDL_WARNING			2
-
 typedef int				(*IDL_callback)(int level, int num, int line,
 							const char *filename, const char *s);
 
-extern int				IDL_parse_filename(const char *filename,
-							   const char *cpp_args,
+extern int				IDL_parse_filename(const char *filename, const char *cpp_args,
 							   IDL_callback cb,
-							   IDL_tree *tree,
-							   IDL_tree *symtab);
-extern const char *			IDL_get_last_error(void);
+							   IDL_tree *tree, IDL_tree *symtab);
 extern void				IDL_root_free(IDL_tree root);
 extern void				IDL_symtab_free(IDL_tree symtab);
 

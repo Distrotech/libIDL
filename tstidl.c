@@ -37,8 +37,7 @@ int main(int argc, char *argv[])
 		
 	}
 	else if (rv == IDL_ERROR) {
-		fprintf(stderr, "tstidl: IDL_ERROR: %s\n",
-			IDL_get_last_error());
+		fprintf(stderr, "tstidl: IDL_ERROR\n");
 		exit(1);	
 	}
 	else if (rv < 0) {
