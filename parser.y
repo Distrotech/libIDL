@@ -273,7 +273,7 @@ case_stmt:		case_label_list
 			element_spec ';'		{ $$ = IDL_case_stmt_new($1, $2); }
 	;
 
-element_spec:		type_spec declarator		{ $$ = IDL_type_dcl_new($1, list_start($2)); }
+element_spec:		type_spec declarator		{ $$ = IDL_member_new($1, list_start($2)); }
 	;
 
 case_label_list:	case_label			{ $$ = list_start($1); }
