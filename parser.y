@@ -1994,6 +1994,14 @@ static int IDL_ns_load_idents_to_tables(IDL_tree interface_ident, IDL_tree ident
 		if (IDL_GENTREE(p).data == NULL)
 			continue;
 		assert(IDL_NODE_TYPE(IDL_GENTREE(p).data) == IDLN_IDENT);
+		
+		if (IDL_NODE_UP(IDL_GENTREE(p).data) == NULL)
+			continue;
+
+		if (IDL_NODE_TYPE(IDL_NODE_UP(IDL_GENTREE(p).data)) != IDLN_OP_DCL ||
+		    IDL_NODE_TYPE(IDL_NODE_UP(IDL_GENTREE(p).data)) != IDLN_ATTR_DCL)
+			continue;
+
 		if (!heap_insert_ident(interface_ident, ident_heap, IDL_GENTREE(p).data))
 			insert_conflict = 1;
 	}
