@@ -107,10 +107,15 @@ static IDL_tree			list_chain(IDL_tree a, IDL_tree b);
 %type <tree>			specification
 %type <tree>			definition_list definition
 %type <tree>			type_dcl type_spec type_declarator declarator_list declarator
-%type <tree>			simple_type_spec base_type_spec
+%type <tree>			simple_type_spec constr_type_spec base_type_spec
 %type <tree>			simple_declarator /* complex_declarator array_declarator */
+%type <tree>			struct_type union_type
+%type <tree>			member member_list enumerator_list
+%type <tree>			switch_type_spec switch_body
 
-%type <tree>			string_lit ident integer_type
+%type <tree>			string_lit ident floating_pt_type integer_type
+%type <tree>			char_type wide_char_type boolean_type octet_type
+%type <tree>			any_type object_type enum_type scoped_name
 
 %type <integer>			signed_int unsigned_int
 
@@ -154,12 +159,70 @@ type_declarator:	type_spec declarator_list	{ $$ = IDL_type_dcl_new($1, $2); }
 	;
 
 type_spec:		simple_type_spec
+|			constr_type_spec
 	;
 
 simple_type_spec:	base_type_spec
 	;
 
-base_type_spec:		integer_type
+constr_type_spec:	struct_type
+|			union_type
+	;
+
+struct_type:		"struct" ident '{'
+				member_list
+			'}'				{ $$ = IDL_type_struct_new($2, $4); }
+	;
+
+union_type:		"union" ident "switch" '('
+				switch_type_spec
+			')' '{'
+				switch_body
+			'}'				{ $$ = IDL_type_union_new($2, $5, $8); }
+	;
+
+switch_type_spec:	integer_type
+|			char_type
+|			boolean_type
+|			enum_type
+|			scoped_name
+	;
+
+enum_type:		"enum" ident '{'
+				enumerator_list
+			'}'				{ $$ = IDL_type_enum_new($2, $4); }
+	;
+
+scoped_name:						{ $$ = NULL; }
+	;
+
+switch_body:						{ $$ = NULL; }
+	;
+
+enumerator_list:	ident				{ $$ = list_start($1); }
+|			enumerator_list ident		{ $$ = list_chain($1, $2); }
+	;
+
+member_list:		member				{ $$ = list_start($1); }
+|			member_list member		{ $$ = list_chain($1, $2); }
+	;
+
+member:			type_spec declarator_list ';'	{ $$ = IDL_member_new($1, $2); }
+	;
+
+base_type_spec:		floating_pt_type
+|			integer_type
+|			char_type
+|			wide_char_type
+|			boolean_type
+|			octet_type
+|			any_type
+|			object_type
+	;
+
+floating_pt_type:	"float"				{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_FLOAT); }
+|			"double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_DOUBLE); }
+|			"long" "double"			{ $$ = IDL_type_float_new(IDL_FLOAT_TYPE_LONGDOUBLE); }
 	;
 
 integer_type:		signed_int			{ $$ = IDL_type_integer_new(IDL_TRUE, $1); }
@@ -192,6 +255,24 @@ unsigned_long_int:	"unsigned" "long"
 	;
 
 unsigned_longlong_int:	"unsigned" "long" "long"
+	;
+
+char_type:		"char"			{ $$ = IDL_type_char_new(); }
+	;
+
+wide_char_type:		"wchar"			{ $$ = IDL_type_wide_char_new(); }
+	;
+
+boolean_type:		"boolean"		{ $$ = IDL_type_boolean_new(); }
+	;
+
+octet_type:		"octet"			{ $$ = IDL_type_octet_new(); }
+	;
+
+any_type:		"any"			{ $$ = IDL_type_any_new(); }
+	;
+
+object_type:		"Object"		{ $$ = IDL_type_object_new(); }
 	;
 
 declarator_list:	declarator			{ $$ = list_start($1); }
@@ -328,16 +409,63 @@ void __idl_print_tree(IDL_tree p)
 		printf("IDL ident: %s\n", IDL_IDENT(p).str);
 		break;
 		
+	case IDLN_MEMBER:
+		printf("IDL member declaration\n");
+		__idl_print_tree(IDL_MEMBER(p).type_spec);
+		__idl_print_tree(IDL_MEMBER(p).dcls);
+		break;
+		
 	case IDLN_TYPE_DCL:
 		printf("IDL type declaration\n");
-		__idl_print_tree(IDL_TYPE_DCL(p).type);
+		__idl_print_tree(IDL_TYPE_DCL(p).type_spec);
 		__idl_print_tree(IDL_TYPE_DCL(p).dcls);
 		break;
 		
+	case IDLN_TYPE_FLOAT:
+		printf("IDL float type: %d\n", IDL_TYPE_FLOAT(p).f_type);
+		break;
+
 	case IDLN_TYPE_INTEGER:
 		printf("IDL integer type: %d %d\n",
-		       IDL_TYPE_INTEGER(p).i_signed,
-		       IDL_TYPE_INTEGER(p).i_type);
+		       IDL_TYPE_INTEGER(p).f_signed,
+		       IDL_TYPE_INTEGER(p).f_type);
+		break;
+
+	case IDLN_TYPE_CHAR:
+		printf("IDL char type\n");
+		break;
+		
+	case IDLN_TYPE_WIDE_CHAR:
+		printf("IDL wide char type\n");
+		break;
+		
+	case IDLN_TYPE_BOOLEAN:
+		printf("IDL boolean type\n");
+		break;
+		
+	case IDLN_TYPE_OCTET:
+		printf("IDL octet type\n");
+		break;
+		
+	case IDLN_TYPE_ANY:
+		printf("IDL any type\n");
+		break;
+		
+	case IDLN_TYPE_OBJECT:
+		printf("IDL object type\n");
+		break;
+
+	case IDLN_TYPE_STRUCT:
+		printf("IDL struct type\n");
+		__idl_print_tree(IDL_TYPE_STRUCT(p).ident);
+		__idl_print_tree(IDL_TYPE_STRUCT(p).member_list);
+		break;
+		
+	case IDLN_TYPE_UNION:
+		printf("IDL union type\n");
+		__idl_print_tree(IDL_TYPE_UNION(p).ident);
+		__idl_print_tree(IDL_TYPE_UNION(p).switch_type_spec);
+		__idl_print_tree(IDL_TYPE_UNION(p).switch_body);
 		break;
 		
 	default:
@@ -375,13 +503,40 @@ static void __idl_tree_free(IDL_tree p, int idents)
 		}
 		break;
 
+	case IDLN_MEMBER:
+		__idl_tree_free(IDL_MEMBER(p).type_spec, idents);
+		__idl_tree_free(IDL_MEMBER(p).dcls, idents);
+		break;
+
+	case IDLN_TYPE_ENUM:
+		__idl_tree_free(IDL_TYPE_ENUM(p).ident, idents);
+		__idl_tree_free(IDL_TYPE_ENUM(p).enumerator_list, idents);
+		break;
+
+	case IDLN_TYPE_STRUCT:
+		__idl_tree_free(IDL_TYPE_STRUCT(p).ident, idents);
+		__idl_tree_free(IDL_TYPE_STRUCT(p).member_list, idents);
+		break;
+
+	case IDLN_TYPE_UNION:
+		__idl_tree_free(IDL_TYPE_UNION(p).ident, idents);
+		__idl_tree_free(IDL_TYPE_UNION(p).switch_type_spec, idents);
+		__idl_tree_free(IDL_TYPE_UNION(p).switch_body, idents);
+		break;
+				
 	case IDLN_TYPE_DCL:
-		__idl_tree_free(IDL_TYPE_DCL(p).type, idents);
+		__idl_tree_free(IDL_TYPE_DCL(p).type_spec, idents);
 		__idl_tree_free(IDL_TYPE_DCL(p).dcls, idents);
 		free(p);
 		break;
-		
+
+	case IDLN_TYPE_FLOAT:		
 	case IDLN_TYPE_INTEGER:
+	case IDLN_TYPE_CHAR:
+	case IDLN_TYPE_WIDE_CHAR:
+	case IDLN_TYPE_BOOLEAN:
+	case IDLN_TYPE_OCTET:
+	case IDLN_TYPE_ANY:
 		free(p);
 		break;
 		
@@ -493,22 +648,102 @@ IDL_tree IDL_ident_get(IDL_tree *symtab, char *s_ident, int add, int *added)
 	return ident;
 }
 
-IDL_tree IDL_type_dcl_new(IDL_tree type, IDL_tree dcls)
+IDL_tree IDL_member_new(IDL_tree type_spec, IDL_tree dcls)
+{
+	IDL_tree p = IDL_node_new(IDLN_MEMBER);
+
+	IDL_MEMBER(p).type_spec = type_spec;
+	IDL_MEMBER(p).dcls = dcls;
+	
+	return p;
+}
+
+IDL_tree IDL_type_dcl_new(IDL_tree type_spec, IDL_tree dcls)
 {
 	IDL_tree p = IDL_node_new(IDLN_TYPE_DCL);
 
-	IDL_TYPE_DCL(p).type = type;
+	IDL_TYPE_DCL(p).type_spec = type_spec;
 	IDL_TYPE_DCL(p).dcls = dcls;
 	
 	return p;
 }
 
-IDL_tree IDL_type_integer_new(unsigned i_signed, unsigned i_type)
+IDL_tree IDL_type_float_new(unsigned f_type)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_FLOAT);
+	
+	IDL_TYPE_FLOAT(p).f_type = f_type;
+
+	return p;
+}
+
+IDL_tree IDL_type_integer_new(unsigned f_signed, unsigned f_type)
 {
 	IDL_tree p = IDL_node_new(IDLN_TYPE_INTEGER);
 	
-	IDL_TYPE_INTEGER(p).i_signed = i_signed;
-	IDL_TYPE_INTEGER(p).i_type = i_type;
+	IDL_TYPE_INTEGER(p).f_signed = f_signed;
+	IDL_TYPE_INTEGER(p).f_type = f_type;
+
+	return p;
+}
+
+IDL_tree IDL_type_char_new(void)
+{
+	return IDL_node_new(IDLN_TYPE_CHAR);
+}
+
+IDL_tree IDL_type_wide_char_new(void)
+{
+	return IDL_node_new(IDLN_TYPE_WIDE_CHAR);
+}
+
+IDL_tree IDL_type_boolean_new(void)
+{
+	return IDL_node_new(IDLN_TYPE_BOOLEAN);
+}
+
+IDL_tree IDL_type_octet_new(void)
+{
+	return IDL_node_new(IDLN_TYPE_OCTET);
+}
+
+IDL_tree IDL_type_any_new(void)
+{
+	return IDL_node_new(IDLN_TYPE_ANY);
+}
+
+IDL_tree IDL_type_object_new(void)
+{
+	return IDL_node_new(IDLN_TYPE_OBJECT);
+}
+
+IDL_tree IDL_type_struct_new(IDL_tree ident, IDL_tree member_list)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_STRUCT);
+	
+	IDL_TYPE_STRUCT(p).ident = ident;
+	IDL_TYPE_STRUCT(p).member_list = member_list;
+
+	return p;
+}
+
+IDL_tree IDL_type_union_new(IDL_tree ident, IDL_tree switch_type_spec, IDL_tree switch_body)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_UNION);
+	
+	IDL_TYPE_UNION(p).ident = ident;
+	IDL_TYPE_UNION(p).switch_type_spec = switch_type_spec;
+	IDL_TYPE_UNION(p).switch_body = switch_body;
+
+	return p;
+}
+
+IDL_tree IDL_type_enum_new(IDL_tree ident, IDL_tree enumerator_list)
+{
+	IDL_tree p = IDL_node_new(IDLN_TYPE_ENUM);
+	
+	IDL_TYPE_ENUM(p).ident = ident;
+	IDL_TYPE_ENUM(p).enumerator_list = enumerator_list;
 
 	return p;
 }
