@@ -185,22 +185,14 @@ definition_list:	definition			{ $$ = list_start($1); }
 
 check_semicolon:	';'
 |			/* empty */			{
-	int dienow = 0;
-
-	dienow = do_prev_token_error($<tree>0, "Missing semicolon after");
-	idl_is_okay = IDL_FALSE;
-	if (dienow)
+	if (do_prev_token_error($<tree>0, "Missing semicolon after"))
 		YYABORT;
 }
 	;
 
 check_comma:		','
 |			/* empty */			{
-	int dienow = 0;
-
-	dienow = do_prev_token_error($<tree>0, "Missing comma after");
-	idl_is_okay = IDL_FALSE;
-	if (dienow)
+	if (do_prev_token_error($<tree>0, "Missing comma after"))
 		YYABORT;
 }
 	;
@@ -223,7 +215,6 @@ module:			TOK_MODULE new_or_prev_scope '{'
 			'}' pop_scope			{
 	yyerrorv("Empty module declaration `%s' is not legal IDL", IDL_IDENT($2).str);
 	$$ = IDL_module_new($2, NULL);
-	idl_is_okay = IDL_FALSE;
 }
 	;
 
@@ -412,7 +403,6 @@ param_attribute:	TOK_IN				{ $$ = IDL_PARAM_IN; }
 	yyerrorv("Missing parameter direction attribute (in, out, inout) before `%s'",
 		 IDL_IDENT($1).str);
 	IDL_tree_free($1);
-	idl_is_okay = IDL_FALSE;
 }
 	;
 
@@ -933,6 +923,7 @@ void yyerrorl(const char *s, int ofs)
 	gchar *filename = g_basename(__IDL_cur_filename);
 
 	++idl_nerrors;
+	idl_is_okay = IDL_FALSE;
 	
 	if (idl_msgcb)
 		(*idl_msgcb)(IDL_ERROR, idl_nerrors, line, filename, s);
