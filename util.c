@@ -173,7 +173,7 @@ gint IDL_ident_cmp (gconstpointer a, gconstpointer b)
 
 const char *IDL_get_libver_string (void)
 {
-	return LIBIDL_VERSION;
+	return LIBIDL_LIBRARY_VERSION;
 }
 
 const char *IDL_get_IDLver_string (void)
@@ -2230,7 +2230,7 @@ void IDL_tree_process_forward_dcls (IDL_tree *p, IDL_ns ns)
 /* Inhibit Creation Removal */
 static int load_inhibits (IDL_tree_func_data *tfd, GHashTable *table)
 {
-	IDL_tree p;
+	IDL_tree p, q, *list_head;
 
 	p = tfd->tree;
 
@@ -2240,13 +2240,24 @@ static int load_inhibits (IDL_tree_func_data *tfd, GHashTable *table)
 	    IDL_NODE_DECLSPEC (p) & IDLF_DECLSPEC_INHIBIT &&
 	    !g_hash_table_lookup_extended (table, IDL_NODE_UP (p), NULL, NULL)) {
 
-		IDL_tree *list_head = NULL;
+		list_head = NULL;
+		q = IDL_NODE_UP (IDL_NODE_UP (p));
+		if (q) {
+			switch (IDL_NODE_TYPE (q)) {
+			case IDLN_MODULE:
+				list_head = &IDL_MODULE (q).definition_list;
+				break;
 
-		if (IDL_NODE_UP (IDL_NODE_UP (p))) {
-			assert (IDL_NODE_TYPE (IDL_NODE_UP (IDL_NODE_UP (p))) == IDLN_MODULE);
-			list_head = &IDL_MODULE (IDL_NODE_UP (IDL_NODE_UP (p))).definition_list;
+			case IDLN_INTERFACE:
+				list_head = &IDL_INTERFACE (q).body;
+				break;
+
+			default:
+				g_warning ("Unhandled node %s in load_inhibits",
+					   IDL_NODE_TYPE_NAME (q));
+				break;
+			}
 		}
-
 		g_hash_table_insert (table, IDL_NODE_UP (p), list_head);
 	}
 	
@@ -2272,7 +2283,7 @@ void IDL_tree_remove_inhibits (IDL_tree *p, IDL_ns ns)
 /* Multi-Pass Empty Module Removal */
 static int load_empty_modules (IDL_tree_func_data *tfd, GHashTable *table)
 {
-	IDL_tree p;
+	IDL_tree p, q, *list_head;
 
 	p = tfd->tree;
 
@@ -2282,13 +2293,12 @@ static int load_empty_modules (IDL_tree_func_data *tfd, GHashTable *table)
 	    IDL_NODE_TYPE (IDL_NODE_UP (p)) == IDLN_LIST &&
 	    !g_hash_table_lookup_extended (table, IDL_NODE_UP (p), NULL, NULL)) {
 
-		IDL_tree *list_head = NULL;
-
-		if (IDL_NODE_UP (IDL_NODE_UP (p))) {
-			assert (IDL_NODE_TYPE (IDL_NODE_UP (IDL_NODE_UP (p))) == IDLN_MODULE);
-			list_head = &IDL_MODULE (IDL_NODE_UP (IDL_NODE_UP (p))).definition_list;
+		list_head = NULL;
+		q = IDL_NODE_UP (IDL_NODE_UP (p));
+		if (q) {
+			assert (IDL_NODE_TYPE (q) == IDLN_MODULE);
+			list_head = &IDL_MODULE (q).definition_list;
 		}
-
 		g_hash_table_insert (table, IDL_NODE_UP (p), list_head);
 	}
 

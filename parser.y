@@ -163,6 +163,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		any_type
 %type <tree>		array_declarator
 %type <tree>		attr_dcl
+%type <tree>		attr_dcl_def
 %type <tree>		base_type_spec
 %type <tree>		boolean_lit
 %type <tree>		boolean_type
@@ -224,6 +225,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		object_type
 %type <tree>		octet_type
 %type <tree>		op_dcl
+%type <tree>		op_dcl_def
 %type <tree>		op_type_spec
 %type <tree>		or_expr
 %type <tree>		param_dcl
@@ -659,7 +661,15 @@ is_readonly:		/* empty */			{ $$ = FALSE; }
 |			TOK_READONLY			{ $$ = TRUE; }
 	;
 
-attr_dcl:		z_props
+attr_dcl:		z_declspec attr_dcl_def		{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
+	;
+
+attr_dcl_def:		z_props
 			is_readonly
 			TOK_ATTRIBUTE
 			param_type_spec
@@ -674,6 +684,8 @@ attr_dcl:		z_props
 		IDL_tree_properties_copy (&node, dcl);
 	}
 	__IDL_free_properties (node.properties);
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 }
 	;
 
@@ -692,7 +704,15 @@ is_oneway:		/* empty */			{ $$ = FALSE; }
 |			TOK_ONEWAY			{ $$ = TRUE; }
 	;
 
-op_dcl:			z_props
+op_dcl:		z_declspec op_dcl_def		{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_inhibits > 0)
+ 		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
+	;
+
+op_dcl_def:		z_props
 			is_noscript
 			is_oneway
 			op_type_spec
@@ -1311,7 +1331,12 @@ boolean_lit:		TOK_TRUE			{ $$ = IDL_boolean_new (TRUE); }
 |			TOK_FALSE			{ $$ = IDL_boolean_new (FALSE); }
 	;
 
-codefrag:		TOK_CODEFRAG
+codefrag:		z_declspec TOK_CODEFRAG		{
+	$$ = $2;
+	IDL_NODE_DECLSPEC ($$) = $1;	
+	if (__IDL_inhibits > 0)
+		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+}
 	;
 
 dqstring_cat:		dqstring

@@ -33,9 +33,11 @@ extern "C" {
 #endif
 
 /* version */
+#define LIBIDL_VERSION(a,b,c)		(((a) << 16) + ((b) << 8) + (c))
 #define LIBIDL_MAJOR_VERSION		@LIBIDL_MAJOR_VERSION@
 #define LIBIDL_MINOR_VERSION		@LIBIDL_MINOR_VERSION@
 #define LIBIDL_MICRO_VERSION		@LIBIDL_MICRO_VERSION@
+#define LIBIDL_VERSION_CODE		LIBIDL_VERSION(@LIBIDL_MAJOR_VERSION@,@LIBIDL_MINOR_VERSION@,@LIBIDL_MICRO_VERSION@)
 
 /* miscellaneous constants */
 #define IDL_SUCCESS			0

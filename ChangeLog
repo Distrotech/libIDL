@@ -1,6 +1,11 @@
-1999-02-22  Andrew T. Veliath  <andrewtv@usa.net>
+1999-02-23  Andrew T. Veliath  <andrewtv@usa.net>
 
-	* Update version to 0.6.0.
+	* IDL.h.new.in: Improved version codes.
+
+	* parser.y: Allow inhibits on codefrags, operations and
+	attributes.
+
+1999-02-22  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* IDL_tree_func tree parameter changed to a structure, which
 	contains up paths of the traversal and the real up path (in the
