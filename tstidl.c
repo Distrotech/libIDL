@@ -107,7 +107,7 @@ int main (int argc, char *argv[])
 	IDL_ns ns;
 	char *fn;
 
-#ifndef WIN32
+#ifndef _WIN32
 	{ extern int __IDL_debug;
 	__IDL_debug = FALSE; }
 #endif

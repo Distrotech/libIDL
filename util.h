@@ -35,7 +35,7 @@
 #include <glib.h>
 #include "IDL.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #  define alloca
 #endif
 

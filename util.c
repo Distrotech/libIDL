@@ -28,7 +28,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
-#ifndef WIN32
+#ifndef _WIN32
 #  include <unistd.h>
 #endif
 #include "rename.h"
@@ -212,7 +212,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 		return -1;
 	}
 
-#ifndef WIN32
+#ifndef _WIN32
 	if (access (filename, R_OK))
 		return -1;
 #endif

@@ -53,7 +53,7 @@ extern "C" {
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
 #define IDLF_DECLSPEC_INHIBIT		(1UL << 1)
 
-#ifdef WIN32
+#ifdef _WIN32
 #  define IDL_EXPORT			__declspec (dllexport)
 #  define IDL_IMPORT			__declspec (dllimport)
 #else
