@@ -46,6 +46,7 @@ extern "C" {
 #define IDLF_NO_EVAL_CONST		(1UL << 0)
 #define IDLF_COMBINE_REOPENED_MODULES	(1UL << 1)
 #define IDLF_PREFIX_FILENAME		(1UL << 2)
+#define IDLF_XPIDL			(1UL << 3)
 
 /* declaration specification flags */
 #define IDLF_DECLSPEC_EXIST		(1UL << 0)
@@ -70,17 +71,7 @@ typedef unsigned long			IDL_ulonglong_t;
 #  warning 64-bit integer type not available, using 32-bit instead
 #endif /* G_HAVE_GINT64 */
 
-#if (SIZEOF_LONG_LONG == 8)
-#  define IDL_B8_FMT			"%llo"
-#  define IDL_UB10_FMT			"%llu"
-#  define IDL_SB10_FMT			"%lld"
-#  define IDL_B16_FMT			"%llx"
-#else
-#  define IDL_B8_FMT			"%lo"
-#  define IDL_UB10_FMT			"%lu"
-#  define IDL_SB10_FMT			"%ld"
-#  define IDL_B16_FMT			"%lx"
-#endif
+#define IDL_LL				"ll"
 	
 typedef unsigned int			IDL_declspec_t;
 typedef struct _IDL_tree_node 		IDL_tree_node;
@@ -554,7 +545,7 @@ struct _IDL_ns {
 };
 #define IDL_NS(a)			(*(a))
 
-typedef int		(*IDL_callback)			(int level,
+typedef int		(*IDL_msg_callback)		(int level,
 							 int num,
 							 int line,
 							 const char *filename,
@@ -575,7 +566,7 @@ extern const char *	IDL_get_IDLver_string		(void);
 
 extern int		IDL_parse_filename		(const char *filename,
 							 const char *cpp_args,
-							 IDL_callback cb,
+							 IDL_msg_callback msg_cb,
 							 IDL_tree *tree, IDL_ns *ns,
 							 unsigned long parse_flags,
 							 int max_msg_level);

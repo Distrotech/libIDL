@@ -93,7 +93,7 @@ int					__IDL_is_parsing;
 unsigned long				__IDL_flags;
 static int				__IDL_max_msg_level;
 static int				__IDL_nerrors, __IDL_nwarnings;
-static IDL_callback			__IDL_msgcb;
+static IDL_msg_callback			__IDL_msgcb;
 
 /* Case-insensitive version of g_str_hash */
 guint IDL_strcase_hash (gconstpointer v)
@@ -177,7 +177,7 @@ static void IDL_tree_optimize (IDL_tree *p, IDL_ns ns)
 }
 
 int IDL_parse_filename (const char *filename, const char *cpp_args,
-			IDL_callback cb, IDL_tree *tree, IDL_ns *ns,
+			IDL_msg_callback msg_cb, IDL_tree *tree, IDL_ns *ns,
 			unsigned long parse_flags, int max_msg_level)
 {
 	extern void __IDL_lex_init (void);
@@ -291,7 +291,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	__IDL_max_msg_level = max_msg_level;
 	__IDL_nerrors = __IDL_nwarnings = 0;
 	__IDL_in = input;
-	__IDL_msgcb = cb;
+	__IDL_msgcb = msg_cb;
 	__IDL_flags = parse_flags;
 	__IDL_root_ns = IDL_ns_new ();
 

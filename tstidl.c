@@ -28,9 +28,9 @@ gboolean print_const_dcls (IDL_tree p, gpointer user_data)
 {
 	if (IDL_NODE_TYPE (p) == IDLN_CONST_DCL &&
 	    IDL_NODE_TYPE (IDL_CONST_DCL (p).const_exp) == IDLN_INTEGER) {
-		printf ("%s is " IDL_SB10_FMT "\n",
-		       IDL_IDENT (IDL_CONST_DCL (p).ident).str,
-		       IDL_INTEGER (IDL_CONST_DCL (p).const_exp).value);
+		printf ("%s is %" IDL_LL "d\n",
+			IDL_IDENT (IDL_CONST_DCL (p).ident).str,
+			IDL_INTEGER (IDL_CONST_DCL (p).const_exp).value);
 		return FALSE;
 	}
 	return TRUE;
@@ -55,7 +55,7 @@ int main (int argc, char *argv[])
 	fn = argv[1];
 
 	rv = IDL_parse_filename (fn, NULL, NULL, &tree, &ns,
-				argc == 3 ? atoi (argv[2]) : 0, IDL_WARNING1);
+				 argc == 3 ? atoi (argv[2]) : 0, IDL_WARNING1);
 
 	if (rv == IDL_SUCCESS) {
 		printf ("Repository IDs\n");

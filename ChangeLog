@@ -1,3 +1,23 @@
+1998-11-16  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* lexer.l: Had b10_int and b10_uint reversed.
+
+	* tstidl.c (print_const_dcls): Update for IDL_LL.
+
+	* lexer.l: Use new IDL_LL constant.
+	(YY_INPUT): Use this now for testing.  This will eventually be
+	used for cpp input override capability.
+
+	* IDL.h (IDLF_XPIDL): New parse flag, for eventual XPIDL support.
+	(IDL_LL): Replaces old IDL_*_FMT defines.  Use this in place of
+	the conversion operator instead of the entire % construct. Rename
+	IDL_callback to IDL_msg_callback. Note: glib currently doesn't
+	tell me what conversion specifier to use for GINT64, so this may
+	currently be troublesome on some platforms (it had to be changed
+	since the hack that was in place no longer works).
+
+	* Makefile.am, configure.in: Bump version number to 0.5.3.
+
 1998-10-25  Andrew Veliath  <andrewtv@usa.net>
 
 	* Update version to 0.5.2

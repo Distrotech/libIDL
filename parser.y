@@ -1039,8 +1039,8 @@ positive_int_const:	const_exp			{
 			yyerrornv (ident, "From constant declared here");
 		$$ = NULL;
 	} else if (value < 0) {
-		yywarningv (IDL_WARNING1, "Cannot use negative value " 
-			   IDL_SB10_FMT ", using " IDL_SB10_FMT,
+		yywarningv (IDL_WARNING1, "Cannot use negative value %"
+			    IDL_LL "d, using %" IDL_LL "d",
 			   value, -value);
 		if (ident)
 			yywarningnv (ident,

@@ -31,7 +31,13 @@
 #include "util.h"
 #include "parser.h"
 
-#define tokreturn(token)	do {			\
+#define YY_INPUT(buf,result,max_size)	do {				\
+        if ((result = fread (buf, 1, max_size, yyin)) == 0 &&		\
+	    ferror (yyin))						\
+                YY_FATAL_ERROR( "input in flex scanner failed" );	\
+} while (0)
+
+#define tokreturn(token)		do {		\
 	__IDL_prev_token_line = __IDL_cur_token_line;	\
 	__IDL_cur_token_line = __IDL_cur_line;		\
 	return token;					\
@@ -51,8 +57,8 @@ newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^#.*
 b8_int			0[0-9]*
-b10_int			[1-9][0-9]*
-b10_uint		-[1-9][0-9]*
+b10_int			-[1-9][0-9]*
+b10_uint		[1-9][0-9]*
 b16_int			0[xX][0-9A-Fa-f]+
 float_lit		-?[0-9]*\.[0-9]+([eE]-?[0-9]+)?|-?[0-9]+\.?([eE]-?[0-9]+)?
 fixed_lit		(-?[0-9]*\.[0-9]+|-?[0-9]+\.?[0-9]*)[dD]
@@ -109,19 +115,19 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 {whitespace}
 {b8_int}		{
-	sscanf (yytext, IDL_B8_FMT, &yylval.integer);
+	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
 {b10_int}		{
-	sscanf (yytext, IDL_SB10_FMT, &yylval.integer);
+	sscanf (yytext, "%" IDL_LL "d", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
 {b10_uint}		{
-	sscanf (yytext, IDL_UB10_FMT, &yylval.integer);
+	sscanf (yytext, "%" IDL_LL "u", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
 {b16_int}		{
-	sscanf (yytext + 2, IDL_B16_FMT, &yylval.integer);
+	sscanf (yytext + 2, "%" IDL_LL "x", &yylval.integer);
 	tokreturn (TOK_INTEGER);
 }
 {fixed_lit}		{
