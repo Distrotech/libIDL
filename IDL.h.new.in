@@ -32,6 +32,11 @@
 extern "C" {
 #endif
 
+/* version */
+#define LIBIDL_MAJOR_VERSION		@LIBIDL_MAJOR_VERSION@
+#define LIBIDL_MINOR_VERSION		@LIBIDL_MINOR_VERSION@
+#define LIBIDL_MICRO_VERSION		@LIBIDL_MICRO_VERSION@
+
 /* miscellaneous constants */
 #define IDL_SUCCESS			0
 #define IDL_ERROR			1

@@ -100,6 +100,15 @@ main ()
       printf("*** to point to the correct copy of libIDL-config, and remove the file config.cache\n");
       printf("*** before re-running configure\n");
     } 
+  else if ((libIDL_major_version != LIBIDL_MAJOR_VERSION) ||
+	   (libIDL_minor_version != LIBIDL_MINOR_VERSION) ||
+           (libIDL_micro_version != LIBIDL_MICRO_VERSION))
+    {
+      printf("\n*** libIDL header files (version %d.%d.%d) do not match\n",
+	     LIBIDL_MAJOR_VERSION, LIBIDL_MINOR_VERSION, LIBIDL_MICRO_VERSION);
+      printf("*** library (version %d.%d.%d)\n",
+	     libIDL_major_version, libIDL_minor_version, libIDL_micro_version);
+    }
   else
     {
       if ((libIDL_major_version > major) ||
