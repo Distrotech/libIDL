@@ -1,4 +1,4 @@
-%define version 0.5.5
+%define version 0.5.6
 %define release 1
 
 Summary:   IDL parsing library

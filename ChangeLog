@@ -1,3 +1,12 @@
+1998-11-30  Andrew T. Veliath  <andrewtv@usa.net>
+
+	* #pragma inhibit on/off added.
+
+	* Made XPIDL interface properties a list, and moved before the
+	interface keyword.
+	
+	* Internal flag state added.
+
 1998-11-29  Andrew T. Veliath  <andrewtv@usa.net>
 
 	* util.c (IDL_tree_process_forward_dcls): 

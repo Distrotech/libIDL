@@ -96,6 +96,7 @@ IDL_ns					__IDL_root_ns;
 int					__IDL_is_okay;
 int					__IDL_is_parsing;
 unsigned long				__IDL_flags;
+unsigned long				__IDL_flagsi;
 gpointer				__IDL_inputcb_user_data;
 IDL_input_callback			__IDL_inputcb;
 GSList *				__IDL_new_ident_comments;
@@ -304,6 +305,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	__IDL_in = input;
 	__IDL_msgcb = msg_cb;
 	__IDL_flags = parse_flags;
+	__IDL_flagsi = 0;
 	__IDL_root_ns = IDL_ns_new ();
 
 	__IDL_is_parsing = TRUE;
@@ -395,6 +397,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	__IDL_nerrors = __IDL_nwarnings = 0;
 	__IDL_msgcb = msg_cb;
 	__IDL_flags = parse_flags;
+	__IDL_flagsi = 0;
 	__IDL_root_ns = IDL_ns_new ();
 
 	__IDL_is_parsing = TRUE;

@@ -128,6 +128,7 @@ static int		do_token_error			(IDL_tree p,
 %token			TOK_STRUCT
 %token			TOK_SWITCH
 %token			TOK_TRUE
+%token			TOK_TYPECODE
 %token			TOK_TYPEDEF
 %token			TOK_UNION
 %token			TOK_UNSIGNED
@@ -139,7 +140,6 @@ static int		do_token_error			(IDL_tree p,
 %token <integer>	TOK_INTEGER
 %token <str>		TOK_DECLSPEC TOK_INFOTAG
 %token <str>		TOK_IDENT TOK_SQSTRING TOK_DQSTRING TOK_FIXEDP
-%token			TOK_TYPECODE
 
 /* Non-Terminals */
 %type <tree>		add_expr
@@ -183,6 +183,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		ident
 %type <tree>		illegal_ident
 %type <tree>		infotag
+%type <tree>		infotag_list
 %type <tree>		integer_lit
 %type <tree>		integer_type
 %type <tree>		interface
@@ -241,7 +242,7 @@ static int		do_token_error			(IDL_tree p,
 %type <tree>		wide_string_type
 %type <tree>		xor_expr
 %type <tree>		z_inheritance
-%type <tree>		z_infotag
+%type <tree>		z_infotags
 %type <tree>		typecode_type
 
 %type <declspec>	z_declspec module_declspec
@@ -321,12 +322,13 @@ module:			module_declspec new_or_prev_scope '{'
 
 			module = NULL;
 		}
-	} else {
+	} else
 		module = IDL_module_new ($2, $4);
-	}
 
 	$$ = module;
-	IDL_NODE_DECLSPEC ($$) = $1;
+	IDL_NODE_DECLSPEC ($$) = $1;	
+	if (__IDL_flagsi & IDLFP_INHIBIT)
+		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 }
 |			module_declspec new_or_prev_scope '{'
 			'}' pop_scope			{
@@ -341,8 +343,11 @@ module:			module_declspec new_or_prev_scope '{'
 		   IDL_IDENT ($2).str);
 
 	$$ = IDL_NODE_UP ($2) ? NULL : IDL_module_new ($2, NULL);
-	if ($$)
+	if ($$) {
 		IDL_NODE_DECLSPEC ($$) = $1;
+		if (__IDL_flagsi & IDLFP_INHIBIT)
+			IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
+	}
 }
 	;
 
@@ -358,67 +363,64 @@ interface_catch_ident:	new_or_prev_scope
 	;
 
 interface:		z_declspec
+			z_infotags
 			TOK_INTERFACE
 			interface_catch_ident
-			z_infotag
 			pop_scope
 			z_inheritance			{
-	assert ($3 != NULL);
-	assert (IDL_NODE_TYPE ($3) == IDLN_IDENT);
-	assert (IDL_IDENT_TO_NS ($3) != NULL);
-	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($3)) == IDLN_GENTREE);
-	if (IDL_NODE_UP ($3) != NULL &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($3)) != IDLN_INTERFACE &&
-	    IDL_NODE_TYPE (IDL_NODE_UP ($3)) != IDLN_FORWARD_DCL) {
-		do_token_error (IDL_NODE_UP ($3), "Interface definition conflicts with", FALSE);
-		yyerrornv ($3, "Previous declaration");
+	assert ($4 != NULL);
+	assert (IDL_NODE_TYPE ($4) == IDLN_IDENT);
+	assert (IDL_IDENT_TO_NS ($4) != NULL);
+	assert (IDL_NODE_TYPE (IDL_IDENT_TO_NS ($4)) == IDLN_GENTREE);
+	if (IDL_NODE_UP ($4) != NULL &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_INTERFACE &&
+	    IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
+		do_token_error (IDL_NODE_UP ($4), "Interface definition conflicts with", FALSE);
+		yyerrornv ($4, "Previous declaration");
 		YYABORT;
-	} else if (IDL_NODE_UP ($3) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($3)) != IDLN_FORWARD_DCL) {
-		yyerrorv ("Cannot redeclare interface `%s'", IDL_IDENT ($3).str);
-		yyerrornv ($3, "Previous declaration of interface `%s'", IDL_IDENT ($3).str);
+	} else if (IDL_NODE_UP ($4) != NULL &&
+		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) != IDLN_FORWARD_DCL) {
+		yyerrorv ("Cannot redeclare interface `%s'", IDL_IDENT ($4).str);
+		yyerrornv ($4, "Previous declaration of interface `%s'", IDL_IDENT ($4).str);
 		YYABORT;
-	} else if (IDL_NODE_UP ($3) != NULL &&
-		   IDL_NODE_TYPE (IDL_NODE_UP ($3)) == IDLN_FORWARD_DCL) {
-		$3->_file = __IDL_cur_filename;
-		$3->_line = __IDL_cur_line;
+	} else if (IDL_NODE_UP ($4) != NULL &&
+		   IDL_NODE_TYPE (IDL_NODE_UP ($4)) == IDLN_FORWARD_DCL) {
+		$4->_file = __IDL_cur_filename;
+		$4->_line = __IDL_cur_line;
 	}
-	IDL_GENTREE (IDL_IDENT_TO_NS ($3))._import = $6;
-	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($3));
-	if (IDL_ns_check_for_ambiguous_inheritance ($3, $6))
+	IDL_GENTREE (IDL_IDENT_TO_NS ($4))._import = $6;
+	IDL_ns_push_scope (__IDL_root_ns, IDL_IDENT_TO_NS ($4));
+	if (IDL_ns_check_for_ambiguous_inheritance ($4, $6))
 		__IDL_is_okay = FALSE;
 }
 			'{'
 				interface_body
 			'}' pop_scope			{
- 	$$ = IDL_interface_new ($3, $6, $9);
+ 	$$ = IDL_interface_new ($4, $6, $9);
 	IDL_NODE_DECLSPEC ($$) = $1;
+	if (__IDL_flagsi & IDLFP_INHIBIT)
+		IDL_NODE_DECLSPEC ($$) |= IDLF_DECLSPEC_EXIST | IDLF_DECLSPEC_INHIBIT;
 
-	/* Check for XPIDL interface tag */
-	if ($4 != NULL) {
+	/* Check for XPIDL interface properties */
+	if ($2 != NULL) {
 		if (__IDL_flags & IDLF_XPIDL)
-			IDL_INTERFACE ($$).infotag = $4;
-		else {
-			yyerrornv ($4,
-				   "Cannot have interface tag %s when XPIDL syntax is not enabled",
-				   IDL_IDENT ($4).str);
-			IDL_tree_free ($4);
-		}
+			IDL_INTERFACE ($$).infotag = $2;
+		else
+			IDL_tree_free ($2);
 	}
 }
 |			z_declspec
+			z_infotags
 			TOK_INTERFACE
 			interface_catch_ident
-			z_infotag
 			pop_scope			{
 	if ($1) yywarningv (IDL_WARNING1,
-			    "Ignoring useless declspec for forward declaration `%s'",
-			    IDL_IDENT ($3));
-	if ($4) yywarningv (IDL_WARNING1,
-			    "Ignoring useless interface tag %s for forward declaration `%s'",
-			    IDL_IDENT ($4).str,
-			    IDL_IDENT ($3));
-	$$ = IDL_forward_dcl_new ($3);
+			    "Ignoring declspec for forward declaration `%s'",
+			    IDL_IDENT ($4));
+	if ($2) yywarningv (IDL_WARNING1,
+			    "Ignoring interface properties for forward declaration `%s'",
+			    IDL_IDENT ($4));
+	$$ = IDL_forward_dcl_new ($4);
 }
 	;
 
@@ -911,6 +913,14 @@ fixed_array_size:	'['
 	;
 
 infotag:		TOK_INFOTAG			{ $$ = IDL_ident_new ($1); }
+|			TOK_IDENT			{
+	yyerror ("XPIDL syntax is not enabled");
+	YYABORT;
+}
+	;
+
+infotag_list:		infotag				{ $$ = list_start ($1, TRUE); }
+|			infotag_list ',' infotag	{ $$ = list_chain ($1, $3, TRUE); }
 	;
 
 ident:			TOK_IDENT			{ $$ = IDL_ident_new ($1); }
@@ -1102,8 +1112,18 @@ z_declspec:		/* empty */			{ $$ = 0; }
 }
 	;
 
-z_infotag:		/* empty */			{ $$ = NULL; }
-|			infotag
+z_infotags:		/* empty */			{ $$ = NULL; }
+|			'['				{
+	/* Enable property scanning */
+	if (__IDL_flags & IDLF_XPIDL)
+		__IDL_flagsi |= IDLFP_XPIDL_PROPERTY;
+}			infotag_list
+			']'				{
+	/* Disable property scanning */
+	if (__IDL_flags & IDLF_XPIDL)
+		__IDL_flagsi &= ~IDLFP_XPIDL_PROPERTY;
+	$$ = $3;
+}
 	;
 
 integer_lit:		TOK_INTEGER			{ $$ = IDL_integer_new ($1); }
@@ -1341,6 +1361,14 @@ void IDL_ns_version (IDL_ns ns, const char *s)
 				__IDL_root_ns, p, NULL, &major, &minor);
 }
 
+static void IDL_inhibit (IDL_ns ns, const char *s)
+{
+	if (g_strcasecmp ("on", s) == 0)
+		__IDL_flagsi |= IDLFP_INHIBIT;
+	else if (g_strcasecmp ("off", s) == 0)
+		__IDL_flagsi &= ~IDLFP_INHIBIT;
+}
+
 void __IDL_do_pragma (const char *s)
 {
 	int n;
@@ -1360,6 +1388,8 @@ void __IDL_do_pragma (const char *s)
 		IDL_ns_ID (__IDL_root_ns, s);
 	else if (strcmp (directive, "version") == 0)
 		IDL_ns_version (__IDL_root_ns, s);
+	else if (strcmp (directive, "inhibit") == 0)
+		IDL_inhibit (__IDL_root_ns, s);
 }
 
 static IDL_declspec_t IDL_parse_declspec (const char *strspec)

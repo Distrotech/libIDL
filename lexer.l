@@ -77,17 +77,21 @@ declspec		__declspec{whitespace}\({whitespace}[A-Za-z]*{whitespace}\)
 happy_ident		[A-Za-z][A-Za-z0-9]*
 err1_ident		_[A-Za-z0-9_]+
 warn1_ident		[A-Za-z][A-Za-z0-9_]*
-infotag_ident		\[[A-Za-z]*[\{\(][A-Za-z0-9_\-]+[\}\)]\]
+infotag_ident		{happy_ident}\([^\)]+\)
 sqstring		\'[^\'\n]*[\'\n]
 dqstring		\"[^\"\n]*[\"\n]
 
 %s XPIDL
+%x XPIDLX
 
 %%
 	if (__IDL_flags & IDLF_XPIDL)
 		BEGIN(XPIDL);
+
+	if (__IDL_flagsi & IDLFP_XPIDL_PROPERTY)
+		BEGIN(XPIDLX);
 		
-{cpp_pragma}		{
+<*>{cpp_pragma}		{
 	int n;
 	char *p = yytext;
 	char *s;
@@ -99,7 +103,7 @@ dqstring		\"[^\"\n]*[\"\n]
 
 	__IDL_do_pragma (s);
 }
-{cpp_status}		{
+<*>{cpp_status}		{
 	char *filename = (char *) malloc (strlen (yytext) + 1);
 	char *orig;
 
@@ -125,11 +129,10 @@ dqstring		\"[^\"\n]*[\"\n]
 					 (gpointer)&orig, NULL)) {
 		free (__IDL_cur_filename);
 		__IDL_cur_filename = orig;
-	} else {
+	} else
 		g_hash_table_insert (__IDL_filename_hash, __IDL_cur_filename, NULL);
-	}
 }
-{whitespace}
+<*>{whitespace}
 {b8_int}		{
 	sscanf (yytext, "%" IDL_LL "o", &yylval.integer);
 	tokreturn (TOK_INTEGER);
@@ -226,7 +229,7 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_IDENT);
 }
-{infotag_ident}		{
+<XPIDLX>{infotag_ident}	{
 	yylval.str = g_strdup (yytext);
 	tokreturn (TOK_INFOTAG);
 }
@@ -240,8 +243,8 @@ wstring			tokreturn (TOK_WSTRING);
 	yylval.str[strlen (yytext) - 2] = 0;
 	tokreturn (TOK_DQSTRING);
 }
-{newline}		++__IDL_cur_line;
-.			tokreturn (yytext[0]);
+<*>{newline}		++__IDL_cur_line;
+<*>.			tokreturn (yytext[0]);
 
 %%
 

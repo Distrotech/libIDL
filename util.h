@@ -39,6 +39,10 @@
 #  define alloca
 #endif
 
+/* internal parse flags */
+#define IDLFP_INHIBIT		(1UL << 0)
+#define IDLFP_XPIDL_PROPERTY	(1UL << 1)
+
 extern void		yyerror				(const char *s);
 extern void		yyerrorl			(const char *s, int ofs);
 extern void		yywarning			(int level, const char *s);
@@ -79,6 +83,7 @@ extern IDL_ns				__IDL_root_ns;
 extern int				__IDL_is_okay;
 extern int				__IDL_is_parsing;
 extern unsigned long			__IDL_flags;
+extern unsigned long			__IDL_flagsi;
 extern gpointer				__IDL_inputcb_user_data;
 extern IDL_input_callback		__IDL_inputcb;
 extern GSList *				__IDL_new_ident_comments;
