@@ -163,12 +163,15 @@ dqstring		\"[^\"\n]*[\"\n]
 <*>{cpp_pragma}						{
 	int n;
 	char *p = yytext;
-	char *s;
+	char *s, *t;
 
 	while (isspace (*p) || *p == '#') ++p;
 	s = p;
 	sscanf (p, "%*6s%n", &n); s += n;
 	while (isspace (*s)) ++s;
+
+	t = s + strlen(s) - 1;
+	while(isspace(*t) && t > s) *(t--) = '\0'; /* Chomp trailing spaces */
 
 	__IDL_do_pragma (s);
 }
