@@ -397,14 +397,20 @@ module:			module_declspec
 }
 	;
 
+/* We only catch these errors for non-pidl because we want to be able to compile
+   the OMG CORBA .idl files which define interfaces by these names */
 interface_catch_ident:	new_or_prev_scope
 |			TOK_OBJECT			{
-	yyerror ("Interfaces cannot be named `Object'");
-	YYABORT;
+	if(!__IDL_pidl) {
+		yyerror ("Interfaces cannot be named `Object'");
+		YYABORT;
+	}
 }
 |			TOK_TYPECODE			{
-	yyerror ("Interfaces cannot be named `TypeCode'");
-	YYABORT;
+	if(!__IDL_pidl) {
+		yyerror ("Interfaces cannot be named `TypeCode'");
+		YYABORT;
+	}
 }
 	;
 

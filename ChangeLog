@@ -1,3 +1,7 @@
+2000-10-02 Elliot Lee <sopwith@redhat.com>
+	* parser.y (interface_catch_ident): Allow 'Object' and 'TypeCode' interface
+	names in pidl mode.
+
 2000-08-28 Elliot Lee <sopwith@redhat.com>
 	* util.c (is_recursive_walker): Fix segfault when past was NULL (aka data type has
 	no parent).
