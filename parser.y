@@ -1,6 +1,6 @@
 /***************************************************************************
 
-    parser.y (IDL yacc parser and AST generation)
+    parser.y (IDL yacc parser and tree generation)
 
     Copyright (C) 1998 Andrew Veliath
 
