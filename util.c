@@ -748,7 +748,7 @@ int IDL_tree_get_node_info (IDL_tree p, char **what, char **who)
 	case IDLN_PARAM_DCL:
 		*what = "operation parameter";
 		assert (IDL_PARAM_DCL (p).simple_declarator != NULL);
-		assert (IDL_NODE_TYPE (IDL_PARAM_DCL (p).simple_declarator) = IDLN_IDENT);
+		assert (IDL_NODE_TYPE (IDL_PARAM_DCL (p).simple_declarator) == IDLN_IDENT);
 		*who = IDL_IDENT (IDL_PARAM_DCL (p).simple_declarator).str;
 		break;
 
