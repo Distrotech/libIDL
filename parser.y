@@ -190,7 +190,7 @@ check_semicolon:	';'
 }
 	;
 
-useless_semicolon:		';'			{
+useless_semicolon:	';'				{
 	yyerror("Dangling semicolon has no effect");
 	$$ = NULL;
 }
@@ -415,8 +415,7 @@ param_attribute:	TOK_IN				{ $$ = IDL_PARAM_IN; }
 |			TOK_OUT				{ $$ = IDL_PARAM_OUT; }
 |			TOK_INOUT			{ $$ = IDL_PARAM_INOUT; }
 |			param_type_spec			{
-	yyerrorv("Missing parameter direction attribute (in, out, inout) before `%s'",
-		 IDL_IDENT($1).str);
+	yyerrorv("Missing direction attribute (in, out, inout) before parameter");
 	IDL_tree_free($1);
 }
 	;
