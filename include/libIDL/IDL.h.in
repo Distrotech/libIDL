@@ -2,8 +2,6 @@
 
     IDL.h (IDL parse tree and namespace components)
 
-    Include wide character support before this, if necessary.
-
     Copyright (C) 1998, 1999 Andrew T. Veliath
 
     This library is free software; you can redistribute it and/or
@@ -28,11 +26,13 @@
 
 #include <glib.h>
 
+/* Try to find wchar_t support */
+#include <stdlib.h>
 #if @HAVE_WCHAR_H@ /* HAVE_WCHAR_H */
-#include <wchar.h>
+#  include <wchar.h>
 #endif
 #if @HAVE_WCSTR_H@ /* HAVE_WCSTR_H */
-#include <wcstr.h>
+#  include <wcstr.h>
 #endif
 
 #ifdef __cplusplus
