@@ -1869,7 +1869,7 @@ int IDL_parse_filename(const char *filename, const char *cpp_args,
 			errno = ENOMEM;
 			return -1;
 		}
-		linkto = (char *)malloc(strlen(cwd) + strlen(filename) + 1);
+		linkto = (char *)malloc(strlen(cwd) + strlen(filename) + 2);
 		if (!linkto) {
 			g_free(cwd);
 			errno = ENOMEM;

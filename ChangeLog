@@ -1,3 +1,8 @@
+1998-07-25  Neil Vachharajani  <nvachhar@pluto.njcc.com>
+
+	* parser.y: Add one more byte for / in the allocation of linkto in 
+	IDL_parse_filename
+	
 1998-07-20  Andrew Veliath  <andrewtv@usa.net>
 
 	* Most of inhertance is done.  ChangeLog won't be updated much now
