@@ -1,3 +1,7 @@
+2005-07-25  Mark McLoughlin  <mark@skynet.ie>
+
+	* configure.in: Version 0.8.6.
+
 2005-02-23  Tor Lillqvist  <tml@novell.com>
 
 	* util.c (IDL_parse_filename): Use g_path_get_dirname(),

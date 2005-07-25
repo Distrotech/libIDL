@@ -1,3 +1,7 @@
+libIDL 0.8.6:
+
+	* Support for building on Win32 (Tor Lillqvist)
+
 libIDL 0.8.5:
 
 	* use modern automake rather than 1.4 (James Henstridge)
