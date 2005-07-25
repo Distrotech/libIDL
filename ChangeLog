@@ -1,5 +1,11 @@
 2005-07-25  Mark McLoughlin  <mark@skynet.ie>
 
+	* configure.in: post-release bump to 0.8.7.
+
+==================== 0.8.6 ====================
+
+2005-07-25  Mark McLoughlin  <mark@skynet.ie>
+
 	* configure.in: Version 0.8.6.
 
 2005-02-23  Tor Lillqvist  <tml@novell.com>
