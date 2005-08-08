@@ -499,13 +499,13 @@ int IDL_parse_filename_with_input (const char *filename,
 void yyerrorl (const char *s, int ofs)
 {
 	int line = __IDL_cur_line - 1 + ofs;
-	gchar *filename = NULL;
+	gchar *freeme = NULL, *filename = NULL;
 
 	if (__IDL_cur_filename) {
 #ifdef HAVE_CPP_PIPE_STDIN
 		filename = __IDL_cur_filename;
 #else
-		filename = g_basename (__IDL_cur_filename);
+		freeme = filename = g_path_get_basename (__IDL_cur_filename);
 #endif
 	} else
 		line = -1;
@@ -515,6 +515,7 @@ void yyerrorl (const char *s, int ofs)
 
 	/* Errors are counted, even if not printed */
 	if (__IDL_max_msg_level < IDL_ERROR)
+		g_free (freeme);
 		return;
 
 	if (__IDL_msgcb)
@@ -525,12 +526,13 @@ void yyerrorl (const char *s, int ofs)
 		else
 			fprintf (stderr, "Error: %s\n", s);
 	}
+	g_free (freeme);
 }
 
 void yywarningl (int level, const char *s, int ofs)
 {
 	int line = __IDL_cur_line - 1 + ofs;
-	gchar *filename = NULL;
+	gchar *freeme = NULL, *filename = NULL;
 
 	/* Unprinted warnings are not counted */
 	if (__IDL_max_msg_level < level)
@@ -540,7 +542,7 @@ void yywarningl (int level, const char *s, int ofs)
 #ifdef HAVE_CPP_PIPE_STDIN
 		filename = __IDL_cur_filename;
 #else
-		filename = g_basename (__IDL_cur_filename);
+		freeme = filename = g_path_get_basename (__IDL_cur_filename);
 #endif
 	} else
 		line = -1;
@@ -555,6 +557,7 @@ void yywarningl (int level, const char *s, int ofs)
 		else
 			fprintf (stderr, "Warning: %s\n", s);
 	}
+	g_free (freeme);
 }
 
 void yyerror (const char *s)

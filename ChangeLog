@@ -1,3 +1,8 @@
+2005-08-08  Kjartan Maraas  <kmaraas@gnome.org>
+
+	* util.c: (yyerrorl), (yywarningl): Remove use of deprecated
+	function g_basename(). Closes bug #133167.
+
 2005-07-25  Mark McLoughlin  <mark@skynet.ie>
 
 	* configure.in: post-release bump to 0.8.7.
