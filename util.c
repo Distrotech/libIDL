@@ -1879,8 +1879,16 @@ static void IDL_tree_free_real (IDL_tree p)
 		g_free (IDL_STRING (p).value);
 		break;
 
+	case IDLN_WIDE_STRING:
+		g_free (IDL_WIDE_STRING (p).value);
+		break;
+
 	case IDLN_CHAR:
 		g_free (IDL_CHAR (p).value);
+		break;
+
+	case IDLN_WIDE_CHAR:
+		g_free (IDL_WIDE_CHAR (p).value);
 		break;
 
 	case IDLN_IDENT:
@@ -1947,9 +1955,12 @@ void IDL_tree_free (IDL_tree p)
 	case IDLN_TYPE_TYPECODE:
 	case IDLN_FIXED:
 	case IDLN_STRING:
+	case IDLN_WIDE_STRING:
 	case IDLN_CHAR:
+	case IDLN_WIDE_CHAR:
 	case IDLN_IDENT:
 	case IDLN_CODEFRAG:
+	case IDLN_SRCFILE:
 		__IDL_tree_free (p);
 		break;
 
