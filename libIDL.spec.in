@@ -7,7 +7,7 @@ Version:   %{version}
 Release:   %{release}
 Source:    %{name}-%PACKAGE_VERSION.tar.gz
 Vendor:    Andrew T. Veliath <andrewtv@usa.net>
-Copyright: LGPL
+License:   LGPL
 Group:     Libraries
 Prereq:    /sbin/install-info
 Prefix:    /usr
@@ -68,6 +68,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING ChangeLog AUTHORS
 %doc README* NEWS BUGS tstidl.c
 %prefix/lib/lib*.so.*.*
+%{_libdir}/libIDL-2.la
+%{_libdir}/libIDL-2.so.0
 
 %files devel
 %defattr(-,root,root)

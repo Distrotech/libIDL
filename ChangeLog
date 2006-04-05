@@ -1,3 +1,8 @@
+2006-04-05  Jules Colding  <colding@omesc.com>
+
+	* libIDL.spec.in: rpmbuild fixes (added missing files to %files) 
+	(License): Fix tag (was "Copyright").
+
 2006-02-02  Mark McLoughlin  <mark@skynet.ie>
 
 	* util.c: (IDL_tree_free_real), (IDL_tree_free): handle
