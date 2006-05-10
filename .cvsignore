@@ -38,4 +38,6 @@ IDL.h.new
 install-sh
 missing
 mkinstalldirs
+depcomp
+libIDL-zip
 
