@@ -249,9 +249,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 #endif
 
-	if (!filename ||
-	    !tree ||
-	    (tree == NULL && ns != NULL)) {
+	if (!filename || !tree) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -376,8 +374,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	__IDL_msgcb = NULL;
 
 	if (rv != 0 || !__IDL_is_okay) {
-		if (tree)
-			*tree = NULL;
+		*tree = NULL;
 
 		if (ns)
 			*ns = NULL;
@@ -388,10 +385,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	if (__IDL_flags & IDLF_PREFIX_FILENAME)
 		IDL_ns_prefix (__IDL_root_ns, filename);
 
-	if (tree)
-		*tree = __IDL_root;
-	else
-		IDL_tree_free (__IDL_root);
+	*tree = __IDL_root;
 
 	if (ns)
 		*ns = __IDL_root_ns;
@@ -416,12 +410,10 @@ int IDL_parse_filename_with_input (const char *filename,
 	GSList *slist;
 	int rv;
 
-	if (!filename || !input_cb || !tree ||
-	    (tree == NULL && ns != NULL)) {
+	if (!filename || !input_cb || !tree) {
 		errno = EINVAL;
 		return -1;
 	}
-
 
 	IDL_parse_setup(parse_flags, max_msg_level);
 
@@ -466,8 +458,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	__IDL_msgcb = NULL;
 
 	if (rv != 0 || !__IDL_is_okay) {
-		if (tree)
-			*tree = NULL;
+		*tree = NULL;
 
 		if (ns)
 			*ns = NULL;
@@ -483,10 +474,7 @@ int IDL_parse_filename_with_input (const char *filename,
 	if (__IDL_flags & IDLF_PREFIX_FILENAME)
 		IDL_ns_prefix (__IDL_root_ns, filename);
 
-	if (tree)
-		*tree = __IDL_root;
-	else
-		IDL_tree_free (__IDL_root);
+	*tree = __IDL_root;
 
 	if (ns)
 		*ns = __IDL_root_ns;
