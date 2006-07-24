@@ -3352,7 +3352,7 @@ struct IDL_emit_node {
 	IDL_tree_func post;
 };
 
-static const struct IDL_emit_node * const IDL_get_IDL_emission_table (void)
+static struct IDL_emit_node * IDL_get_IDL_emission_table (void)
 {
 	static gboolean initialized = FALSE;
 	static struct IDL_emit_node table[IDLN_LAST];
