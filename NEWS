@@ -1,3 +1,13 @@
+libIDL 0.8.7:
+
+	* Clean up some dead code (Pascal Terjan)
+	* Fix compiler warning (Kjartan)
+	* Don't use deprecated function g_basename() (Kjartan)
+	* Handle IDLN_WIDE_CHAR, IDLN_WIDE_STRING and IDLN_SRCFILE
+	  in IDL_tree_free()/IDL_tree_free_real() (Mark)
+	* Wind32 fixes (Tor Lillqvist)
+	* spec file fixes (Jules Colding)
+
 libIDL 0.8.6:
 
 	* Support for building on Win32 (Tor Lillqvist)
