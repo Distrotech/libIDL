@@ -31,7 +31,7 @@ MOSTLYCLEANFILES	= parser.output y.output
 
 EXTRA_DIST		= BUGS parser.y lexer.l \
 			  Makefile.msc README.win32 libIDL-zip.in \
-			  libIDL.def libIDL.spec \
+			  libIDL.def \
 			  HACKING MAINTAINERS
 
 info_TEXINFOS		= libIDL2.texi
