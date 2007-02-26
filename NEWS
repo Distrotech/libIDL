@@ -1,3 +1,7 @@
+libIDL 0.8.8:
+
+	* Don't ship the broken spec file any more (Brian Pepple)
+
 libIDL 0.8.7:
 
 	* Clean up some dead code (Pascal Terjan)
