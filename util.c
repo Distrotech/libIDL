@@ -502,9 +502,10 @@ void yyerrorl (const char *s, int ofs)
 	__IDL_is_okay = FALSE;
 
 	/* Errors are counted, even if not printed */
-	if (__IDL_max_msg_level < IDL_ERROR)
+	if (__IDL_max_msg_level < IDL_ERROR) {
 		g_free (freeme);
 		return;
+	}
 
 	if (__IDL_msgcb)
 		(*__IDL_msgcb)(IDL_ERROR, __IDL_nerrors, line, filename, s);
