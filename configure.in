@@ -128,7 +128,7 @@ fi
 
 
 if test "x$GCC" = "xyes" -a "x$enable_compile_warnings" != "xno"; then
-        WARN_CFLAGS="-Wall -Wunused -Wmissing-prototypes -Wmissing-declarations -D_FORTIFY_SOURCE=2"
+        WARN_CFLAGS="-Wall -Wunused -Wmissing-prototypes -Wmissing-declarations"
 else
         WARN_CFLAGS=
 fi
