@@ -1,3 +1,7 @@
+libIDL 0.8.9:
+
+	* Add missing braces (Dominique Quatravaux)
+
 libIDL 0.8.8:
 
 	* Don't ship the broken spec file any more (Brian Pepple)

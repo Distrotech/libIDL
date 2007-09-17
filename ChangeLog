@@ -1,8 +1,12 @@
+======================= libIDL 0.8.9 ========================
+
 2007-05-15  Mark McLoughlin  <markmc@redhat.com>
 
 	* util.c: (yyerrorl): Add missing braces. Fix from
 	 Dominique Quatravaux <dominique@quatravaux.org> in
 	bug #438424.
+
+======================= libIDL 0.8.8 ========================
 
 2006-11-22  Brian Pepple  <bdpepple@ameritech.net>
 
