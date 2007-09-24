@@ -1,3 +1,13 @@
+2007-09-24  Wouter Bolsterlee  <wbolster@svn.gnome.org>
+
+	reviewed by: Michael Meeks  <michael@ximian.com>
+
+	* lexer.l: Ignore "command-line" in addition to "command
+	line" when handling output from cpp . This fixes build
+	problems when using newer toolchains, e.g. ORBIT2 can be
+	compiled again with cpp >= 4.2. Fixes bug #474641, patch
+	by Sebastian Bober.
+
 ======================= libIDL 0.8.9 ========================
 
 2007-05-15  Mark McLoughlin  <markmc@redhat.com>

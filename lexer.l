@@ -18,7 +18,7 @@
     License along with this library; if not, write to the Free
     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-    $Id$
+    $Id: lexer.l,v 1.83 2003/05/09 15:19:06 jody Exp $
 
 ***************************************************************************/
 %{
@@ -205,6 +205,7 @@ dqstring		\"[^\"\n]*[\"\n]
 		    (!strcmp (mytext, "<builtin>")  ||
 		     !strcmp (mytext, "<built-in>") ||
 		     !strcmp (mytext, "<stdin>")    ||
+		     !strcmp (mytext, "<command-line>") ||
 		     !strcmp (mytext, "<command line>")))
 		    
 			yylval.tree = IDL_file_set ("", line);
