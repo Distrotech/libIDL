@@ -1,3 +1,11 @@
+======================= libIDL 0.8.10 =======================
+
+2008-01-29  Christian Persch  <chpe@gnome.org>
+
+	* autogen.sh: Fix autogen with automake 1.10.
+	* NEWS:
+	* configure.in: Update for 0.8.10.
+
 2008-01-29  Christian Persch  <chpe@gnome.org>
 
 	* include/libIDL/IDL.h.in: Use G_STRFUNC, since G_GNUC_PRETTY_FUNCTION
