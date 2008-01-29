@@ -1,3 +1,8 @@
+2008-01-29  Christian Persch  <chpe@gnome.org>
+
+	* include/libIDL/IDL.h.in: Use G_STRFUNC, since G_GNUC_PRETTY_FUNCTION
+	was deprecated.
+
 2007-09-24  Wouter Bolsterlee  <wbolster@svn.gnome.org>
 
 	reviewed by: Michael Meeks  <michael@ximian.com>
