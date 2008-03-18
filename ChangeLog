@@ -1,3 +1,8 @@
+2008-03-18  Christian Persch  <chpe@gnome.org>
+
+	* configure.in: Update glib version req. Bug #517088, patch by
+	Mart Raudsepp.
+
 ======================= libIDL 0.8.10 =======================
 
 2008-01-29  Christian Persch  <chpe@gnome.org>
