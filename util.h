@@ -87,7 +87,7 @@ extern void		__IDL_lex_cleanup 		(void);
 
 
 #ifndef HAVE_CPP_PIPE_STDIN
-extern char *				__IDL_tmp_filename;
+extern const char *			__IDL_tmp_filename;
 #endif
 extern const char *			__IDL_real_filename;
 extern char *				__IDL_cur_filename;

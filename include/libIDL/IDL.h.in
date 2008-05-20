@@ -86,16 +86,18 @@ extern "C" {
 #define IDLF_OUTPUT_CODEFRAGS		(1UL << 3)
 
 #ifdef G_PLATFORM_WIN32
-#  define IDL_EXPORT			/* assume auto-export */
-#  define IDL_IMPORT			__declspec (dllimport)
+#  ifdef LIBIDL_COMPILATION
+#    define LIBIDL_VAR extern		/* exported from .def file */
+#  else
+#    define LIBIDL_VAR extern __declspec(dllimport)
+#  endif
 #else
-#  define IDL_EXPORT			/* empty */
-#  define IDL_IMPORT			extern
+#  define LIBIDL_VAR extern		/* empty */
 #endif
 
 /* type casting checks */
 #define IDL_check_cast_enable(boolean)	do {	\
-	IDL_IMPORT int __IDL_check_type_casts;	\
+	LIBIDL_VAR int __IDL_check_type_casts;	\
 	__IDL_check_type_casts = (boolean);	\
 } while (0)
 #define IDL_CHECK_CAST(tree, thetype, name)			\
@@ -539,7 +541,8 @@ typedef enum {
 
 	IDLN_LAST
 } IDL_tree_type;
-IDL_IMPORT const char *			IDL_tree_type_names[];
+
+LIBIDL_VAR const char *			IDL_tree_type_names[];
 
 struct _IDL_tree_node {
 	IDL_tree_type _type;

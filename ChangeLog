@@ -1,3 +1,30 @@
+2008-05-19  Tor Lillqvist  <tml@novell.com>
+
+	Bug 522697 - Patch: make libIDL work with Microsoft's compilers
+
+	Patch by Marcelo Vanzin, applied with modifications.
+
+	* configure.in: Define Automake confitional OS_WIN32.
+
+	* Makefile.am: Use --export-symbols libIDL.def on Windows.
+
+	* Makefile.msc.in: Significant changes. Build a DLL with the same
+	name as libtool does. Use pkg-config.
+
+	* util.c: Make it work also in the !HAVE_CPP_STDIN && !HAVE_SYMLINK case.
+
+	* util.h: Make __IDL_tmp_filename const.
+
+	* include/libIDL/IDL.h.in: Rework the dllimport logic. Use
+	LIBIDL_VAR to decorate imported variables, similar to
+	GLIB_VAR. Unlike Marcelo's patch, I decided not to decorate
+	functions. Maybe later I can be convinced it would be a good idea,
+	but for now just use the .def file to export them and let them be
+	imported automatically.
+
+	* README.win32
+	* libIDL.def: Update.
+
 2008-03-18  Christian Persch  <chpe@gnome.org>
 
 	* configure.in: Update glib version req. Bug #517088, patch by

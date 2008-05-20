@@ -37,9 +37,12 @@
 
 #ifdef G_OS_WIN32
 #include <fcntl.h>
+#include <direct.h>
+#define popen _popen
+#define pclose _pclose
 #endif
 
-IDL_EXPORT const char *IDL_tree_type_names[] = {
+const char *IDL_tree_type_names[] = {
 	"IDLN_NONE",
 	"IDLN_ANY",
 	"IDLN_LIST",
@@ -88,9 +91,9 @@ IDL_EXPORT const char *IDL_tree_type_names[] = {
 	/* IDLN_LAST */
 };
 
-IDL_EXPORT int				__IDL_check_type_casts = FALSE;
+int					__IDL_check_type_casts = FALSE;
 #ifndef HAVE_CPP_PIPE_STDIN
-char *					__IDL_tmp_filename = NULL;
+const char *				__IDL_tmp_filename = NULL;
 #endif
 const char *				__IDL_real_filename = NULL;
 char *					__IDL_cur_filename = NULL;
@@ -228,9 +231,13 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	char *wd;
 #else
 	char *fmt = CPP_PROGRAM " " CPP_NOSTDINC " -I- -I%s %s \"%s\" %s";
-	char *s, *tmpfilename;
 	char cwd[2048];
+#ifdef HAVE_SYMLINK
+	char *s, *tmpfilename;
 	gchar *linkto;
+#else
+	const char *tmpfilename;
+#endif
 #endif
 
 #ifndef G_OS_WIN32
@@ -267,11 +274,12 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 
 	g_free (wd);
 #else
-	s = tmpnam (NULL);
-	if (s == NULL)
+	if (!getcwd (cwd, sizeof (cwd)))
 		return -1;
 
-	if (!getcwd (cwd, sizeof (cwd)))
+#ifdef HAVE_SYMLINK
+	s = tmpnam (NULL);
+	if (s == NULL)
 		return -1;
 
 	if (g_path_is_absolute (filename)) {
@@ -281,16 +289,16 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	}
 
 	tmpfilename = g_strconcat (s, ".c", NULL);
-#ifdef HAVE_SYMLINK
+
 	if (symlink (linkto, tmpfilename) < 0) {
 		g_free (linkto);
 		g_free (tmpfilename);
 		return -1;
 	}
-#else
-#error Must have symlink
-#endif
 	g_free (linkto);
+#else
+	tmpfilename = filename;
+#endif
 
 	cmd = g_strdup_printf (fmt, cwd, cpp_args ? cpp_args : "",
 			       tmpfilename, cpperrs);
@@ -301,7 +309,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	putenv ("LC_ALL=C");
 
 #ifdef HAVE_POPEN
-#ifdef G_OS_WIN32
+#if defined (G_OS_WIN32) && !defined (_MSC_VER)
 	if (!(parse_flags & IDLF_SHOW_CPP_ERRORS)) {
 		int save_stderr = dup (2);
 		int null = open ("NUL:", O_WRONLY);
@@ -317,13 +325,12 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 	input = popen (cmd, "r");
 #endif
 #else
-	/* Surely this doesn't make any sense? */	
-	input = fopen (cmd, "r");
+#error Must have popen
 #endif
 	g_free (cmd);
 
 	if (input == NULL || ferror (input)) {
-#ifndef HAVE_CPP_PIPE_STDIN
+#if !defined (HAVE_CPP_PIPE_STDIN) && defined (HAVE_SYMLINK)
 		g_free (tmpfilename);
 #endif
 		return IDL_ERROR;
@@ -356,7 +363,7 @@ int IDL_parse_filename (const char *filename, const char *cpp_args,
 #else
 	fclose (input);
 #endif
-#ifndef HAVE_CPP_PIPE_STDIN
+#if !defined (HAVE_CPP_PIPE_STDIN) && defined (HAVE_SYMLINK)
 	unlink (tmpfilename);
 	g_free (tmpfilename);
 #endif

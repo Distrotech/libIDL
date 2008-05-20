@@ -2,6 +2,11 @@
 #
 # libIDL Makefile.am
 #
+if OS_WIN32
+libIDL_def = libIDL.def
+export_symbols = -export-symbols libIDL.def
+endif
+
 SUBDIRS = include
 INCLUDES =                             \
 	-DYYDEBUG=1                    \
@@ -44,7 +49,9 @@ BUILT_SOURCES		= lexer.c parser.c parser.h stamp-parser
 
 libIDL_2_la_SOURCES	= parser.c parser.h lexer.c \
 			  ns.c util.c util.h rename.h
-libIDL_2_la_LDFLAGS	= -version-info $(LT_VERSION) $(LIBIDL_LIBS) -no-undefined
+libIDL_2_la_CFLAGS      = -DLIBIDL_COMPILATION
+libIDL_2_la_LDFLAGS	= -version-info $(LT_VERSION) $(LIBIDL_LIBS) -no-undefined $(export_symbols)
+libIDL_2_la_DEPENDENCIES = $(libIDL_def)
 
 tstidl_SOURCES		= tstidl.c
 tstidl_LDADD		= libIDL-2.la $(LIBIDL_LIBS)

@@ -77,6 +77,19 @@ AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 AM_MAINTAINER_MODE
 
+AC_MSG_CHECKING([for Win32])
+case "$host" in
+  *-*-mingw*)
+    os_win32=yes
+    ;;
+  *)
+    os_win32=no
+    
+    ;;
+esac
+AC_MSG_RESULT([$os_win32])
+AM_CONDITIONAL(OS_WIN32, [test $os_win32 = yes])
+
 dnl Checks for libraries.
 PKG_CHECK_MODULES(LIBIDL, glib-2.0 >= 2.4.0)
 
