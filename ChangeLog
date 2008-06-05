@@ -1,3 +1,10 @@
+2008-06-02  Tor Lillqvist  <tml@novell.com>
+
+	Bug 536165 - Make libIDL correctly parse cl's pre-processor output
+
+	* lexer.l: Further change needed when using MSVC's cl.exe as the
+	preprocessor. Patch by Marcelo Vanzin.
+
 2008-05-19  Tor Lillqvist  <tml@novell.com>
 
 	Bug 522697 - Patch: make libIDL work with Microsoft's compilers

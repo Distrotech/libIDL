@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <glib.h>
 #include "rename.h"
 #include "util.h"
 #include "parser.h"
@@ -81,6 +82,64 @@
 
 static int		count_nl			(const char *s);
 
+static void IDL_parse_cpp_status(char *mytext) {
+	gint   line;
+
+	line = atoi (mytext);
+
+	while (g_ascii_isdigit (*mytext))
+		mytext++;
+
+	if (g_ascii_isspace (*mytext)) {
+		mytext++;
+
+		if (mytext [0] == '"') {
+			gchar *p = ++mytext;
+
+			while (*p && *p != '"') p++;
+
+			*p = '\0';
+		}
+
+		if (mytext [0] ==  '<' &&
+		    (!strcmp (mytext, "<builtin>")  ||
+		     !strcmp (mytext, "<built-in>") ||
+		     !strcmp (mytext, "<stdin>")    ||
+		     !strcmp (mytext, "<command-line>") ||
+		     !strcmp (mytext, "<command line>")))
+
+			yylval.tree = IDL_file_set ("", line);
+		else {
+			gchar *filename = g_strdup (mytext);
+#ifdef G_OS_WIN32
+			/*
+			 * On Windows when using MSVC, the file name
+			 * output by cl.exe may have "\\" as the path
+			 * separator. We need to strip the extra '\'
+			 * so we can compare to our internal file
+			 * name.
+			 */
+			gchar *dst, *src;
+			for (dst = filename, src = mytext;
+			     *src != '\0'; src++, dst++) {
+			  if (*src == '\\' && *(src + 1) == '\\') {
+			    src++;
+			  }
+			  *dst = *src;
+			}
+			*dst = '\0';
+#endif
+
+			yylval.tree = IDL_file_set (filename, line);
+
+			g_free (filename);
+		}
+	}
+	else
+		yylval.tree = IDL_file_set ("", line);
+}
+
+
 #ifdef YYDEBUG
 extern int				yydebug;
 #endif
@@ -97,6 +156,7 @@ whitespacenl		[ \t\v\f\r\n]*
 newline			\n
 cpp_pragma		^{whitespace}#{whitespace}pragma{whitespace}.*
 cpp_status		^{whitespace}#{whitespace}[0-9][0-9]*.*
+cpp_status_ms		^{whitespace}#line{whitespace}[0-9][0-9]*.*
 cpp_other		^{whitespace}#.*
 b8_int			0[0-9]*
 b10_uint		[1-9][0-9]*
@@ -176,7 +236,6 @@ dqstring		\"[^\"\n]*[\"\n]
 }
 <*>{cpp_status}						{
 	gchar *mytext = yytext;
-	gint   line;
 
 	while (g_ascii_isspace (*mytext))
 		mytext++;
@@ -184,42 +243,25 @@ dqstring		\"[^\"\n]*[\"\n]
 	g_assert (mytext [0] == '#' && mytext [1] == ' ');
 
 	mytext += 2;
+	IDL_parse_cpp_status(mytext);
+	if (yylval.tree)
+	 	tokreturn (TOK_SRCFILE);
+}
+<*>{cpp_status_ms}						{
+	gchar *mytext = yytext;
 
-	line = atoi (mytext);
-
-	while (g_ascii_isdigit (*mytext))
+	while (g_ascii_isspace (*mytext))
 		mytext++;
 
-	if (g_ascii_isspace (*mytext)) {
-		mytext++;
+	g_assert (mytext [0] == '#' &&
+		  mytext [1] == 'l' &&
+		  mytext [2] == 'i' &&
+		  mytext [3] == 'n' &&
+		  mytext [4] == 'e' &&
+		  g_ascii_isspace(mytext [5]));
 
-		if (mytext [0] == '"') {
-			gchar *p = ++mytext;
-
-			while (*p && *p != '"') p++;
-
-			*p = '\0';
-		}
-
-		if (mytext [0] ==  '<' &&
-		    (!strcmp (mytext, "<builtin>")  ||
-		     !strcmp (mytext, "<built-in>") ||
-		     !strcmp (mytext, "<stdin>")    ||
-		     !strcmp (mytext, "<command-line>") ||
-		     !strcmp (mytext, "<command line>")))
-		    
-			yylval.tree = IDL_file_set ("", line);
-		else {
-			gchar *filename = g_strdup (mytext);
-
-			yylval.tree = IDL_file_set (filename, line);
-
-			g_free (filename);
-		}
-	}
-	else
-		yylval.tree = IDL_file_set ("", line);
-
+	mytext += 6;
+	IDL_parse_cpp_status(mytext);
 	if (yylval.tree)
 	 	tokreturn (TOK_SRCFILE);
 }
