@@ -1,3 +1,5 @@
+=========================== 0.8.11 ========================
+
 2008-06-02  Tor Lillqvist  <tml@novell.com>
 
 	Bug 536165 - Make libIDL correctly parse cl's pre-processor output
