@@ -3,6 +3,7 @@ libIDL 0.8.10:
         * Fix the build with glib 2.15
         * Ignore "command-line" in addition to "command line" when handling
           output from cpp (#474641, Sebastian Bober)
+	* Win32 portability work. (Tor)
 
 libIDL 0.8.9:
 
