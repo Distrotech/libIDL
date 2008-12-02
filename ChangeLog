@@ -1,3 +1,9 @@
+2008-12-02  Matthias Clasen <mclasen@redhat.com>
+
+	Bug 559395 - libIDL 0.8.11 fails to build with bison 2.4
+
+	* parser.y: Fix the build with bison 2.4. Patch by Juergen Daubert
+
 =========================== 0.8.11 ========================
 
 2008-06-02  Tor Lillqvist  <tml@novell.com>

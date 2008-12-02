@@ -1,3 +1,7 @@
+libIDL 0.8.12:
+
+        * Fix the build with bison 2.4
+
 libIDL 0.8.10:
 
         * Fix the build with glib 2.15
