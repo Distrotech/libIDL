@@ -1,3 +1,5 @@
+=========================== 0.8.12 ========================
+
 2008-12-02  Matthias Clasen <mclasen@redhat.com>
 
 	Bug 559395 - libIDL 0.8.11 fails to build with bison 2.4
