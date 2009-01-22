@@ -11,8 +11,8 @@ SUBDIRS = include
 INCLUDES =                             \
 	-DYYDEBUG=1                    \
 	-DYYERROR_VERBOSE=1            \
-	$(LIBIDL_CFLAGS)               \
 	-I$(top_builddir)/include      \
+	$(LIBIDL_CFLAGS)               \
 	-DG_LOG_DOMAIN=\"libIDL\"      \
 	$(WARN_CFLAGS)
 
