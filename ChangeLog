@@ -1,3 +1,10 @@
+2008-09-17  Kjartan Maraas  <kmaraas@gnome.org>
+
+	* util.c: clean up some warnings from sparse/gcc.
+	Closes bug #568677.
+	Makefile.am: Put local includes first. Closes
+	bug #536178.
+
 =========================== 0.8.12 ========================
 
 2008-12-02  Matthias Clasen <mclasen@redhat.com>
