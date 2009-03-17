@@ -1,3 +1,7 @@
+2009-03-17  Vincent Untz  <vuntz@gnome.org>
+
+	* NEWS: version 0.8.13
+
 2008-09-17  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* util.c: clean up some warnings from sparse/gcc.
