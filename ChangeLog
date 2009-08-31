@@ -1,3 +1,7 @@
+2009-09-01  Vincent Untz  <vuntz@gnome.org>
+
+	* AUTHORS: update, after request from Andrew T. Veliath.
+
 2009-03-17  Vincent Untz  <vuntz@gnome.org>
 
 	* configure.in: post-release bump to 0.8.14
