@@ -1,3 +1,9 @@
+libIDL 0.8.14:
+
+	* Fix build error in configure.in.
+	* Remove CPP_STDINC cruft from configure.in.
+	* Enable silent build rules.
+
 libIDL 0.8.13:
 
         * Clean up some warnings from sparse/gcc.
